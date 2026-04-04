@@ -1,18 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/business/business_provider.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_card.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_textfield.dart';
 
-class CreateBusinessScreen extends StatelessWidget {
-   CreateBusinessScreen({super.key});
+class CreateBusinessScreen extends ConsumerStatefulWidget {
+  const CreateBusinessScreen({super.key});
+
+  @override
+  ConsumerState<CreateBusinessScreen> createState() =>
+      _CreateBusinessScreenState();
+}
+
+class _CreateBusinessScreenState
+    extends ConsumerState<CreateBusinessScreen> {
 
   final TextEditingController businessNameController = TextEditingController();
   final TextEditingController businessAddressController = TextEditingController();
+
+  String? selectedCategory;
+
+  @override
+  void dispose() {
+    businessNameController.dispose();
+    businessAddressController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(businessProvider);
+
+    /// ✅ FIX: listen inside build (NOT initState)
+    ref.listen(businessProvider, (prev, next) {
+      next.whenOrNull(
+        data: (res) {
+          if (res != null && res.success) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(res.message)),
+              );
+
+            /// clear fields after success
+            businessNameController.clear();
+            businessAddressController.clear();
+            selectedCategory = null;
+          }
+        },
+        error: (e, _) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(e.toString())),
+            );
+        },
+      );
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: const CustomAppBar(
@@ -26,7 +75,7 @@ class CreateBusinessScreen extends StatelessWidget {
 
               /// 🔵 Top Header Section
               CustomCard(
-                padding:  EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Container(
@@ -74,7 +123,6 @@ class CreateBusinessScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
-                        /// Section Title
                         const Text(
                           "Business Information",
                           style: TextStyle(
@@ -102,7 +150,9 @@ class CreateBusinessScreen extends StatelessWidget {
                             "Salon",
                             "Institute",
                           ],
-                          onChanged: (value) {},
+                          onChanged: (value) {
+                            selectedCategory = value;
+                          },
                         ),
 
                         const SizedBox(height: 16),
@@ -117,8 +167,33 @@ class CreateBusinessScreen extends StatelessWidget {
 
                         /// 🔵 Button
                         CustomButton(
-                          onTap: () {},
-                          label: "Create Business",
+                          onTap: state.isLoading
+                              ? null
+                              : () async {
+
+                            /// ✅ Validation
+                            if (businessNameController.text.trim().isEmpty ||
+                                selectedCategory == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please fill required fields"),
+                                ),
+                              );
+                              return;
+                            }
+
+                            /// ✅ API call
+                            await ref
+                                .read(businessProvider.notifier)
+                                .createBusiness(
+                              name: businessNameController.text.trim(),
+                              category: selectedCategory!,
+                              address: businessAddressController.text.trim(),
+                            );
+                          },
+                          label: state.isLoading
+                              ? "Creating..."
+                              : "Create Business",
                         ),
                       ],
                     ),
@@ -127,8 +202,6 @@ class CreateBusinessScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 10),
-
-              /// 🔹 Bottom Note
               const Text(
                 "You can add multiple businesses later",
                 style: TextStyle(
@@ -136,7 +209,6 @@ class CreateBusinessScreen extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-
               const SizedBox(height: 10),
             ],
           ),
