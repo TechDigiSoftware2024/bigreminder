@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"bizzreminder","appId":"1:407707103592:android:4b8da304d72d759824e6dd","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"bizzreminder","configurations":{"android":"1:407707103592:android:4b8da304d72d759824e6dd","ios":"1:407707103592:ios:c696e6ce9fa7dbe324e6dd"}}}}}}

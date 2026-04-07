@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "407707103592",
+    "project_id": "bizzreminder",
+    "storage_bucket": "bizzreminder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407707103592:android:4b8da304d72d759824e6dd",
+        "android_client_info": {
+          "package_name": "techdigi.software.bigreminder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-l9udNdIp_HiYKEBtTxU7JwnaUe1d0S4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
