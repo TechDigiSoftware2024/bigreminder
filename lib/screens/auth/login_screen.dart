@@ -1,11 +1,13 @@
 import 'package:bigreminder/providers/auth/auth_provider.dart';
+import 'package:bigreminder/screens/auth/signup_screen.dart';
+import 'package:bigreminder/screens/super_admin/bottom_nav_screens/super_admin_main.dart';
 import 'package:bigreminder/widgets/custom_card.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:ui';
-import '../../constants/bottom_nav_bar.dart';
+import '../../constants/business_main.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
-  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   bool _obscurePassword = true;
   final _formKey = GlobalKey<FormState>();
@@ -27,7 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   void dispose() {
-    emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -57,7 +59,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget build(BuildContext context) {
     // Listen for errors
     ref.listen(authControllerProvider, (prev, next) {
-
       if (next.error != null && next.error!.isNotEmpty) {
         final msg = _formatError(next.error.toString());
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -71,11 +72,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           next.user != null &&
           next.error == null) {
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => BottomNavBar()),
-              (route) => false, // ✅ fix: no back
-        );
+        final role = next.user!.role; // 👈 from API
+
+        if (role == 'super_admin') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => SuperAdminMain()),
+                (route) => false,
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => BusinessMain()),
+                (route) => false,
+          );
+        }
       }
     });
     final size = MediaQuery.of(context).size;
@@ -135,17 +146,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: Column(
                           children: [
                             CustomTextField(
-                              controller: emailController,
-                              hint: "Email address",
-                              icon: Icons.alternate_email_rounded,
+                              controller: phoneController,
+                              hint: "Phone number",
+                              icon: Icons.phone_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return "Email is required";
+                                  return "Phone is required";
                                 }
-                                final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                final regex = RegExp(r'^[6-9][0-9]{9}$');
                                 if (!regex.hasMatch(value)) {
-                                  return "Enter a valid email";
+                                  return "Enter a valid 10-digit phone number";
                                 }
                                 return null;
                               },
@@ -215,7 +226,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 : () {
                               if (!_formKey.currentState!.validate()) return;
                               ref.read(authControllerProvider.notifier).login(
-                                emailController.text.trim(),
+                                phoneController.text.trim(),
                                 passwordController.text.trim(),
                               );
                             },
@@ -241,7 +252,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       // Navigate to Signup
                       Center(
                         child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SignupScreen())),
                           child: RichText(
                             text: TextSpan(
                               text: "Don't have an account? ",

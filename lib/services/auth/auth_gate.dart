@@ -1,12 +1,13 @@
-import 'package:bigreminder/screens/Super Admin/super_admin.dart';
-import 'package:bigreminder/screens/auth/signup_screen.dart';
+
+import 'package:bigreminder/screens/auth/login_screen.dart';
+import 'package:bigreminder/screens/business/business_home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../constants/business_main.dart';
 import '../../providers/auth/auth_provider.dart';
-import '../../constants/bottom_nav_bar.dart';
-import '../../screens/auth/login_screen.dart';
-import '../../screens/create business/create_business.dart';
+import '../../screens/auth/signup_screen.dart';
+import '../../screens/super_admin/bottom_nav_screens/super_admin_main.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -24,14 +25,26 @@ class AuthGate extends ConsumerWidget {
 
     /// ================= USER CHECK =================
     if (state.user != null) {
-      if (state.user!.role == "super_admin") {
-        return const SuperAdminHome();
-      } else {
-        return  CreateBusinessScreen();
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (state.user!.role == "super_admin") {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const SuperAdminMain()),
+                (route) => false,
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const BusinessMain()),
+                (route) => false,
+          );
+        }
+      });
+
+      return const SizedBox(); // empty while navigating
     }
 
     /// ================= NOT LOGGED IN =================
-    return SignupScreen();
+    return LoginScreen();
   }
 }

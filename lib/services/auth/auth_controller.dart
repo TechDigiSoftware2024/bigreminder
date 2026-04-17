@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,24 +9,38 @@ class AuthController extends StateNotifier<AuthState> {
   final AuthService service;
 
   AuthController(this.service) : super(AuthState()) {
-    checkLoginStatus(); // ✅ auto login on start
+    checkLoginStatus();
+  }
+
+  // ================= COMMON SAVE USER =================
+  Future<void> _saveUser(AuthUserModel user) async {
+    if (user.accessToken == null || user.accessToken!.isEmpty) {
+      throw Exception("Token not received from server");
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString("token", user.accessToken!);
+    await prefs.setString("role", user.role);
+    await prefs.setString("userId", user.userId);
   }
 
   // ================= LOGIN =================
-  Future<void> login(String email, String password) async {
+  Future<void> login(String phone, String password) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final user = await service.login(email, password);
+      final user = await service.login(phone, password);
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool("isLoggedIn", true); // ✅ persist
+      // 🔥 validate + save
+      await _saveUser(user);
 
       state = state.copyWith(
         isLoading: false,
         user: user,
         error: null,
       );
+
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -37,29 +50,38 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  // ================= SIGNUP =================
-  Future<void> signup(
-      String name,
-      String email,
-      String password,
-      String role,
-      String phone,
-      ) async {
+  // ================= SIGNUP + AUTO LOGIN =================
+  Future<void> signup({
+    required String ownerName,
+    required String phone,
+    required String password,
+    required String businessName,
+    required String businessCategory,
+    required String address,
+    required String doc,
+  }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      // ✅ signup returns user
-      final user =
-      await service.signup(name, email, password, role, phone);
+      final user = await service.signupAndLogin(
+        ownerName: ownerName,
+        phone: phone,
+        password: password,
+        businessName: businessName,
+        businessCategory: businessCategory,
+        address: address,
+        doc: doc,
+      );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool("isLoggedIn", true);
+      // 🔥 validate + save
+      await _saveUser(user);
 
       state = state.copyWith(
         isLoading: false,
         user: user,
         error: null,
       );
+
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -71,17 +93,19 @@ class AuthController extends StateNotifier<AuthState> {
   // ================= AUTO LOGIN =================
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool("isLoggedIn") ?? false;
 
-    if (isLoggedIn) {
+    final token = prefs.getString("token");
+    final role = prefs.getString("role");
+    final userId = prefs.getString("userId");
+
+    print("🔍 STORED TOKEN: $token");
+
+    if (token != null && token.isNotEmpty) {
       state = state.copyWith(
         user: AuthUserModel(
-          id: "cached",
-          name: "",
-          email: "",
-          phone: "",
-          role: "",
-          status: "",
+          userId: userId ?? '',
+          accessToken: token,
+          role: role ?? '',
         ),
       );
     }
@@ -90,7 +114,7 @@ class AuthController extends StateNotifier<AuthState> {
   // ================= LOGOUT =================
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // ✅ remove login
+    await prefs.clear();
 
     state = AuthState();
   }
@@ -101,8 +125,9 @@ class AuthController extends StateNotifier<AuthState> {
 
     if (msg.contains("socket")) return "No internet connection";
     if (msg.contains("timeout")) return "Server is slow, try again";
-    if (msg.contains("already")) return "Email already registered";
-    if (msg.contains("invalid")) return "Invalid email or password";
+    if (msg.contains("already")) return "User already registered";
+    if (msg.contains("invalid")) return "Invalid phone or password";
+    if (msg.contains("token")) return "Authentication failed";
 
     return "Something went wrong";
   }

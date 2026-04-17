@@ -160,15 +160,36 @@ class _DropdownBodyState extends State<_DropdownBody> {
       ],
     );
   }
-
   Widget _getRoleIcon(String role) {
     switch (role.toLowerCase()) {
+
+      case 'general store':
+        return const Icon(Icons.storefront, size: 18);
+
       case 'gym':
         return const Icon(Icons.fitness_center, size: 18);
-      case 'shop':
-        return const Icon(Icons.store, size: 18);
-      case 'institute':
-        return const Icon(Icons.school, size: 18);
+
+      case 'medical':
+        return const Icon(Icons.local_hospital, size: 18);
+
+      case 'salon':
+        return const Icon(Icons.content_cut, size: 18);
+
+      case 'restaurant':
+        return const Icon(Icons.restaurant, size: 18);
+
+      case 'repair shop':
+        return const Icon(Icons.build, size: 18);
+
+      case 'clothing':
+        return const Icon(Icons.checkroom, size: 18);
+
+      case 'electronics':
+        return const Icon(Icons.devices, size: 18);
+
+      case 'other':
+        return const Icon(Icons.more_horiz, size: 18);
+
       default:
         return const Icon(Icons.work_outline, size: 18);
     }

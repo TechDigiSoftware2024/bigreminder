@@ -6,53 +6,67 @@ import 'package:http/http.dart' as http;
 class AuthService {
 
   // ================= LOGIN =================
-  Future<AuthUserModel> login(String email, String password) async {
+  Future<AuthUserModel> login(String phone, String password) async {
     try {
-      final res = await http
-          .post(
+      final res = await http.post(
         ApiConfig.url(ApiConfig.login),
         headers: ApiConfig.headers(),
         body: jsonEncode({
-          "email": email,
+          "phone": phone,
           "password": password,
         }),
-      )
-          .timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 15));
 
       final data = _handleResponse(res);
 
-      return AuthUserModel.fromJson(data); // ✅ FIX
+      return AuthUserModel.fromJson(data);
+
     } catch (e) {
       throw Exception(_handleError(e));
     }
   }
 
-  // ================= SIGNUP =================
-  Future<AuthUserModel> signup(
-      String name,
-      String email,
-      String password,
-      String role,
-      String phone,
-      ) async {
+  // ================= SIGNUP + AUTO LOGIN =================
+  Future<AuthUserModel> signupAndLogin({
+    required String ownerName,
+    required String phone,
+    required String password,
+    required String businessName,
+    required String businessCategory,
+    required String address,
+    required String doc,
+  }) async {
     try {
-      final res = await http
-          .post(
+      // 🔥 STEP 1: SIGNUP
+      final res = await http.post(
         ApiConfig.url(ApiConfig.register),
         headers: ApiConfig.headers(),
         body: jsonEncode({
-          "name": name,
-          "email": email,
+          "owner_name": ownerName,
           "phone": phone,
           "password": password,
-          "role": role,
+          "business_name": businessName,
+          "business_category": businessCategory,
+          "address": address,
+          "doc": doc,
         }),
-      )
-          .timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 60));
 
-      final data = _handleResponse(res);
+      final signupData = _handleResponse(res);
 
-      return AuthUserModel.fromJson(data); // ✅ FIX
+      // 🧠 DEBUG (optional but useful)
+      print("SIGNUP RESPONSE: $signupData");
+
+      // 🔥 STEP 2: AUTO LOGIN (CRITICAL)
+      final user = await login(phone, password);
+
+      // 🧠 Safety check
+      if (user.accessToken == null || user.accessToken!.isEmpty) {
+        throw Exception("Login failed: Token not received");
+      }
+
+      return user;
+
     } catch (e) {
       throw Exception(_handleError(e));
     }
@@ -77,19 +91,11 @@ class AuthService {
   String _handleError(dynamic error) {
     final msg = error.toString().toLowerCase();
 
-    if (msg.contains('socket')) {
-      return "No internet connection";
-    }
-    if (msg.contains('timeout')) {
-      return "Server timeout, try again";
-    }
-    if (msg.contains('already')) {
-      return "Email already registered";
-    }
-    if (msg.contains('invalid')) {
-      return "Invalid email or password";
-    }
+    if (msg.contains('socket')) return "No internet connection";
+    if (msg.contains('timeout')) return "Server timeout, try again";
+    if (msg.contains('already')) return "User already registered";
+    if (msg.contains('invalid')) return "Invalid phone or password";
 
-    return "Something went wrong";
+    return error.toString();
   }
 }

@@ -4,10 +4,9 @@ class AppColors {
   AppColors._();
 
   // 🟣 BRAND (Purple Identity)
-  static const Color primary = Color(0xFF7C3AED); // main purple
-  static const Color primaryDark = Color(0xFF5B21B6);
-  static const Color primaryLight = Color(0xFFC4B5FD);
-
+  static const Color primary = Color(0xFF14B8A6);      // main teal (clean + modern)
+  static const Color primaryDark = Color(0xFF0D9488);  // deeper teal for pressed/active
+  static const Color primaryLight = Color(0xFFCCFBF1); // soft teal tint for backgrounds
   // ⚫ NEUTRAL BASE
   static const Color black = Color(0xFF111827);
   static const Color darkGrey = Color(0xFF374151);
@@ -15,7 +14,8 @@ class AppColors {
   // ⚪ BACKGROUND SYSTEM
   static const Color background = Color(0xFFF9FAFB);
   static const Color surface = Color(0xFFF3F4F6);
-  static const Color card = Colors.white;
+  static const Color card = primaryDark;
+  static const Color cardText = Colors.white;
 
   // 🧊 GLASS EFFECT (optional premium)
   static const Color glass = Color(0x80FFFFFF);
@@ -28,8 +28,8 @@ class AppColors {
   static const Color textOnPrimary = Colors.white;
 
   // 📱 APP BAR
-  static const Color appBarBg = Colors.white;
-  static const Color appBarText = textPrimary;
+  static const Color appBarBg = primaryDark;
+  static const Color appBarText = Colors.white;
   static const Color appBarIcon = textPrimary;
   static const Color appBarBorder = Color(0xFFE5E7EB);
 
@@ -50,7 +50,7 @@ class AppColors {
   static const Color divider = Color(0xFFF3F4F6);
 
   // 🔘 BUTTON SYSTEM
-  static const Color buttonPrimaryBg = primary;
+  static const Color buttonPrimaryBg = primaryDark;
   static const Color buttonPrimaryText = Colors.white;
 
   static const Color buttonSecondaryBg = Color(0xFFF3F4F6);
@@ -58,6 +58,9 @@ class AppColors {
 
   static const Color buttonDisabledBg = Color(0xFFE5E7EB);
   static const Color buttonDisabledText = Color(0xFF9CA3AF);
+
+  static const Color iconColor = Colors.white;
+  static const Color iconBg = primaryLight;
 
   // 🏷️ CHIP / TAG
   static const Color chipBg = Color(0xFFF3F4F6);

@@ -2,14 +2,13 @@ import 'package:bigreminder/providers/auth/auth_provider.dart';
 import 'package:bigreminder/screens/auth/login_screen.dart';
 import 'package:bigreminder/widgets/custom_card.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
-import 'package:bigreminder/widgets/custom_dropdown.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:ui';
-
-import '../../constants/bottom_nav_bar.dart';
+import '../../constants/business_main.dart';
 import '../../providers/auth/auth_state.dart';
+import '../../widgets/custom_dropdown.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -24,24 +23,45 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final phoneController = TextEditingController();
+  final businessNameController = TextEditingController();
+  final categoryController = TextEditingController();
+  final addressController = TextEditingController();
+  String? docFilePath; // image/file optional
   bool _obscurePassword = true;
 
   final _formKey = GlobalKey<FormState>();
   String? selectedRole;
+  late final finalCategory = selectedCategory == "Other"
+      ? otherCategoryController.text.trim()
+      : selectedCategory;
 
+  String? selectedCategory;
+  bool showOtherField = false;
 
+  final TextEditingController otherCategoryController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
   }
-
+  final List<String> businessCategories = [
+    "General Store",
+    "Gym",
+    "Medical",
+    "Salon",
+    "Restaurant",
+    "Clothing",
+    "Other",
+  ];
   @override
   void dispose() {
     nameController.dispose();
-    emailController.dispose();
     passwordController.dispose();
+    phoneController.dispose();
+    businessNameController.dispose();
+    categoryController.dispose();
+    addressController.dispose();
     super.dispose();
   }
 
@@ -63,60 +83,55 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
         ? cleaned
         : 'Something went wrong. Please try again.';
   }
-
   @override
   Widget build(BuildContext context) {
+
     ref.listen<AuthState>(authControllerProvider, (prev, next) {
+
       /// ================= ERROR =================
       if (next.error != null && next.error != prev?.error) {
         final msg = _formatError(next.error!);
 
-        ScaffoldMessenger.of(context).clearSnackBars();
+        if (!context.mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            content: Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF4D6D).withOpacity(0.92),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF4D6D).withOpacity(0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  )
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline_rounded,
-                      color: Colors.white, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      msg,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              content: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF4D6D).withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: Colors.white, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        msg,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              duration: const Duration(seconds: 4),
             ),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+          );
       }
 
-      /// ================= SUCCESS NAVIGATION =================
+      /// ================= SUCCESS =================
       final isSuccess =
           prev?.isLoading == true &&
               next.isLoading == false &&
@@ -124,17 +139,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
               next.error == null;
 
       if (isSuccess) {
-        // Prevent multiple navigation
-        Future.microtask(() {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => BottomNavBar()),
-                (route) => false,
-          );
-        });
+        if (!context.mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => BusinessMain()),
+              (route) => false,
+        );
       }
     });
-
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -163,7 +176,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 72),
 
                       // Headline
                       const Text(
@@ -211,24 +223,99 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 6),
                             CustomTextField(
-                              controller: emailController,
-                              hint: "Email address",
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value){
-                                if(value == null || value.isEmpty){
-                                  return "Email is required";
-                                }
-                                final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                                if (!regex.hasMatch(value)) {
-                                  return "Enter a valid email";
+                              controller: businessNameController,
+                              hint: "Business Name",
+                              icon: Icons.storefront_outlined,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Business name required";
                                 }
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 14),
+
+                            const SizedBox(height: 6),
+
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+
+                                /// ===== CATEGORY DROPDOWN =====
+                                CustomDropdown(
+                                  roles: businessCategories,
+                                  selectedRole: selectedCategory,
+                                  hint: "Select Business Category",
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedCategory = value;
+
+                                      // 🔥 CORE LOGIC
+                                      showOtherField = value == "Other";
+
+                                      // optional reset
+                                      if (!showOtherField) {
+                                        otherCategoryController.clear();
+                                      }
+                                    });
+                                  },
+                                  validator: (value) =>
+                                  value == null ? "Please select category" : null,
+                                ),
+
+                                /// ===== OTHER FIELD =====
+                                if (showOtherField)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: TextFormField(
+                                      controller: otherCategoryController,
+                                      decoration: InputDecoration(
+                                        hintText: "Enter your business category",
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (showOtherField && (value == null || value.trim().isEmpty)) {
+                                          return "Please enter your business type";
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            CustomTextField(
+                              controller: addressController,
+                              hint: "Address",
+                              icon: Icons.location_on_outlined,
+                            ),
+                            const SizedBox(height: 6),
+                            CustomTextField(
+                              controller: emailController,
+                              hint: "Enter PAN or AADHAAR  number",
+                              icon: Icons.document_scanner_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "PAN or Aadhaar number is required";
+                                  }
+                                  final input = value.trim().toUpperCase();
+                                  // 🔥 Aadhaar → 12 digits
+                                  final aadhaarRegex = RegExp(r'^\d{12}$');
+                                  // 🔥 PAN → 5 letters + 4 digits + 1 letter
+                                  final panRegex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$');
+                                  if (aadhaarRegex.hasMatch(input) || panRegex.hasMatch(input)) {
+                                    return null; // ✅ valid
+                                  }
+                                  return "Enter valid PAN or Aadhaar";
+                                }
+                            ),
+                            const SizedBox(height: 6),
                             CustomTextField(
                               controller: phoneController,
                               hint: "Phone number",
@@ -247,7 +334,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 6),
                             // CustomDropdown(
                             //   roles: ["staff",""],
                             //   selectedRole: selectedRole,
@@ -274,7 +361,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 if(value.length < 6){
                                   return "Password must be at least 6 characters";
                                 }
-                                if (!RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$')
+                                if (!RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@]{6,}$')
                                     .hasMatch(value)) {
                                   return "Password must contain letters and numbers";
                                 }
@@ -296,29 +383,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                         ),
                       ),
 
-                      const SizedBox(height: 16),
-
-                      // Password hint
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline_rounded,
-                                size: 13,
-                                color: Colors.white.withOpacity(0.3)),
-                            const SizedBox(width: 6),
-                            Text(
-                              "Use at least 6 characters for your password",
-                              style: TextStyle(
-                                color: Colors.blueGrey.withOpacity(0.8),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
 
                       // ── Signup Button ──
                       Consumer(
@@ -335,18 +400,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                               if (!_formKey.currentState!.validate()) return;
 
                               await ref.read(authControllerProvider.notifier).signup(
-                                nameController.text.trim(),
-                                emailController.text.trim(),
-                                passwordController.text.trim(),
-                                selectedRole ?? "staff", // ✅ safe
-                                phoneController.text.trim(),
+                                ownerName: nameController.text.trim(),
+                                phone: phoneController.text.trim(),
+                                password: passwordController.text.trim(),
+                                businessName: businessNameController.text.trim(),
+                                businessCategory: finalCategory ?? "general",
+                                address: addressController.text.trim(),
+                                doc: docFilePath ?? "",
                               );
                             },
                           );
                         },
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 10),
 
                       // Terms hint
                       Center(
@@ -360,7 +427,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                         ),
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 10),
 
                       // Navigate to Login
                       Center(
