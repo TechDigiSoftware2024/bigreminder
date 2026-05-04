@@ -9,10 +9,10 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final ButtonVariant variant;
 
-  final Color? backgroundColor; 
-  final Color? textColor;     
+  final Color? backgroundColor;
+  final Color? textColor;
 
-   CustomButton({
+  const CustomButton({
     super.key,
     required this.label,
     this.onTap,
@@ -26,10 +26,10 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final disabled = isDisabled || onTap == null;
+
     BorderSide? border;
 
     if (variant == ButtonVariant.outline) {
@@ -42,9 +42,11 @@ class CustomButton extends StatelessWidget {
     final txtColor = textColor ??
         (variant == ButtonVariant.filled ? Colors.white : primary);
 
+    final disabledColor = theme.disabledColor.withValues(alpha: 0.2);
+
     return Material(
-      color: disabled ? theme.disabledColor.withOpacity(0.2) : bg,
       borderRadius: BorderRadius.circular(22),
+      color: disabled ? disabledColor : bg,
       child: InkWell(
         onTap: disabled ? null : onTap,
         borderRadius: BorderRadius.circular(22),
@@ -57,9 +59,13 @@ class CustomButton extends StatelessWidget {
             border: border != null ? Border.fromBorderSide(border) : null,
           ),
           child: isLoading
-              ? CircularProgressIndicator(
-            strokeWidth: 2,
-            color: txtColor,
+              ? SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: txtColor,
+            ),
           )
               : Row(
             mainAxisSize: MainAxisSize.min,

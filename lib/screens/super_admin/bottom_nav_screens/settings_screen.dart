@@ -1,16 +1,17 @@
+import 'package:bigreminder/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../providers/auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/custom_list_toggle.dart';
-
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool notificationsEnabled = true;
   bool maintenanceMode = false;
   bool allowSignup = true;
@@ -191,7 +192,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: "Logout",
                     icon: Icons.logout,
                     isDanger: true,
-                    onTap: () {},
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) {
+                          return Dialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+
+                                  /// 🔴 ICON
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.logout,
+                                      color: Colors.red,
+                                      size: 28,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  /// 🧠 TITLE
+                                  const Text(
+                                    "Logout?",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 8),
+
+                                  /// ✍️ DESCRIPTION
+                                  const Text(
+                                    "Are you sure you want to logout from your account?",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 24),
+
+                                  /// 🔘 BUTTONS
+                                  Row(
+                                    children: [
+
+                                      /// ❌ CANCEL
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text("Cancel"),
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      /// ✅ LOGOUT
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: () async {
+                                            Navigator.pop(context); // close dialog
+
+                                            await ref
+                                                .read(authControllerProvider.notifier)
+                                                .logout();
+
+                                            Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const LoginScreen(),
+                                              ),
+                                                  (route) => false,
+                                            );
+                                          },
+                                          child: const Text("Logout"),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),

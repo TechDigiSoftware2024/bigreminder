@@ -4,19 +4,29 @@ import 'package:bigreminder/screens/super_admin/bottom_nav_screens/subscription_
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/super_admin_home.dart';
 import 'package:bigreminder/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../providers/super_admin/super_admin_provider.dart';
 import '../../auth/signup_screen.dart';
 import 'notification_screen.dart';
 
-class SuperAdminMain extends StatefulWidget {
+class SuperAdminMain extends ConsumerStatefulWidget {
   const SuperAdminMain({super.key});
 
   @override
-  State<SuperAdminMain> createState() => _SuperAdminMainState();
+  ConsumerState<SuperAdminMain> createState() => _SuperAdminMainState();
 }
 
-class _SuperAdminMainState extends State<SuperAdminMain> {
+class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
   int currentIndex = 0;
+  @override
+  void initState() {
+    super.initState();
 
+    Future.microtask(() {
+      ref.invalidate(userProvider);
+      ref.invalidate(businessListProvider);
+    });
+  }
   final List<Widget> screens = [
     SuperAdminHome(),        // 0
     SubscriptionScreen(),    // 1
@@ -100,15 +110,27 @@ class _SuperAdminMainState extends State<SuperAdminMain> {
                       width: double.infinity,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
-                        onTap: () {
+                        onTap: () async {
                           Navigator.pop(context);
 
-                          Navigator.push(
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => SignupScreen(),
+                              builder: (_) => const SignupScreen(isFromAdmin: true),
                             ),
                           );
+
+                          if (result == true) {
+
+                            /// 🔥 REFRESH DATA (IMPORTANT)
+                            ref.invalidate(userProvider);
+                            ref.invalidate(businessListProvider);
+
+                            /// 🔥 SWITCH TO DASHBOARD
+                            setState(() {
+                              currentIndex = 0;
+                            });
+                          }
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -179,10 +201,10 @@ class _SuperAdminMainState extends State<SuperAdminMain> {
             children: [
 
               /// Dashboard
-              _navItem(Icons.home_rounded, "Dashboard", 0),
+              _navItem(Icons.home_outlined, "Dashboard", 0),
 
-              /// Subscriptions
-              _navItem(Icons.wallet_rounded, "Subscriptions", 1),
+              /// Plans
+              _navItem(Icons.wallet_rounded, "Plans", 1),
 
               /// CENTER BUTTON
               GestureDetector(
@@ -206,10 +228,10 @@ class _SuperAdminMainState extends State<SuperAdminMain> {
               ),
 
               /// Notification
-              _navItem(Icons.bar_chart_rounded, "Notification", 3),
+              _navItem(Icons.stacked_bar_chart_outlined, "Notification", 3),
 
               /// Settings
-              _navItem(Icons.person_rounded, "Settings", 4),
+              _navItem(Icons.settings_outlined, "Settings", 4),
             ],
           ),
         ),

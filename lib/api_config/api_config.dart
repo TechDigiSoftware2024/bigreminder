@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
 class ApiConfig {
   // ================= BASE URL =================
   static const String baseUrl =
@@ -7,8 +11,10 @@ class ApiConfig {
   static const String login = "/api/v1/auth/login";
   static const String register = "/api/v1/auth/register-business";
   static const String businessList = "/api/v1/businesses";
-  static const String businessAccess ="/api/v1/access-control";
+  static const String businessAccess = "/api/v1/access-control";
   static const String totalUserList = "/api/v1/users";
+  static const String subscriptions = "/api/v1/subscriptions";
+  static const String addCustomer = "/api/v1/customers";
 
   static Uri url(String endpoint) {
     return Uri.parse(baseUrl + endpoint);

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../api_config/api_config.dart';
-import '../../models/total_user_model.dart';
+import '../../models/super_admin_models/total_user_model.dart';
 
 class UserService {
   Future<TotalUserModel> fetchUsers({String? token}) async {

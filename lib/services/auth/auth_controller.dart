@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../models/auth_user_model.dart';
+import '../../models/auth_models/auth_user_model.dart';
 import '../../providers/auth/auth_state.dart';
 import '../../services/auth/auth_service.dart';
 
@@ -38,6 +40,7 @@ class AuthController extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         user: user,
+        token: user.accessToken, // 🔥 ADD THIS
         error: null,
       );
 
@@ -79,6 +82,7 @@ class AuthController extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         user: user,
+        token: user.accessToken, // 🔥 ADD THIS
         error: null,
       );
 
@@ -107,6 +111,7 @@ class AuthController extends StateNotifier<AuthState> {
           accessToken: token,
           role: role ?? '',
         ),
+        token: token, // 🔥 IMPORTANT
       );
     }
   }
@@ -114,7 +119,8 @@ class AuthController extends StateNotifier<AuthState> {
   // ================= LOGOUT =================
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+
+    await prefs.clear(); // safe now
 
     state = AuthState();
   }
@@ -130,5 +136,38 @@ class AuthController extends StateNotifier<AuthState> {
     if (msg.contains("token")) return "Authentication failed";
 
     return "Something went wrong";
+  }
+
+
+  Future<void> restoreSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+      if (!isLoggedIn) {
+        state = AuthState();
+        return;
+      }
+
+      final userId = prefs.getString('user_id');
+      final role = prefs.getString('user_role');
+      final token = prefs.getString('access_token');
+
+      if (userId != null && role != null) {
+        state = state.copyWith(
+          user: AuthUserModel(
+            userId: userId,
+            role: role,
+            accessToken: token,
+          ),
+          isLoading: false,
+        );
+      } else {
+        state = AuthState();
+      }
+    } catch (e) {
+      state = AuthState();
+    }
   }
 }

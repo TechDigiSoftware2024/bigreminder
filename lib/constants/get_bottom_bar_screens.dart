@@ -1,58 +1,33 @@
+import 'package:bigreminder/screens/business/business_home.dart' hide AppType;
+import 'package:bigreminder/screens/business/business_notification.dart';
 import 'package:flutter/material.dart';
+import '../screens/business/business_profile.dart';
+import '../screens/business/business_staff.dart';
 import '../utils/enum_classes.dart';
 
+// ================= SCREENS =================
 List<Widget> getBottomBarScreens(AppType type) {
-  switch (type) {
-    case AppType.gym:
-      return const [
-        Center(child: Text("Members")),
-        Center(child: Text("Add Workout")),
-        SizedBox(),
-        Center(child: Text("Gym Reports")),
-        Center(child: Text("Gym Profile")),
-      ];
+  final commonScreens = [
+    BusinessHome(type: type),
+    BusinessStaff(),
+    const SizedBox(),
+    BusinessNotificationScreen(),
+    BusinessProfile(),
+  ];
 
-    case AppType.shop:
-      return const [
-        Center(child: Text("Orders")),
-        Center(child: Text("Add Product")),
-        SizedBox(),
-        Center(child: Text("Shop Analytics")),
-        Center(child: Text("Shop Profile")),
-      ];
-
-    case AppType.institute:
-      return const [
-        Center(child: Text("Students")),
-        Center(child: Text("Add Course")),
-        SizedBox(),
-        Center(child: Text("Institute Reports")),
-        Center(child: Text("Institute Profile")),
-      ];
-
-    default:
-      return const [
-        Center(child: Text("Home")),
-        Center(child: Text("Add")),
-        SizedBox(),
-        Center(child: Text("Reports")),
-        Center(child: Text("Profile")),
-      ];
-  }
+  // 🔥 All types use same structure for now
+  return commonScreens;
 }
 
+
+//✅ LABELS (fixed + generic safe)
 List<String> getBottomBarLabels(AppType type) {
-  switch (type) {
-    case AppType.gym:
-      return ["Members", "Workout"," ", "Reports", "Profile"];
+  return const [
+    "Home",
+    "Manage",
+    " ",
+    "Notify",
+    "Profile",
+  ];
 
-    case AppType.shop:
-      return ["Orders", "Products"," ", "Analytics", "Profile"];
-
-    case AppType.institute:
-      return ["Students", "Courses"," ", "Reports", "Profile"];
-
-    default:
-      return ["Home", "Add"," ", "Reports", "Profile"];
-  }
 }

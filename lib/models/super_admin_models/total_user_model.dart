@@ -1,4 +1,4 @@
-import 'package:bigreminder/models/user_list_item_model.dart';
+import 'package:bigreminder/models/super_admin_models/user_list_item_model.dart';
 
 class TotalUserModel {
   final List<UserListItemModel> users;

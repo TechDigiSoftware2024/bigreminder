@@ -1,7 +1,7 @@
 import 'package:bigreminder/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../models/total_user_model.dart';
+import '../../../models/super_admin_models/total_user_model.dart';
 import '../../../services/super_admin/user_list_service.dart';
 
 

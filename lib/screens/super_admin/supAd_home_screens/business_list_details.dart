@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../models/business_access_model.dart';
-import '../../../models/business_list_model.dart';
+import '../../../models/business_models/business_access_model.dart';
+import '../../../models/super_admin_models/business_list_model.dart';
 import '../../../services/business/business_access_service.dart';
 import '../../../widgets/custom_button.dart';
 

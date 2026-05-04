@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:bigreminder/api_config/api_config.dart';
-import 'package:bigreminder/models/auth_user_model.dart';
+import 'package:bigreminder/models/auth_models/auth_user_model.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {

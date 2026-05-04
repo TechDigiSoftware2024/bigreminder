@@ -1,24 +1,33 @@
 import 'package:bigreminder/providers/auth/auth_provider.dart';
+import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/screens/auth/login_screen.dart';
+import 'package:bigreminder/screens/business/business_home.dart';
+import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:bigreminder/widgets/custom_card.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
-import '../../constants/business_main.dart';
+import '../../providers/business/business_provider.dart';
+import '../business/business_main.dart';
 import '../../providers/auth/auth_state.dart';
 import '../../widgets/custom_dropdown.dart';
-
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+  final bool isFromAdmin;
+
+  const SignupScreen({
+    super.key,
+    this.isFromAdmin = false,
+  });
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
-
 class _SignupScreenState extends ConsumerState<SignupScreen>
     with TickerProviderStateMixin {
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -85,67 +94,77 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   }
   @override
   Widget build(BuildContext context) {
+    bool _isCreatingBusiness = false;
 
-    ref.listen<AuthState>(authControllerProvider, (prev, next) {
-
-      /// ================= ERROR =================
+    ref.listen<AuthState>(authControllerProvider, (prev, next) async {
+      // ================= ERROR =================
       if (next.error != null && next.error != prev?.error) {
-        final msg = _formatError(next.error!);
-
         if (!context.mounted) return;
+
+        final msg = _formatError(next.error!);
 
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              content: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF4D6D).withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline_rounded,
-                        color: Colors.white, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        msg,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          ..showSnackBar(SnackBar(content: Text(msg)));
+
+        return; // 🔥 stop execution
       }
 
-      /// ================= SUCCESS =================
+      // ================= SUCCESS =================
       final isSuccess =
           prev?.isLoading == true &&
               next.isLoading == false &&
               next.user != null &&
               next.error == null;
 
-      if (isSuccess) {
+      if (!isSuccess) return;
+
+      // 🔥 HARD LOCK
+      if (_isCreatingBusiness) return;
+      _isCreatingBusiness = true;
+
+      try {
+        final businessController =
+        ref.read(businessControllerProvider.notifier);
+
+        final categoryString = (selectedCategory == "Other")
+            ? (otherCategoryController.text.trim().isEmpty
+            ? "General"
+            : otherCategoryController.text.trim())
+            : (selectedCategory ?? "General");
+
+        final appType = mapStringToAppType(categoryString);
+
+
         if (!context.mounted) return;
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => BusinessMain()),
-              (route) => false,
-        );
+        final businessState = ref.read(businessControllerProvider);
+
+        if (!businessState.isSuccess) return;
+
+        final prefs = await SharedPreferences.getInstance();
+
+        await prefs.setString("businessCategory", categoryString);
+        await prefs.setString("appType", appType.name);
+
+        ref.read(appTypeProvider.notifier).state = appType;
+
+        if (!context.mounted) return;
+
+        if (widget.isFromAdmin) {
+          Navigator.pop(context, true);
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const BusinessMain()),
+          );
+        }
+
+        return; // 🔥 CRITICAL
+      } catch (e) {
+        debugPrint("SIGNUP ERROR: $e");
+      } finally {
+        _isCreatingBusiness = false;
       }
     });
     final size = MediaQuery.of(context).size;
@@ -399,7 +418,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 : () async {
                               if (!_formKey.currentState!.validate()) return;
 
-                              await ref.read(authControllerProvider.notifier).signup(
+                              final authController =
+                              ref.read(authControllerProvider.notifier);
+
+                              final businessController =
+                              ref.read(businessControllerProvider.notifier);
+
+                              /// ================= STEP 1: SIGNUP =================
+                              await authController.signup(
                                 ownerName: nameController.text.trim(),
                                 phone: phoneController.text.trim(),
                                 password: passwordController.text.trim(),
@@ -408,6 +434,82 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 address: addressController.text.trim(),
                                 doc: docFilePath ?? "",
                               );
+
+                              final authState = ref.read(authControllerProvider);
+
+                              if (authState.user == null || authState.token == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Signup failed")),
+                                );
+                                return;
+                              }
+
+                              final token = authState.token!;
+
+                              /// ================= STEP 2: CHECK EXISTING BUSINESS =================
+                              await businessController.fetchMyBusinesses(token);
+
+                              final businessState = ref.read(businessControllerProvider);
+
+                              /// 🔥 PREVENT DUPLICATE (CORE FIX)
+                              if (businessState.businesses.isNotEmpty) {
+                                print("⚠️ Business already exists, skipping creation");
+                              } else {
+                                /// ================= CREATE ONLY IF NOT EXISTS =================
+                                await businessController.createBusiness(
+                                  name: businessNameController.text.trim(),
+                                  category: finalCategory ?? "general",
+                                  address: addressController.text.trim(),
+                                  doc: docFilePath ?? "",
+                                  userId: int.parse(authState.user!.userId),
+                                  planId: 1,
+                                );
+
+                                /// fetch again after create
+                                await businessController.fetchMyBusinesses(token);
+                              }
+
+                              final updatedState = ref.read(businessControllerProvider);
+
+                              if (updatedState.businesses.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Business setup failed")),
+                                );
+                                return;
+                              }
+
+                              final business = updatedState.businesses.first;
+
+                              final appType =
+                              mapStringToAppType(business.category ?? "General");
+
+                              /// ================= SAVE =================
+                              final prefs = await SharedPreferences.getInstance();
+
+                              await prefs.setString("appType", appType.name);
+                              await prefs.setString(
+                                  "businessCategory", business.category ?? "General");
+
+                              ref.read(appTypeProvider.notifier).state = appType;
+
+                              if (!context.mounted) return;
+
+                              /// ================= NAVIGATE =================
+                              if (widget.isFromAdmin) {
+                                /// 🔥 ADMIN FLOW
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Business account created successfully ✅")),
+                                );
+
+                                Navigator.pop(context, true); // 🔥 go back to admin
+                              } else {
+                                /// 🔥 NORMAL USER FLOW
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const BusinessMain()),
+                                      (route) => false,
+                                );
+                              }
                             },
                           );
                         },

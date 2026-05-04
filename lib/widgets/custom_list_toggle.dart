@@ -24,35 +24,51 @@ class CustomListToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      value: value,
-      onChanged: onChanged,
-
-      contentPadding: EdgeInsets.zero,
-
-      // Thumb colors
-      activeThumbColor: onColor ?? Colors.white,
-      inactiveThumbColor: offColor ?? Colors.white,
-
-      // Track colors (important for modern UI)
-      activeTrackColor: (onColor ?? Colors.green).withOpacity(0.6),
-
-      // Border control (your main issue)
-      trackOutlineColor: MaterialStateProperty.all(
-        outlineColor ?? AppColors.primaryDark.withOpacity(0.3), // 🔥 clean default
+    final isSelected = value;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primaryDark.withOpacity(0.08)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primaryDark
+              : Colors.transparent,
+        ),
       ),
+      child: SwitchListTile(
+        value: value,
+        onChanged: onChanged,
 
-      // Text
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        contentPadding: EdgeInsets.zero,
+
+        // Thumb colors
+        activeThumbColor: onColor ?? Colors.white,
+        inactiveThumbColor: offColor ?? AppColors.primaryDark,
+
+        // Track colors (important for modern UI)
+        activeTrackColor: (onColor ?? Colors.green).withOpacity(0.6),
+
+        // Border control (your main issue)
+        trackOutlineColor: MaterialStateProperty.all(
+          outlineColor ?? AppColors.primaryDark.withOpacity(0.3), // 🔥 clean default
+        ),
+
+        // Text
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+          subtitle!,
+          style: TextStyle(color: Colors.grey.shade600),
+        )
+            : null,
       ),
-      subtitle: subtitle != null
-          ? Text(
-        subtitle!,
-        style: TextStyle(color: Colors.grey.shade600),
-      )
-          : null,
     );
   }
 }

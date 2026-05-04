@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import '../../../models/business_list_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import '../../../models/super_admin_models/business_list_model.dart';
+import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_service.dart';
+import '../../../theme/app_colors.dart';
 import 'business_list_details.dart';
 
 class BusinessListPage extends StatefulWidget {
@@ -187,46 +191,41 @@ class _BusinessListPageState extends State<BusinessListPage>
   }
 
   Widget _header() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        bottom: Radius.circular(20),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 5),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark.withOpacity(0.95),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
       ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7),
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.grey.withOpacity(0.2),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Businesses",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.3,
               ),
             ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Businesses",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Manage your business list",
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              "Manage your business list",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -265,103 +264,164 @@ class _AnimatedCard extends StatelessWidget {
   }
 }
 
-class _BusinessCard extends StatelessWidget {
+class _BusinessCard extends ConsumerWidget {
   final Business business;
 
   const _BusinessCard({required this.business});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isActive = business.isActive;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BusinessDetailPage(business: business),
+    return Slidable(
+      key: ValueKey(business.id),
+
+      // 🔥 Right side swipe actions
+      endActionPane: ActionPane(
+        motion: const StretchMotion(), // smooth premium feel
+        extentRatio: 0.3,
+        children: [
+          SlidableAction(
+            onPressed: (_) async {
+              final confirm = await showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Delete Business"),
+                  content: const Text(
+                      "Are you sure you want to delete this business?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryDark, // 🔥 text color
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryDark, // 🔥 main color
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      child: const Text("Delete"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                ref
+                    .read(businessControllerProvider.notifier)
+                    .deleteBusinessById(business.id);
+              }
+            },
+
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
+            borderRadius: BorderRadius.circular(16),
           ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+        ],
+      ),
+
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BusinessDetailPage(business: business),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 50,
-              width: 50,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Colors.blueAccent.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
-              child: Icon(
-                Icons.store,
-                color: isActive ? Colors.blueAccent : Colors.red,
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 50,
+                width: 50,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppColors.primaryDark.withOpacity(0.3) // active soft bg
+                      : Colors.red.withOpacity(0.3), // inactive lighter bg
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.store,
+                  color: isActive
+                      ? AppColors.primaryDark // strong for active
+                      : Colors.red.shade600, // faded for inactive
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      business.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      business.category,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
                 children: [
-                  Text(
-                    business.name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    business.category,
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isActive ? "Active" : "Inactive",
-                    style: TextStyle(
-                      color: isActive ? Colors.green : Colors.red,
-                      fontSize: 11,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isActive ? "Active" : "Inactive",
+                      style: TextStyle(
+                        color: isActive ? Colors.green : Colors.red,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Icon(Icons.arrow_forward_ios,
-                    size: 12, color: Colors.grey.shade400)
-              ],
-            )
-          ],
+                  const SizedBox(height: 6),
+                  Icon(Icons.arrow_forward_ios,
+                      size: 12, color: Colors.grey.shade400)
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 class _ErrorView extends StatelessWidget {
   final VoidCallback retry;
   final String error;

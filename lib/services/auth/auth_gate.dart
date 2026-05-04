@@ -1,50 +1,56 @@
-
 import 'package:bigreminder/screens/auth/login_screen.dart';
-import 'package:bigreminder/screens/business/business_home.dart';
+import 'package:bigreminder/screens/business/business_main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../constants/business_main.dart';
+import '../../models/auth_models/auth_user_model.dart';
 import '../../providers/auth/auth_provider.dart';
-import '../../screens/auth/signup_screen.dart';
+import '../../providers/auth/auth_state.dart';
 import '../../screens/super_admin/bottom_nav_screens/super_admin_main.dart';
+import 'auth_gate.dart';
 
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await ref.read(authControllerProvider.notifier).restoreSession();
+    setState(() => _ready = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
 
-    /// ================= LOADING =================
-    if (state.isLoading) {
+    if (!_ready || state.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    /// ================= USER CHECK =================
-    if (state.user != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (state.user!.role == "super_admin") {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const SuperAdminMain()),
-                (route) => false,
-          );
-        } else {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const BusinessMain()),
-                (route) => false,
-          );
-        }
-      });
+    final user = state.user;
 
-      return const SizedBox(); // empty while navigating
+    if (user != null && user.hasValidToken) {
+      if (user.isSuperAdmin) {
+        return const SuperAdminMain();
+      } else {
+        return const BusinessMain();
+      }
     }
 
-    /// ================= NOT LOGGED IN =================
-    return LoginScreen();
+    return const LoginScreen();
   }
 }

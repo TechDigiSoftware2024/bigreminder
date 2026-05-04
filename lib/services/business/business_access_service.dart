@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../api_config/api_config.dart';
-import '../../models/business_access_model.dart';
+import '../../models/business_models/business_access_model.dart';
 import '../local_storage/local_storage.dart';
 
 class BusinessAccessService {

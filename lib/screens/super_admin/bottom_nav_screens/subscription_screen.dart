@@ -1,10 +1,29 @@
-import 'package:bigreminder/widgets/custom_kpi_card.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../models/super_admin_models/subscription_model.dart';
+import '../../../providers/super_admin/subscription_provider.dart';
+import '../../../subscription/feature_model.dart';
+import '../../../subscription/plan_model.dart';
 import '../../../theme/app_colors.dart';
+import '../../../widgets/custom_button.dart';
+import '../../../widgets/custom_list_toggle.dart';
 
-class SubscriptionScreen extends StatelessWidget {
+class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
+
+  @override
+  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+}
+
+class _SubscriptionScreenState extends State<SubscriptionScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    _tabController = TabController(length: 3, vsync: this);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,240 +33,1628 @@ class SubscriptionScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: AppColors.appBarBg,
         title: const Text(
-          "Subscriptions",
-          style: TextStyle(fontWeight: FontWeight.w600,color: AppColors.appBarText),
+          "Subscription Management",
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.appBarText,
+          ),
         ),
-      ),
-// my name is noor s
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        bottom: TabBar(
+          controller: _tabController,
 
-            /// 🔹 KPI GRID (MATCH DASHBOARD)
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.3,
-              children: [
-                CustomKPICard(title: "Total Users",value:  "1,240",icon: Icons.people,onTap: (){},),
-                CustomKPICard(title:"Active Plans",value:  "320",icon: Icons.verified,onTap: (){},),
-                CustomKPICard(title:"Monthly Revenue",value:  "₹24,000",icon: Icons.currency_rupee,onTap: (){},),
-                CustomKPICard(title:"Expiring Soon",value:  "18",icon: Icons.warning_amber,onTap: (){},),
-              ],
-            ),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
 
-            const SizedBox(height: 24),
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.label,
 
-            /// 🔹 SECTION TITLE
-            const Text(
-              "Plans",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          labelStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
 
-            const SizedBox(height: 12),
-
-            /// 🔹 PLAN CARDS (PREMIUM)
-            _planCard(
-              title: "Basic Plan",
-              price: "₹49/month",
-              users: "120 users",
-            ),
-
-            const SizedBox(height: 12),
-
-            _planCard(
-              title: "Pro Plan",
-              price: "₹99/month",
-              users: "200 users",
-              isHighlighted: true,
-            ),
-
-            const SizedBox(height: 12),
-
-            _premiumPlanCard(
-              title: "Premium Plan",
-              price: "₹199/month",
-              users: "350 users",
-            ),
-
-            const SizedBox(height: 30),
+          tabs: const [
+            Tab(text: "Plan"),
+            Tab(text: "Feature"),
+            Tab(text: "Subscription"),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          PlansTab(),
+          FeaturesTab(),
+          SubscriptionsTab(),
+        ],
       ),
     );
   }
 }
 
-/// ================= PLAN CARD =================
-Widget _planCard({
-  required String title,
-  required String price,
-  required String users,
-  bool isHighlighted = false,
-}) {
+//////////////////////////////////////////////////////////////
+/// ======================= PLANS TAB ===================== //
+//////////////////////////////////////////////////////////////
+// class PlansTab extends ConsumerStatefulWidget {
+//   const PlansTab({super.key});
+//
+//   @override
+//   ConsumerState<PlansTab> createState() => _PlansTabState();
+// }
+//
+// class _PlansTabState extends ConsumerState<PlansTab> {
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//
+//     Future.microtask(() {
+//       ref.read(subscriptionProvider).loadAll();
+//     });
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final provider = ref.watch(subscriptionProvider);
+//
+//     if (provider.isPlansLoading) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+//
+//     final plans = provider.plans;
+//
+//     return RefreshIndicator(
+//       onRefresh: () => ref.read(subscriptionProvider).loadAll(),
+//       child: ListView(
+//         padding: const EdgeInsets.all(16),
+//         children: [
+//
+//           /// 🔹 HEADER ACTION
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               const Text(
+//                 "Plans",
+//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//               ),
+//               ElevatedButton.icon(
+//                 onPressed: () async {
+//                   await showDialog(
+//                     context: context,
+//                     builder: (_) => const CreatePlanDialog(),
+//                   );
+//
+//                   ref.read(subscriptionProvider).loadAll();
+//                 },
+//                 icon: const Icon(Icons.add),
+//                 label: const Text("Create"),
+//               ),
+//             ],
+//           ),
+//
+//           const SizedBox(height: 16),
+//
+//           /// 🔹 EMPTY STATE
+//           if (plans.isEmpty)
+//             const Center(
+//               child: Padding(
+//                 padding: EdgeInsets.only(top: 40),
+//                 child: Text("No Plans Found"),
+//               ),
+//             ),
+//
+//           /// 🔹 PLAN LIST
+//           ...plans.map((plan) {
+//             return Padding(
+//               padding: const EdgeInsets.only(bottom: 12),
+//               child: _planCardEnhanced(plan,context),
+//             );
+//           }).toList(),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PlanFeatureMappingScreen(plan: plan),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: plan.isActive ? Colors.green.shade100 : Colors.red.shade100,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          /// 🔹 TOP ROW (Name + Status)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  plan.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: plan.isActive
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  plan.isActive ? "ACTIVE" : "INACTIVE",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: plan.isActive ? Colors.green : Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          /// 🔹 PRICE
+          Text(
+            "₹${plan.price.toStringAsFixed(0)}",
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          /// 🔹 BILLING
+          Text(
+            "${plan.billingCycle.toUpperCase()} PLAN",
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// 🔹 DIVIDER
+          Divider(color: Colors.grey.shade200),
+
+          const SizedBox(height: 8),
+
+          /// 🔹 DETAILS ROW
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+
+              /// Duration
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Duration",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${plan.durationDays} days",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              /// Trial
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Trial",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${plan.trialDays} days",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              /// ID (admin useful)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Plan ID",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "#${plan.id}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+//////////////////////////////////////////////////////////////
+/// ===================== FEATURES TAB ==================== ///
+//////////////////////////////////////////////////////////////
+//
+// class FeaturesTab extends ConsumerStatefulWidget {
+//   const FeaturesTab({super.key});
+//
+//   @override
+//   ConsumerState<FeaturesTab> createState() => _FeaturesTabState();
+// }
+//
+// class _FeaturesTabState extends ConsumerState<FeaturesTab> {
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//
+//     Future.microtask(() {
+//       ref.read(subscriptionProvider).loadFeatures();
+//     });
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final provider = ref.watch(subscriptionProvider);
+//
+//     if (provider.isFeaturesLoading) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+//
+//     final features = provider.features;
+//
+//     return RefreshIndicator(
+//       onRefresh: () => ref.read(subscriptionProvider).loadFeatures(),
+//       child: ListView(
+//         padding: const EdgeInsets.all(16),
+//         children: [
+//
+//           /// 🔹 HEADER (same style as plans)
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               const Text(
+//                 "Features",
+//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//               ),
+//               ElevatedButton.icon(
+//                 onPressed: () async {
+//                   await showDialog(
+//                     context: context,
+//                     builder: (_) => const CreateFeatureDialog(),
+//                   );
+//
+//                   ref.read(subscriptionProvider).loadFeatures();
+//                 },
+//                 icon: const Icon(Icons.add),
+//                 label: const Text("Create"),
+//               ),
+//             ],
+//           ),
+//
+//           const SizedBox(height: 16),
+//
+//           /// 🔹 EMPTY STATE
+//           if (features.isEmpty)
+//             const Center(
+//               child: Padding(
+//                 padding: EdgeInsets.only(top: 40),
+//                 child: Text("No Features Found"),
+//               ),
+//             ),
+//
+//           /// 🔹 FEATURE LIST
+//           ...features.map((f) {
+//             return Padding(
+//               padding: const EdgeInsets.only(bottom: 12),
+//               child: _featureCardEnhanced(f),
+//             );
+//           }).toList(),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+Widget _featureCardEnhanced(FeatureModel f) {
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
       border: Border.all(
-        color: isHighlighted
-            ? AppColors.primaryLight
-            : Colors.grey.shade200,
-        width: isHighlighted ? 1.5 : 1,
+        color: f.isActive ? Colors.green.shade100 : Colors.red.shade100,
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        /// 🔹 TOP ROW (name + status)
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                f.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: f.isActive
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                f.isActive ? "ACTIVE" : "INACTIVE",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: f.isActive ? Colors.green : Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        /// 🔹 KEY (like billingCycle in plan)
+        Text(
+          f.key.toUpperCase(),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            letterSpacing: 0.5,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        /// 🔹 DESCRIPTION
+        Text(
+          f.description.isEmpty ? "No description" : f.description,
+          style: const TextStyle(fontSize: 13),
+        ),
+
+        const SizedBox(height: 12),
+
+        Divider(color: Colors.grey.shade200),
+
+        const SizedBox(height: 8),
+
+        /// 🔹 BOTTOM INFO (same layout as plan)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+
+            /// Feature ID
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Feature ID",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "#${f.id}",
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+
+            /// Created date
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Created",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "${f.createdAt.day}/${f.createdAt.month}/${f.createdAt.year}",
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+//////////////////////////////////////////////////////////////
+/// ================== SUBSCRIPTIONS TAB ================== ///
+//////////////////////////////////////////////////////////////
+
+class SubscriptionsTab extends ConsumerStatefulWidget {
+  const SubscriptionsTab({super.key});
+
+  @override
+  ConsumerState<SubscriptionsTab> createState() =>
+      _SubscriptionsTabState();
+}
+
+class _SubscriptionsTabState extends ConsumerState<SubscriptionsTab> {
+  final searchController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(subscriptionProvider).loadAllSubscriptions();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ref.watch(subscriptionProvider);
+
+    if (provider.isSubListLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final subs = provider.subscriptions;
+
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(subscriptionProvider).loadAllSubscriptions(),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+
+          Column(
+            children: [
+
+              /// 🔍 SEARCH BAR
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: searchController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Search by Business ID...",
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 14,
+                    ),
+
+                    /// 🔍 ICON
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: Colors.grey.shade600,
+                    ),
+
+                    /// ❌ CLEAR BUTTON
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () {
+                        searchController.clear();
+                        ref.read(subscriptionProvider)
+                            .loadAllSubscriptions(businessId: null);
+                      },
+                    )
+                        : null,
+
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+
+                    /// 🔥 FOCUS BORDER
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade300,
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+
+                  /// 🔥 ENTER PRESS
+                  onSubmitted: (value) async {
+                    final id = int.tryParse(value);
+                    if (id == null) return;
+
+                    await ref
+                        .read(subscriptionProvider)
+                        .loadAllSubscriptions(businessId: id);
+                  },
+
+                  /// 🔥 live UI update (for clear button)
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              /// 🔹 ADD BUTTON
+              Row(
+                children: [
+                  CustomButton(
+                    label: "Add Subscription",
+                    icon: Icons.add_circle_outline,
+                    backgroundColor: AppColors.primaryDark,
+                    textColor: Colors.white,
+                    onTap: () async {
+                      await showDialog(
+                        context: context,
+                        builder: (_) => const CreateSubscriptionDialog(),
+                      );
+
+                      /// 🔥 refresh with same search
+                      final id = int.tryParse(searchController.text);
+                      ref
+                          .read(subscriptionProvider)
+                          .loadAllSubscriptions(businessId: id);
+                    },
+                  )
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          /// 🔹 EMPTY
+          if (subs.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: Text("No Subscriptions Found"),
+              ),
+            ),
+
+          /// 🔹 LIST
+          ...subs.map((s) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _subscriptionCard(s, context, ref),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+class CreateSubscriptionDialog extends ConsumerStatefulWidget {
+  const CreateSubscriptionDialog({super.key});
+
+  @override
+  ConsumerState<CreateSubscriptionDialog> createState() =>
+      _CreateSubscriptionDialogState();
+}
+
+class _CreateSubscriptionDialogState
+    extends ConsumerState<CreateSubscriptionDialog> {
+
+  int? selectedPlanId;
+  final businessIdController = TextEditingController();
+
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(subscriptionProvider).loadAll(); // load plans
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ref.watch(subscriptionProvider);
+    final plans = provider.plans;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            const Text(
+              "Create Subscription",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              "Assign a plan to business",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// 🔹 Business ID
+            _buildField(
+              controller: businessIdController,
+              hint: "Business ID",
+              keyboard: TextInputType.number,
+            ),
+
+            const SizedBox(height: 14),
+
+            /// 🔹 Plan Dropdown
+            SizedBox(
+              width: double.infinity,
+              child: DropdownButtonFormField<int>(
+                value: plans.any((p) => p.id == selectedPlanId)
+                    ? selectedPlanId
+                    : null,
+
+                isExpanded: true, // 🔥 prevents overflow
+
+                items: plans.map((p) {
+                  return DropdownMenuItem<int>(
+                    value: p.id,
+                    child: Text(
+                      "${p.name} (₹${p.price})",
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+
+                onChanged: (val) {
+                  setState(() => selectedPlanId = val);
+                },
+
+                decoration: InputDecoration(
+                  hintText: "Select Plan",
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            /// 🔹 BUTTONS
+            Row(
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    label: "Cancel",
+                    backgroundColor: Colors.grey.shade200,
+                    textColor: Colors.black87,
+                    onTap: isLoading
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CustomButton(
+                    label: isLoading ? "Creating..." : "Create",
+                    backgroundColor: AppColors.primaryDark,
+                    textColor: Colors.white,
+                    onTap: isLoading ? null : _handleCreate,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboard = TextInputType.text,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboard,
+        decoration: _inputDecoration(hint),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        overflow: TextOverflow.ellipsis,
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      contentPadding:
+      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  Future<void> _handleCreate() async {
+    if (businessIdController.text.isEmpty || selectedPlanId == null) {
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await ref.read(subscriptionProvider).createSubscription(
+        businessId: int.parse(businessIdController.text),
+        planId: selectedPlanId!,
+      );
+
+      if (context.mounted) Navigator.pop(context);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+}
+
+Widget _subscriptionCard(
+    SubscriptionModel s,
+    BuildContext context,
+    WidgetRef ref,
+    ) {
+  final isActive = s.status == "active";
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(
+        color: isActive
+            ? Colors.green.shade100
+            : Colors.orange.shade100,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 10,
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         )
       ],
     ),
-    child: Row(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// LEFT
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+        /// 🔹 HEADER (Plan + Business)
+        Row(
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            Expanded(
+              child: Text(
+                "BUSINESS ID: ${s.businessId}  •  PLAN ID: ${s.planId}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
+            _statusChip(s.status),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        /// 🔹 PAYMENT
+        Row(
+          children: [
+            Icon(Icons.payments_outlined,
+                size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 6),
             Text(
-              price,
-              style: const TextStyle(
-                color: AppColors.primaryDark,
+              s.paymentStatus.toUpperCase(),
+              style: TextStyle(
+                fontSize: 12,
+                color: s.paymentStatus == "paid"
+                    ? Colors.green
+                    : Colors.orange,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
 
-        const Spacer(),
+        const SizedBox(height: 12),
+        Divider(color: Colors.grey.shade200),
 
-        /// RIGHT
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        /// 🔹 DATES + AUTO
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              users,
-              style: TextStyle(color: Colors.grey.shade600,fontWeight: FontWeight.w600),
+            _infoBlock(
+              "Start",
+              _formatDate(s.startDate),
             ),
-            if (isHighlighted)
-              Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    "Most Popular",
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
+            _infoBlock(
+              "End",
+              _formatDate(s.endDate),
+            ),
+            _infoBlock(
+              "Auto Renew",
+              s.autoRenew ? "YES" : "NO",
+            ),
           ],
         ),
+
+        const SizedBox(height: 12),
+
+        /// 🔹 FEATURES (important for admin)
+        if (s.features.isNotEmpty) ...[
+          Text(
+            "Features",
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: s.features.map((f) {
+              return Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  f.toString(),
+                  style: const TextStyle(fontSize: 11),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+
+        const SizedBox(height: 12),
+
+        Divider(color: Colors.grey.shade200),
+
+        /// 🔹 META INFO
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _infoBlock("ID", "#${s.id}"),
+            _infoBlock("Created", _formatDateTime(s.createdAt)),
+            _infoBlock("Updated", _formatDateTime(s.updatedAt)),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        /// 🔹 ACTION
+        if (!isActive)
+          SizedBox(
+            width: double.infinity,
+            child: CustomButton(
+              label: "Activate Subscription",
+              backgroundColor: AppColors.primaryDark,
+              textColor: Colors.white,
+              onTap: () async {
+                await ref
+                    .read(subscriptionProvider)
+                    .activateSubscription(s.id);
+              },
+            ),
+          ),
       ],
     ),
   );
 }
+Widget _statusChip(String status) {
+  final isActive = status == "active";
 
-Widget _premiumPlanCard({
-  required String title,
-  required String price,
-  required String users,
-}) {
   return Container(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [AppColors.primaryDark, AppColors.primary],
-      ),
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.blue.withOpacity(0.25),
-          blurRadius: 20,
-          offset: const Offset(0, 10),
-        )
-      ],
+      color: isActive
+          ? Colors.green.withOpacity(0.1)
+          : Colors.orange.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(20),
     ),
-    child: Row(
-      children: [
-        /// LEFT
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: const [
-                Text(
-                  "Premium Plan",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(width: 6),
-                Icon(Icons.workspace_premium,
-                    size: 16, color: Colors.white),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              price,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-
-        const Spacer(),
-
-        /// RIGHT
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              users,
-              style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                "Best Value",
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+    child: Text(
+      status.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: isActive ? Colors.green : Colors.orange,
+      ),
     ),
   );
+}
+
+String _formatDate(DateTime d) {
+  return "${d.day}/${d.month}/${d.year}";
+}
+
+String _formatDateTime(DateTime d) {
+  return "${d.day}/${d.month} ${d.hour}:${d.minute}";
+}Widget _infoBlock(String title, String value) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: 10,
+          color: Colors.grey.shade500,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        value,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    ],
+  );
+}
+//////////////////////////////////////////////////////////////
+/// ===================== DIALOGS ========================= ///
+//////////////////////////////////////////////////////////////
+
+class CreatePlanDialog extends ConsumerStatefulWidget {
+  const CreatePlanDialog({super.key});
+
+  @override
+  ConsumerState<CreatePlanDialog> createState() =>
+      _CreatePlanDialogState();
+}
+
+class _CreatePlanDialogState extends ConsumerState<CreatePlanDialog> {
+  final name = TextEditingController();
+  final price = TextEditingController();
+
+  String duration = "monthly";
+  String billingCycle = "monthly";
+  int durationDays = 30;
+  int trialDays = 0;
+  bool isActive = true;
+
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Create Plan"),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            /// Name
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+
+            /// Price
+            TextField(
+              controller: price,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Price"),
+            ),
+
+            /// Duration Type
+            DropdownButtonFormField(
+              value: duration,
+              items: const [
+                DropdownMenuItem(value: "monthly", child: Text("Monthly")),
+                DropdownMenuItem(value: "yearly", child: Text("Yearly")),
+                DropdownMenuItem(value: "one_time", child: Text("One Time")),
+              ],
+              onChanged: (val) {
+                setState(() {
+                  duration = val!;
+                  durationDays = val == "monthly"
+                      ? 30
+                      : val == "yearly"
+                      ? 365
+                      : 0;
+                });
+              },
+              decoration: const InputDecoration(labelText: "Duration"),
+            ),
+
+            /// Trial Days
+            TextField(
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Trial Days"),
+              onChanged: (val) {
+                trialDays = int.tryParse(val) ?? 0;
+              },
+            ),
+
+            /// Active Toggle
+            SwitchListTile(
+              title: const Text("Active"),
+              value: isActive,
+              onChanged: (val) {
+                setState(() => isActive = val);
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: isLoading
+              ? null
+              : () async {
+            if (name.text.isEmpty || price.text.isEmpty) return;
+
+            setState(() => isLoading = true);
+
+            try {
+              final provider = ref.read(subscriptionProvider);
+
+              await provider.addPlanFull(
+                name: name.text.trim(),
+                price: int.parse(price.text.trim()),
+                duration: duration,
+                billingCycle: billingCycle,
+                durationDays: durationDays,
+                trialDays: trialDays,
+                isActive: isActive,
+              );
+
+              Navigator.pop(context);
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: $e")),
+              );
+            } finally {
+              setState(() => isLoading = false);
+            }
+          },
+          child: isLoading
+              ? const CircularProgressIndicator()
+              : const Text("Create"),
+        )
+      ],
+    );
+  }
+}
+//////////////////////////////////////////////////////////////
+/// ======================= PLANS TAB ===================== ///
+//////////////////////////////////////////////////////////////
+
+class PlansTab extends ConsumerStatefulWidget {
+  const PlansTab({super.key});
+
+  @override
+  ConsumerState<PlansTab> createState() => _PlansTabState();
+}
+
+class _PlansTabState extends ConsumerState<PlansTab> {
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(subscriptionProvider).loadAll();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ref.watch(subscriptionProvider);
+
+    if (provider.isPlansLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final plans = provider.plans;
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(subscriptionProvider).loadAll(),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              CustomButton(
+                label: "Create Plans",
+                icon: Icons.add_circle_outlined,
+                backgroundColor: AppColors.primaryDark,
+                textColor: Colors.white,
+                onTap: () async {
+                  await showDialog(
+                    context: context,
+                    builder: (_) => CreatePlanDialog(),
+                  );
+
+                  ref.read(subscriptionProvider).loadAll();
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (plans.isEmpty)
+            const Center(child: Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: Text("No Plans Found"),
+            )),
+
+          ...plans.map((plan) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PlanFeatureMappingScreen(plan: plan),
+                    ),
+                  );
+                },
+                child: _planCardEnhanced(plan,context)
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////////////////
+/// ===================== FEATURES TAB ==================== ///
+//////////////////////////////////////////////////////////////
+
+class FeaturesTab extends ConsumerStatefulWidget {
+  const FeaturesTab({super.key});
+
+  @override
+  ConsumerState<FeaturesTab> createState() => _FeaturesTabState();
+}
+
+class _FeaturesTabState extends ConsumerState<FeaturesTab> {
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(subscriptionProvider).loadFeatures();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ref.watch(subscriptionProvider);
+
+    if (provider.isFeaturesLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final features = provider.features;
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(subscriptionProvider).loadFeatures(),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              CustomButton(
+                label: "Create Features",
+                icon: Icons.add_circle_outlined,
+                backgroundColor: AppColors.primaryDark,
+                textColor: Colors.white,
+                onTap: () async {
+                  await showDialog(
+                    context: context,
+                    builder: (_) => CreateFeatureDialog(),
+                  );
+
+                  ref.read(subscriptionProvider).loadFeatures();
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (features.isEmpty)
+            const Center(child: Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: Text("No Features Found"),
+            )),
+
+          ...features.map((f) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _featureCardEnhanced(f),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////////////////
+/// ================= PLAN ↔ FEATURE MAPPING ============== ///
+//////////////////////////////////////////////////////////////
+
+class PlanFeatureMappingScreen extends ConsumerStatefulWidget {
+  final PlanModel plan;
+
+  const PlanFeatureMappingScreen({super.key, required this.plan});
+
+  @override
+  ConsumerState<PlanFeatureMappingScreen> createState() =>
+      _PlanFeatureMappingScreenState();
+}
+
+class _PlanFeatureMappingScreenState
+    extends ConsumerState<PlanFeatureMappingScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() async {
+      final p = ref.read(subscriptionProvider);
+      await p.loadFeatures();
+      await p.loadPlanFeatures(widget.plan.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ref.watch(subscriptionProvider);
+
+    /// 🔥 FIX: loading state added
+    if (provider.isMappingLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final features = provider.features;
+    final selected = provider.planFeatureMap[widget.plan.id] ?? {};
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.appBarBg,
+        title: Text("${widget.plan.name} Features",style: TextStyle(color: AppColors.appBarText),),
+      ),
+      body: features.isEmpty
+          ? const Center(child: Text("No Features"))
+          :ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: features.length,
+        itemBuilder: (_, i) {
+          final f = features[i];
+          final isSelected = selected.contains(f.id);
+
+          return CustomListToggle(
+            title: f.name,
+            subtitle: f.key,
+            value: isSelected,
+
+            /// optional theming (keeps your earlier feel)
+            onColor: AppColors.primaryDark,
+            outlineColor: AppColors.primaryDark.withOpacity(0.4),
+
+            onChanged: (val) async {
+              try {
+                await provider.toggleFeature(
+                  planId: widget.plan.id,
+                  featureId: f.id,
+                );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Failed to update feature: ${e.toString()}",
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          );
+        },
+      )
+    );
+  }
+}
+
+class CreateFeatureDialog extends ConsumerStatefulWidget {
+  const CreateFeatureDialog({super.key});
+
+  @override
+  ConsumerState<CreateFeatureDialog> createState() =>
+      _CreateFeatureDialogState();
+}
+
+class _CreateFeatureDialogState
+    extends ConsumerState<CreateFeatureDialog> {
+  final name = TextEditingController();
+  final description = TextEditingController();
+
+  bool isLoading = false;
+
+  String _generateKey(String name) {
+    return name
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '_');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Title
+            const Text(
+              "Create Feature",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              "Add a new feature to your plan",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// Name Field
+            _buildField(
+              controller: name,
+              hint: "Feature name",
+            ),
+
+            const SizedBox(height: 14),
+
+            /// Description Field
+            _buildField(
+              controller: description,
+              hint: "Short description",
+              maxLines: 3,
+            ),
+
+            const SizedBox(height: 22),
+
+            /// Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    label: "Cancel",
+                    backgroundColor: Colors.grey.shade200,
+                    textColor: Colors.black87,
+                    onTap: isLoading
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CustomButton(
+                    label: isLoading ? "Creating..." : "Create",
+                    backgroundColor: AppColors.primaryDark,
+                    textColor: Colors.white,
+                    onTap: isLoading ? null : _handleCreate,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        contentPadding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleCreate() async {
+    if (name.text.trim().isEmpty ||
+        description.text.trim().isEmpty) {
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await ref.read(subscriptionProvider).addFeature(
+        key: _generateKey(name.text), // 🔥 backend same
+        name: name.text.trim(),
+        description: description.text.trim(),
+      );
+
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 }
