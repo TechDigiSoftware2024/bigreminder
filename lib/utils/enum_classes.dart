@@ -118,23 +118,23 @@ AppType mapStringToAppType(String? type) {
   static List<String> actions(AppType type) {
     switch (type) {
       case AppType.gym:
-        return ["Add Member", "Collect Fee", "Reminder"];
+        return ["Member", "Collect Fee", "Reminder", "Calculator"];
       case AppType.shop:
-        return ["Add Customer", "Add Income", "Add Expense"];
+        return ["Customer", "Income", "Expense", "Calculator"];
       case AppType.institute:
-        return ["Add Student", "Collect Fees", "Notice"];
+        return ["Student", "Collect Fees", "Notice", "Calculator"];
       case AppType.salon:
-        return ["Add Client", "Book", "Reminder"];
+        return ["Client", "Book", "Reminder", "Calculator"];
       case AppType.hospital:
-        return ["Add Patient", "Bill", "Notify"];
+        return ["Patient", "Bill", "Notify", "Calculator"];
       case AppType.restaurant:
-        return ["Add Order", "Bill", "Notify"];
+        return ["Order", "Bill", "Notify", "Calculator"];
       case AppType.finance:
-        return ["Add Client", "Record", "Report"];
+        return ["Client", "Record", "Report", "Calculator"];
       case AppType.realEstate:
-        return ["Add Property", "Lead", "Visit"];
+        return ["Property", "Lead", "Visit", "Calculator"];
       case AppType.generic:
-        return ["Add", "Manage", "Notify"];
+        return ["Add", "Manage", "Notify", "Calculator"];
     }
   }
 

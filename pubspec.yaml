@@ -23,6 +23,7 @@ dependencies:
   firebase_core: any
   firebase_messaging: any
   flutter_slidable: ^4.0.3
+  math_expressions: ^2.4.0
 
 dev_dependencies:
   flutter_test:

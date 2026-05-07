@@ -35,13 +35,15 @@ class BusinessController extends StateNotifier<BusinessState> {
       if (list.isNotEmpty) {
         final prefs = await SharedPreferences.getInstance();
 
-        final firstBusinessId = list.first.id;
+        final firstBusiness = list.first;
 
-        await prefs.setInt("businessId", firstBusinessId);
+        await prefs.setInt("businessId", firstBusiness.id);
+        await prefs.setString("businessName", firstBusiness.name);
 
-        print("✅ SAVED BUSINESS ID: $firstBusinessId");
+        print("✅ SAVED BUSINESS ID: ${firstBusiness.id}");
+        print("🏢 BUSINESS NAME: ${firstBusiness.name}");
+
       } else {
-        /// ❗ No business case
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove("businessId");
 

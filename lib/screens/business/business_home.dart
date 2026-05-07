@@ -1,3 +1,4 @@
+import 'package:bigreminder/screens/business/business_dash_screens/business_calculator_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/customer_list_screen.dart';
 import 'package:flutter/material.dart';
 import '../../utils/enum_classes.dart';
@@ -18,6 +19,7 @@ class BusinessHome extends ConsumerStatefulWidget {
 
 class _BusinessHomeState extends ConsumerState<BusinessHome> {
   int businessId = 0;
+  late String businessName = DashboardText.title(widget.type);
 
   @override
   void initState() {
@@ -28,9 +30,10 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
   Future<void> _loadBusinessId() async {
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt("businessId") ?? 0;
-
+    final busName = prefs.getString("businessName") ?? "";
     setState(() {
       businessId = id;
+      businessName = busName;
     });
   }
 
@@ -56,7 +59,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       appBar: AppBar(
         backgroundColor: primary,
         title: Text(
-          DashboardText.title(widget.type),
+          businessName,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -202,7 +205,6 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
                 childAspectRatio: 1.2,
                 children: [
 
@@ -223,28 +225,16 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       );
                     },
                   ),
-
-                  _MetricCard(
-                    title: metrics[1],
-                    value: data.planName == "No Plan" ? "Free" : data.planName,
-                    icon: Icons.workspace_premium,
-                  ),
-
                   _MetricCard(
                     title: metrics[2],
                     value: "₹${data.totalExpensesValue.toStringAsFixed(0)}",
                     icon: Icons.warning,
                   ),
 
-                  _MetricCard(
-                    title: metrics[3],
-                    value: _getStatusText(data.subscriptionStatus),
-                    icon: Icons.timer,
-                  ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               /// ================= QUICK ACTIONS =================
               const Align(
@@ -255,7 +245,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
 
               Row(
                 children: [
@@ -313,10 +303,28 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       },
                     ),
                   ),
+                  Expanded(
+                    child: _ActionBtn(
+                      title: actions[3],
+                      icon: Icons.calculate_outlined,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BusinessCalculatorScreen(),
+                          ),
+                        );
+
+                        if (result == true) {
+                          await ref.refresh(dashboardProvider(businessId).future);
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               /// ================= FEATURES =================
               if (data.features.isNotEmpty)

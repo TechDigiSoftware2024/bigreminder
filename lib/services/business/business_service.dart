@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
@@ -170,32 +171,75 @@ class BusinessService {
       throw Exception("Fetch error: $e");
     }
   }
+
   Future<void> addCustomer({
     required String name,
     required String phone,
     required int businessId,
     required String fcmToken,
-    required String token, // auth token
+    required String token,
   }) async {
-    final body = {
-      "name": name,
-      "phone": phone,
-      "business_id": businessId,
-      "fcm_token": fcmToken,
-    };
+    try {
+      final body = {
+        "name": name,
+        "phone": phone,
+        "business_id": businessId,
+        "fcm_token": fcmToken,
+      };
 
-    final response = await http.post(
-      ApiConfig.url(ApiConfig.addCustomer),
-      headers: ApiConfig.headers(token: token),
-      body: jsonEncode(body),
-    );
+      final response = await http.post(
+        ApiConfig.url(ApiConfig.addCustomer),
+        headers: ApiConfig.headers(token: token),
+        body: jsonEncode(body),
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      // ✅ success
-      print("Customer added");
-    } else {
-      print(response.body);
-      throw Exception("Failed to add customer");
+      final data = jsonDecode(response.body);
+
+      // ✅ Success
+      if (response.statusCode == 200 ||
+          response.statusCode == 201) {
+        return;
+      }
+
+      // ✅ Show backend message directly
+      final errorMessage =
+          data["detail"] ??
+              data["message"] ??
+              data["error"];
+
+      if (errorMessage != null) {
+        throw Exception(errorMessage.toString());
+      }
+
+      // ✅ Fallback errors
+      switch (response.statusCode) {
+        case 401:
+          throw Exception(
+            "Session expired. Please login again",
+          );
+
+        case 404:
+          throw Exception("Business not found");
+
+        case 409:
+          throw Exception("Customer already exists");
+
+        case 500:
+          throw Exception(
+            "Server error. Try again later",
+          );
+
+        default:
+          throw Exception("Failed to add customer");
+      }
+    } on SocketException {
+      throw Exception("No internet connection");
+    } on FormatException {
+      throw Exception("Invalid server response");
+    } catch (e) {
+      throw Exception(
+        e.toString().replaceFirst("Exception: ", ""),
+      );
     }
   }
 

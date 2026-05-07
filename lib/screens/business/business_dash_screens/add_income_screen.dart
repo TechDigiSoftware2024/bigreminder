@@ -153,7 +153,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
       final amount = double.tryParse(amountCtrl.text.trim());
 
       if (amount == null || amount <= 0) {
-        throw "Enter valid amount";
+        return _showSnack("Enter valid amount",isSuccess: false);
       }
 
       final businessId = ref.read(businessIdProvider);
@@ -181,8 +181,12 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
   }
 
   /// 💬 SNACK
-  void _showSnack(String msg) {
-    CustomDialog.showSuccessSnack(context, msg);
+  void _showSnack(String msg, {bool isSuccess = true,}) {
+    if (isSuccess) {
+      CustomDialog.showSuccessSnack(context, msg);
+    } else {
+      CustomDialog.showErrorSnack(context, msg);
+    }
   }
 
   /// 🎨 INPUT FIELD

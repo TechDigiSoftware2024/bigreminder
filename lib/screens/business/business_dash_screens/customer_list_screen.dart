@@ -247,14 +247,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     _fetchCustomers();
                   }
                 } catch (e) {
-                  // ✅ STEP 3 (error): Dismiss loading dialog
                   if (context.mounted) {
                     Navigator.of(context, rootNavigator: true).pop();
-                    CustomDialog.showErrorSnack(context, e.toString());
+
+                    CustomDialog.showErrorSnack(
+                      context,
+                      e.toString().replaceFirst("Exception: ", ""),
+                    );
                   }
                 }
               },
-              child: const Text("Save"),
+              child: const Text("Add"),
             ),
           ],
         );

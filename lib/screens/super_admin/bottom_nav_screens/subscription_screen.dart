@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/super_admin_models/subscription_model.dart';
+import '../../../providers/business/business_provider.dart';
 import '../../../providers/super_admin/subscription_provider.dart';
 import '../../../subscription/feature_model.dart';
 import '../../../subscription/plan_model.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/custom_button.dart';
+import '../../../widgets/custom_dialog.dart';
 import '../../../widgets/custom_list_toggle.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -730,8 +735,17 @@ class CreateSubscriptionDialog extends ConsumerStatefulWidget {
 class _CreateSubscriptionDialogState
     extends ConsumerState<CreateSubscriptionDialog> {
 
-  int? selectedPlanId;
-  final businessIdController = TextEditingController();
+  /// 🔥 MULTI MAP (Business → Plan)
+  Map<int, int> selectedMap = {};
+
+  int? tempSelectedBusiness;
+  int? tempSelectedPlan;
+
+  bool isBusinessExpanded = false;
+  bool isPlanExpanded = false;
+
+  final businessSearchCtrl = TextEditingController();
+  final planSearchCtrl = TextEditingController();
 
   bool isLoading = false;
 
@@ -740,117 +754,176 @@ class _CreateSubscriptionDialogState
     super.initState();
 
     Future.microtask(() {
-      ref.read(subscriptionProvider).loadAll(); // load plans
+      ref.read(subscriptionProvider).loadAll();
+      final token = ref.read(tokenProvider);
+      ref.read(businessControllerProvider.notifier)
+          .fetchMyBusinesses(token);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(subscriptionProvider);
-    final plans = provider.plans;
+    final subProvider = ref.watch(subscriptionProvider);
+    final bizProvider = ref.watch(businessControllerProvider);
+
+    final plans = subProvider.plans;
+    final businesses = bizProvider.businesses;
+
+    final filteredBusinesses = businesses.where((b) {
+      final q = businessSearchCtrl.text.toLowerCase();
+      return b.name.toLowerCase().contains(q) ||
+          b.id.toString().contains(q);
+    }).toList();
+
+    final filteredPlans = plans.where((p) {
+      final q = planSearchCtrl.text.toLowerCase();
+      return p.name.toLowerCase().contains(q) ||
+          p.price.toString().contains(q);
+    }).toList();
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Padding(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        height: isBusinessExpanded || isPlanExpanded ? 600 : 450,
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
             const Text(
               "Create Subscription",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
 
-            Text(
-              "Assign a plan to business",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-              ),
+            /// 🔹 BUSINESS SECTION
+            _sectionHeader(
+              "Businesses",
+              isBusinessExpanded,
+                  () {
+                setState(() {
+                  isBusinessExpanded = !isBusinessExpanded;
+                  isPlanExpanded = false;
+                });
+              },
             ),
 
-            const SizedBox(height: 20),
+            if (isBusinessExpanded) ...[
+              _searchField(businessSearchCtrl, "Search Business"),
 
-            /// 🔹 Business ID
-            _buildField(
-              controller: businessIdController,
-              hint: "Business ID",
-              keyboard: TextInputType.number,
-            ),
+              const SizedBox(height: 10),
 
-            const SizedBox(height: 14),
-
-            /// 🔹 Plan Dropdown
-            SizedBox(
-              width: double.infinity,
-              child: DropdownButtonFormField<int>(
-                value: plans.any((p) => p.id == selectedPlanId)
-                    ? selectedPlanId
-                    : null,
-
-                isExpanded: true, // 🔥 prevents overflow
-
-                items: plans.map((p) {
-                  return DropdownMenuItem<int>(
-                    value: p.id,
-                    child: Text(
-                      "${p.name} (₹${p.price})",
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                }).toList(),
-
-                onChanged: (val) {
-                  setState(() => selectedPlanId = val);
-                },
-
-                decoration: InputDecoration(
-                  hintText: "Select Plan",
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredBusinesses.length,
+                  itemBuilder: (_, i) {
+                    final b = filteredBusinesses[i];
+                    return _selectCard(
+                      title: b.name,
+                      subtitle: "ID: ${b.id}",
+                      selected: tempSelectedBusiness == b.id,
+                      onTap: () {
+                        setState(() => tempSelectedBusiness = b.id);
+                      },
+                    );
+                  },
                 ),
               ),
+            ],
+
+            /// 🔹 PLAN SECTION
+            _sectionHeader(
+              "Plans",
+              isPlanExpanded,
+                  () {
+                setState(() {
+                  isPlanExpanded = !isPlanExpanded;
+                  isBusinessExpanded = false;
+                });
+              },
             ),
 
-            const SizedBox(height: 22),
+            if (isPlanExpanded) ...[
+              _searchField(planSearchCtrl, "Search Plan"),
+
+              const SizedBox(height: 10),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredPlans.length,
+                  itemBuilder: (_, i) {
+                    final p = filteredPlans[i];
+
+                    return _selectCard(
+                      title: p.name,
+                      subtitle: "₹${p.price}",
+                      selected: tempSelectedPlan == p.id,
+                      onTap: () {
+                        setState(() => tempSelectedPlan = p.id);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 10),
+
+            /// 🔹 ADD PAIR BUTTON
+            _btn("Add Pair", AppColors.primary, AppColors.appBarText, () {
+              if (tempSelectedBusiness == null || tempSelectedPlan == null) {
+                CustomDialog.showErrorSnack(
+                    context, "Select business & plan first");
+                return;
+              }
+
+              setState(() {
+                selectedMap[tempSelectedBusiness!] = tempSelectedPlan!;
+                tempSelectedBusiness = null;
+                tempSelectedPlan = null;
+              });
+            }),
+
+            const SizedBox(height: 10),
+
+            /// 🔹 SELECTED LIST
+            if (selectedMap.isNotEmpty)
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: selectedMap.entries.map((e) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text("B:${e.key} → P:${e.value}"),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            const SizedBox(height: 10),
 
             /// 🔹 BUTTONS
             Row(
               children: [
                 Expanded(
-                  child: CustomButton(
-                    label: "Cancel",
-                    backgroundColor: Colors.grey.shade200,
-                    textColor: Colors.black87,
-                    onTap: isLoading
-                        ? null
-                        : () => Navigator.pop(context),
-                  ),
+                  child: _btn("Cancel", Colors.grey.shade200,
+                      Colors.black, () => Navigator.pop(context)),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: CustomButton(
-                    label: isLoading ? "Creating..." : "Create",
-                    backgroundColor: AppColors.primaryDark,
-                    textColor: Colors.white,
-                    onTap: isLoading ? null : _handleCreate,
+                  child: _btn(
+                    isLoading ? "Creating..." : "Create",
+                    AppColors.primary, AppColors.appBarText,
+                    isLoading ? null : _handleCreate,
                   ),
                 ),
               ],
@@ -861,62 +934,157 @@ class _CreateSubscriptionDialogState
     );
   }
 
-  Widget _buildField({
-    required TextEditingController controller,
-    required String hint,
-    TextInputType keyboard = TextInputType.text,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboard,
-        decoration: _inputDecoration(hint),
+  /// 🔹 HEADER
+  Widget _sectionHeader(String title, bool expanded, VoidCallback onTap) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      trailing: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+      onTap: onTap,
+    );
+  }
+
+  Widget _searchField(TextEditingController ctrl, String hint) {
+    return TextField(
+      controller: ctrl,
+      onChanged: (_) => setState(() {}),
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(
-        overflow: TextOverflow.ellipsis,
+  Widget _selectCard({
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected ? Colors.blue.withOpacity(0.1) : Colors.white,
+            border: Border.all(
+                color: selected ? Colors.blue : Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(subtitle,
+                          style: TextStyle(color: Colors.grey.shade600)),
+                    ]),
+              ),
+              if (selected)
+                const Icon(Icons.check_circle, color: Colors.blue),
+            ],
+          ),
+        ),
       ),
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+    );
+  }
+
+  Widget _btn(String text, Color bg, Color txt, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(text,
+            style: TextStyle(color: txt, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
   Future<void> _handleCreate() async {
-    if (businessIdController.text.isEmpty || selectedPlanId == null) {
+    if (selectedMap.isEmpty) {
+      CustomDialog.showErrorSnack(context, "No selections made");
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      await ref.read(subscriptionProvider).createSubscription(
-        businessId: int.parse(businessIdController.text),
-        planId: selectedPlanId!,
-      );
+      for (var entry in selectedMap.entries) {
+        await ref.read(subscriptionProvider).createSubscription(
+          businessId: entry.key,
+          planId: entry.value,
+        );
+      }
 
-      if (context.mounted) Navigator.pop(context);
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+      CustomDialog.showSuccessSnack(
+          context, "Subscriptions created successfully");
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      CustomDialog.showErrorSnack(context, _mapErrorToMessage(e));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 }
+String _mapErrorToMessage(Object error) {
+  // 👇 Clean raw message
+  String message = error.toString().toLowerCase();
+
+  // Remove common prefixes
+  message = message.replaceAll("exception:", "").trim();
+
+  // 👇 Handle real-world cases first (backend messages)
+  if (message.contains("already")) {
+    return "Plan is already assigned.";
+  } else if (message.contains("invalid")) {
+    return "Invalid input. Please check details.";
+  } else if (message.contains("not found")) {
+    return "Business or plan not found.";
+  } else if (message.contains("timeout")) {
+    return "Request timed out. Try again.";
+  } else if (message.contains("socket")) {
+    return "No internet connection.";
+  }
+
+  // 👇 HTTP fallback (rare but useful)
+  if (message.contains("401") || message.contains("unauthorized")) {
+    return "Session expired. Please login again.";
+  } else if (message.contains("403")) {
+    return "You don't have permission.";
+  } else if (message.contains("404")) {
+    return "Resource not found.";
+  } else if (message.contains("500")) {
+    return "Server error. Try again later.";
+  }
+
+  // 👇 FINAL FIX: instead of generic → show cleaned backend message
+  if (message.isNotEmpty) {
+    return message[0].toUpperCase() + message.substring(1);
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
 
 Widget _subscriptionCard(
     SubscriptionModel s,
