@@ -117,7 +117,7 @@ class _BusinessListPageState extends State<BusinessListPage>
                       (context, index) {
                     return Padding(
                       padding:
-                      const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                      const EdgeInsets.fromLTRB(20, 0, 20, 0),
                       child: _AnimatedCard(
                         controller: _animController,
                         delay: index * 0.08,

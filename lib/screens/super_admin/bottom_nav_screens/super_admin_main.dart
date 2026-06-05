@@ -204,7 +204,7 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
               _navItem(Icons.home_outlined, "Dashboard", 0),
 
               /// Plans
-              _navItem(Icons.wallet_rounded, "Plans", 1),
+              _navItem(Icons.wallet_rounded, "Subs", 1),
 
               /// CENTER BUTTON
               GestureDetector(
@@ -228,7 +228,7 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
               ),
 
               /// Notification
-              _navItem(Icons.stacked_bar_chart_outlined, "Notification", 3),
+              _navItem(Icons.stacked_bar_chart_outlined, "Notify", 3),
 
               /// Settings
               _navItem(Icons.settings_outlined, "Settings", 4),

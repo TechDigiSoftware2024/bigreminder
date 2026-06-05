@@ -65,9 +65,10 @@ AppType mapStringToAppType(String? type) {
       return AppType.realEstate;
 
     default:
-      return AppType.generic; // ✅ safe fallback
+      return AppType.generic;
   }
-}class DashboardText {
+}
+class DashboardText {
 
   static String title(AppType type) {
     switch (type) {
@@ -118,23 +119,23 @@ AppType mapStringToAppType(String? type) {
   static List<String> actions(AppType type) {
     switch (type) {
       case AppType.gym:
-        return ["Member", "Collect Fee", "Reminder", "Calculator"];
+        return ["Member", "Income", "Expense", "Calculator"];
       case AppType.shop:
         return ["Customer", "Income", "Expense", "Calculator"];
       case AppType.institute:
-        return ["Student", "Collect Fees", "Notice", "Calculator"];
+        return ["Student", "Income", "Expense", "Calculator"];
       case AppType.salon:
-        return ["Client", "Book", "Reminder", "Calculator"];
+        return ["Client", "Income", "Expense", "Calculator"];
       case AppType.hospital:
-        return ["Patient", "Bill", "Notify", "Calculator"];
+        return ["Patient", "Income", "Expense", "Calculator"];
       case AppType.restaurant:
-        return ["Order", "Bill", "Notify", "Calculator"];
+        return ["Customer", "Income", "Expense", "Calculator"];
       case AppType.finance:
-        return ["Client", "Record", "Report", "Calculator"];
+        return ["Client", "Income", "Expense", "Calculator"];
       case AppType.realEstate:
-        return ["Property", "Lead", "Visit", "Calculator"];
+        return ["Client", "Income", "Expense", "Calculator"];
       case AppType.generic:
-        return ["Add", "Manage", "Notify", "Calculator"];
+        return ["Add", "Income", "Expense", "Calculator"];
     }
   }
 

@@ -17,14 +17,11 @@ import '../../providers/business/business_provider.dart';
 import '../local_storage/local_storage.dart';
 import '../notification_service.dart';
 
-
 class BusinessService {
   // =========================================================
   // 🔥 BUSINESS SIDE - FETCH OWN BUSINESSES
   // =========================================================
-  Future<List<Business>> fetchMyBusinesses({
-    required String token,
-  }) async {
+  Future<List<Business>> fetchMyBusinesses({required String token}) async {
     try {
       /// 🔥 TOKEN VALIDATION
       if (token.isEmpty) {
@@ -69,7 +66,6 @@ class BusinessService {
       }
 
       throw Exception("Unexpected error: ${response.statusCode}");
-
     } catch (e) {
       print("❌ BUSINESS FETCH ERROR: $e");
       rethrow;
@@ -100,6 +96,7 @@ class BusinessService {
       throw Exception("Dashboard fetch failed");
     }
   }
+
   Future<BusinessModel> createBusinessApi({
     required String token,
     required CreateBusinessRequestModel model,
@@ -120,6 +117,7 @@ class BusinessService {
       throw Exception("Failed: ${response.body}");
     }
   }
+
   static Future<List<Business>> fetchBusinesses() async {
     final token = await TokenStorage.getToken();
 
@@ -140,6 +138,7 @@ class BusinessService {
       throw Exception("Error: ${response.statusCode}");
     }
   }
+
   Future<List<CustomerResponseModel>> fetchCustomers({
     required String token,
     required int businessId,
@@ -157,55 +156,74 @@ class BusinessService {
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
 
-        return data
-            .map((e) => CustomerResponseModel.fromJson(e))
-            .toList();
+        return data.map((e) => CustomerResponseModel.fromJson(e)).toList();
       }
 
-      if (response.statusCode == 401) {
-        throw Exception("Session expired");
-      }
+      switch (response.statusCode) {
+        case 401:
+          throw "Session expired. Please login again.";
 
-      throw Exception("Failed to fetch customers (${response.statusCode})");
+        case 403:
+          throw "You don't have access to add customers.";
+
+        case 404:
+          throw "Customers not found.";
+
+        case 500:
+          throw "Server error. Try again later.";
+
+        default:
+          throw "Unable to load customers.";
+      }
     } catch (e) {
-      throw Exception("Fetch error: $e");
+      if (e.toString().contains("SocketException")) {
+        throw "No internet connection.";
+      }
+
+      throw e.toString();
     }
   }
 
   Future<void> addCustomer({
+    required int businessId,
     required String name,
     required String phone,
-    required int businessId,
-    required String fcmToken,
     required String token,
+
+    // ✅ Optional fields
+    String? gender,
+    String? email,
+    String? fcmToken,
   }) async {
     try {
       final body = {
         "name": name,
         "phone": phone,
         "business_id": businessId,
-        "fcm_token": fcmToken,
+
+        // ✅ Optional fields
+        if (gender != null && gender.isNotEmpty) "gender": gender,
+        if (email != null && email.isNotEmpty) "email": email,
+        if (fcmToken != null && fcmToken.isNotEmpty) "fcm_token": fcmToken,
       };
 
-      final response = await http.post(
+      final response = await http
+          .post(
         ApiConfig.url(ApiConfig.addCustomer),
         headers: ApiConfig.headers(token: token),
         body: jsonEncode(body),
-      );
+      )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
       // ✅ Success
-      if (response.statusCode == 200 ||
-          response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return;
       }
 
       // ✅ Show backend message directly
-      final errorMessage =
-          data["detail"] ??
-              data["message"] ??
-              data["error"];
+      final errorMessage = data["detail"] ?? data["message"] ?? data["error"];
 
       if (errorMessage != null) {
         throw Exception(errorMessage.toString());
@@ -214,9 +232,7 @@ class BusinessService {
       // ✅ Fallback errors
       switch (response.statusCode) {
         case 401:
-          throw Exception(
-            "Session expired. Please login again",
-          );
+          throw Exception("Session expired. Please login again");
 
         case 404:
           throw Exception("Business not found");
@@ -225,9 +241,7 @@ class BusinessService {
           throw Exception("Customer already exists");
 
         case 500:
-          throw Exception(
-            "Server error. Try again later",
-          );
+          throw Exception("Server error. Try again later");
 
         default:
           throw Exception("Failed to add customer");
@@ -237,9 +251,7 @@ class BusinessService {
     } on FormatException {
       throw Exception("Invalid server response");
     } catch (e) {
-      throw Exception(
-        e.toString().replaceFirst("Exception: ", ""),
-      );
+      throw Exception(e.toString().replaceFirst("Exception: ", ""));
     }
   }
 
@@ -263,7 +275,6 @@ class BusinessService {
       throw Exception("Expense creation failed: $e");
     }
   }
-
 }
 
 class IncomeService {

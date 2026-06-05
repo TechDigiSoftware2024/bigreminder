@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/super_admin_models/subscription_model.dart';
 import '../../../providers/business/business_provider.dart';
 import '../../../providers/super_admin/subscription_provider.dart';
+import '../../../services/super_admin/delete_service.dart';
 import '../../../subscription/feature_model.dart';
 import '../../../subscription/plan_model.dart';
 import '../../../theme/app_colors.dart';
@@ -177,7 +178,6 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
       );
     },
     child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -204,14 +204,17 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
                 child: Text(
                   plan.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: plan.isActive
                       ? Colors.green.withOpacity(0.1)
@@ -227,9 +230,29 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
                   ),
                 ),
               ),
+
+              const SizedBox(width: 10),
+
+              InkWell(
+                onTap: () {
+                  // Delete action
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20,
+                  ),
+                ),
+              ),
             ],
           ),
-
           const SizedBox(height: 10),
 
           /// 🔹 PRICE
@@ -257,7 +280,6 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
 
           /// 🔹 DIVIDER
           Divider(color: Colors.grey.shade200),
-
           const SizedBox(height: 8),
 
           /// 🔹 DETAILS ROW
@@ -418,8 +440,10 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
 //     );
 //   }
 // }
-
-Widget _featureCardEnhanced(FeatureModel f) {
+Widget _featureCardEnhanced(
+FeatureModel f,
+BuildContext context,
+WidgetRef ref,) {
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
@@ -447,7 +471,7 @@ Widget _featureCardEnhanced(FeatureModel f) {
               child: Text(
                 f.name,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -470,22 +494,83 @@ Widget _featureCardEnhanced(FeatureModel f) {
                 ),
               ),
             ),
+            const SizedBox(width: 10),
+
+            InkWell(
+              onTap: () async {
+
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (_) {
+                    return AlertDialog(
+                      title: const Text("Delete Feature"),
+                      content: Text(
+                        "Are you sure you want to delete '${f.name}'?",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                          },
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
+                          child: const Text(
+                            "Delete",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (confirmed != true) return;
+
+                final message = await DeleteService.deleteFeature(
+                  featureId: f.id,
+                  token: ref.read(tokenProvider),
+                );
+
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                  ),
+                );
+
+                /// Refresh list
+                await ref.read(subscriptionProvider).loadFeatures();
+              },
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+            ),
           ],
         ),
 
         const SizedBox(height: 10),
 
-        /// 🔹 KEY (like billingCycle in plan)
-        Text(
-          f.key.toUpperCase(),
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-            letterSpacing: 0.5,
-          ),
-        ),
-
-        const SizedBox(height: 12),
+  //
+  //       Text(
+  //         f.key,
+  //         style: const TextStyle(fontSize: 13),
+  //       ),
+  // const SizedBox(height: 10),
 
         /// 🔹 DESCRIPTION
         Text(
@@ -1192,21 +1277,40 @@ Widget _subscriptionCard(
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: s.features.map((f) {
+            children: s.features.map((featureId) {
+
+              final allFeatures =
+                  ref.watch(subscriptionProvider).features;
+
+              final feature = allFeatures
+                  .cast<FeatureModel?>()
+                  .firstWhere(
+                    (e) =>
+                e?.key.toString() ==
+                    featureId.toString(),
+                orElse: () => null,
+              );
+
+              if (feature == null) {
+                return const SizedBox();
+              }
+
               return Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  f.toString(),
+                  feature.name,
                   style: const TextStyle(fontSize: 11),
                 ),
               );
             }).toList(),
-          ),
+          )
         ],
 
         const SizedBox(height: 12),
@@ -1576,7 +1680,7 @@ class _FeaturesTabState extends ConsumerState<FeaturesTab> {
           ...features.map((f) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _featureCardEnhanced(f),
+              child: _featureCardEnhanced(f,context,ref),
             );
           }),
         ],
@@ -1643,7 +1747,7 @@ class _PlanFeatureMappingScreenState
 
           return CustomListToggle(
             title: f.name,
-            subtitle: f.key,
+            subtitle: f.id.toString(),
             value: isSelected,
 
             /// optional theming (keeps your earlier feel)

@@ -1,5 +1,10 @@
+import 'package:bigreminder/providers/business/business_provider.dart';
+import 'package:bigreminder/screens/super_admin/bottom_nav_screens/notification_screen.dart';
+import 'package:bigreminder/screens/super_admin/bottom_nav_screens/subscription_screen.dart';
 import 'package:bigreminder/screens/super_admin/supAd_home_screens/business_list.dart';
+import 'package:bigreminder/screens/super_admin/supAd_home_screens/super_admin_qeury_screen.dart';
 import 'package:bigreminder/screens/super_admin/supAd_home_screens/user_list_screen.dart';
+import 'package:bigreminder/services/super_admin/subscription_service.dart';
 import 'package:bigreminder/theme/app_colors.dart';
 import 'package:bigreminder/widgets/custom_kpi_card.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +22,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
 
   @override
   Widget build(BuildContext context) {
-
+    final queryAsync = ref.watch(adminQueryProvider);
     /// 🔥 PROVIDERS (NEW)
     final usersAsync = ref.watch(userProvider);
     final businessAsync = ref.watch(businessListProvider);
@@ -40,6 +45,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
           await Future.wait([
             ref.refresh(userProvider.future),
             ref.refresh(businessListProvider.future),
+            ref.refresh(adminQueryProvider.future)
           ]);
         },
         child: SingleChildScrollView(
@@ -136,6 +142,9 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                     child: _actionCard(
                       icon: Icons.notifications_none,
                       title: "Send Notification",
+                      onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationScreen()));
+                      }
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -143,25 +152,166 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                     child: _actionCard(
                       icon: Icons.workspace_premium_outlined,
                       title: "Manage Plans",
+                        onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionScreen()));
+                        }
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 24),
-
-              /// 🚨 ALERT
-              const Text(
-                "System Alerts",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
               const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                            const SuperAdminQueryScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.grey.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.orange
+                                    .withOpacity(0.1),
+                                borderRadius:
+                                BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.question_answer_outlined,
+                                color: Colors.orange,
+                              ),
+                            ),
 
-              _alertCard(
-                title: "High Pending Payments",
-                subtitle: "18 users pending renewal",
+                            const SizedBox(width: 10),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+
+                                  const Text(
+                                    "Business Support Requests",
+                                    style: TextStyle(
+                                      fontWeight:
+                                      FontWeight.w600,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  queryAsync.when(
+                                    data: (queries) {
+
+                                      final openCount =
+                                          queries
+                                              .where(
+                                                (q) =>
+                                            q.status
+                                                .toLowerCase() ==
+                                                "open",
+                                          )
+                                              .length;
+
+                                      return Text(
+                                        "$openCount Open Requests",
+                                        style: TextStyle(
+                                          color: openCount > 0
+                                              ? Colors.orange
+                                              : Colors.green,
+                                          fontWeight:
+                                          FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      );
+                                    },
+                                    loading: () =>
+                                    const Text(
+                                      "Loading...",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    error: (_, __) =>
+                                    const Text(
+                                      "0 Open Requests",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            queryAsync.when(
+                              data: (queries) {
+
+                                final openCount =
+                                    queries
+                                        .where(
+                                          (q) =>
+                                      q.status
+                                          .toLowerCase() ==
+                                          "open",
+                                    )
+                                        .length;
+
+                                if (openCount == 0) {
+                                  return const SizedBox();
+                                }
+
+                                return Container(
+                                  padding:
+                                  const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius:
+                                    BorderRadius.circular(
+                                      20,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    openCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight:
+                                      FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                              loading: () =>
+                              const SizedBox(),
+                              error: (_, __) =>
+                              const SizedBox(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
               const SizedBox(height: 40),
             ],
           ),
@@ -174,32 +324,36 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
   Widget _actionCard({
     required IconData icon,
     required String title,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.primaryDark),
             ),
-            child: Icon(icon, color: AppColors.primaryDark),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

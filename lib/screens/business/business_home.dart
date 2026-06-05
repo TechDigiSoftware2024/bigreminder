@@ -89,7 +89,13 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
-        await ref.refresh(dashboardProvider(businessId).future);
+        ref.invalidate(dashboardProvider(businessId));
+        ref.invalidate(customerProvider);
+
+        await Future.wait([
+          ref.read(dashboardProvider(businessId).future),
+          ref.read(customerProvider.future),
+        ]);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -205,17 +211,18 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 crossAxisSpacing: 14,
-                childAspectRatio: 1.2,
+                mainAxisSpacing: 14,
+                childAspectRatio: 1.22,
                 children: [
 
                   _MetricCard(
                     title: metrics[0],
                     value: customerCountAsync.when(
                       data: (count) => count.toString(),
-                      loading: () => "...",
+                      loading: () => "0",
                       error: (_, __) => "0",
                     ),
-                    icon: Icons.people,
+                    icon: Icons.people_alt_rounded,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -225,10 +232,23 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       );
                     },
                   ),
+
                   _MetricCard(
-                    title: metrics[2],
-                    value: "₹${data.totalExpensesValue.toStringAsFixed(0)}",
-                    icon: Icons.warning,
+                    title: "Pending Amount",
+                    value: "₹6520",
+                    icon: Icons.account_balance_wallet_rounded,
+                  ),
+
+                  _MetricCard(
+                    title: "Current Plan",
+                    value: "Free" ?? "Active Plan",
+                    icon: Icons.workspace_premium_rounded,
+                  ),
+
+                  _MetricCard(
+                    title: "Monthly Growth",
+                    value: "+92%",
+                    icon: Icons.trending_up,
                   ),
 
                 ],
@@ -247,138 +267,90 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
 
               const SizedBox(height: 6),
 
-              Row(
+              Column(
                 children: [
-                  Expanded(
-                    child: _ActionBtn(
-                      title: actions[0],
-                      icon: Icons.person_add,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CustomerListScreen(type: widget.type),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  /// 💰 ADD INCOME
-                  Expanded(
-                    child: _ActionBtn(
-                      title: actions[1],
-                      icon: Icons.payment,
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AddIncomeScreen(),
-                          ),
-                        );
-
-                        if (result == true) {
-                          await ref.refresh(dashboardProvider(businessId).future);
-                        }
-                      },
-                    ),
-                  ),
-
-                  /// 💸 ADD EXPENSE
-                  Expanded(
-                    child: _ActionBtn(
-                      title: actions[2],
-                      icon: Icons.receipt_long,
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AddExpenseScreen(),
-                          ),
-                        );
-
-                        if (result == true) {
-                          await ref.refresh(dashboardProvider(businessId).future);
-                        }
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: _ActionBtn(
-                      title: actions[3],
-                      icon: Icons.calculate_outlined,
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const BusinessCalculatorScreen(),
-                          ),
-                        );
-
-                        if (result == true) {
-                          await ref.refresh(dashboardProvider(businessId).future);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              /// ================= FEATURES =================
-              if (data.features.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
+                  // Row 1
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ActionBtn(
+                          title: actions[0],
+                          icon: Icons.person_add,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CustomerListScreen(type: widget.type),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _ActionBtn(
+                          title: actions[1],
+                          icon: Icons.payment,
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AddIncomeScreen(),
+                              ),
+                            );
+                            if (result == true) {
+                              await ref.refresh(dashboardProvider(businessId).future);
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),
-                  child: Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: data.features.map((f) {
-                      final enabled = f.enabled;
 
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: enabled
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              enabled ? Icons.check : Icons.lock,
-                              size: 16,
-                              color: enabled ? Colors.green : Colors.grey,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              f.name,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: enabled ? Colors.black : Colors.grey,
+                  const SizedBox(height: 8),
+
+                  // Row 2
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ActionBtn(
+                          title: actions[2],
+                          icon: Icons.receipt_long,
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AddExpenseScreen(),
                               ),
-                            ),
-                          ],
+                            );
+                            if (result == true) {
+                              await ref.refresh(dashboardProvider(businessId).future);
+                            }
+                          },
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _ActionBtn(
+                          title: actions[3],
+                          icon: Icons.calculate_outlined,
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BusinessCalculatorScreen(),
+                              ),
+                            );
+                            if (result == true) {
+                              await ref.refresh(dashboardProvider(businessId).future);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-
+                ],
+              ),
               const SizedBox(height: 30),
             ],
           ),
@@ -393,23 +365,23 @@ class _MetricCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final VoidCallback? onTap; // ✅ NEW
+  final VoidCallback? onTap;
 
   const _MetricCard({
     required this.title,
     required this.value,
     required this.icon,
-    this.onTap, // ✅ NEW
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return GestureDetector( // ✅ ADDED
+    return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -424,11 +396,15 @@ class _MetricCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              backgroundColor: primary.withOpacity(0.1),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                color: primary.withOpacity(0.1),
+              ),
               child: Icon(icon, color: primary),
             ),
-            const Spacer(),
+           const Spacer(),
             Text(
               value,
               overflow: TextOverflow.ellipsis,
@@ -448,11 +424,6 @@ class _MetricCard extends StatelessWidget {
     );
   }
 }
-String _getStatusText(String status) {
-  if (status.toLowerCase().contains("active")) return "Active";
-  if (status.toLowerCase().contains("expired")) return "Expired";
-  return "Inactive";
-}
 
 /// ================= ACTION BUTTON =================
 class _ActionBtn extends StatelessWidget {
@@ -462,30 +433,64 @@ class _ActionBtn extends StatelessWidget {
 
   const _ActionBtn({
     required this.title,
-    this.onTap,
     required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: primary.withOpacity(0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: primary),
-            const SizedBox(height: 6),
-            Text(title, style: const TextStyle(fontSize: 12)),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(99),
+        onTap: onTap,
+        splashColor: primary.withOpacity(0.08),
+        highlightColor: primary.withOpacity(0.04),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: primary.withOpacity(0.12),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Icon(icon, color: primary, size: 16),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

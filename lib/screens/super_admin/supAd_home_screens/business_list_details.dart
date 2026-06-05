@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import '../../../models/business_models/business_access_model.dart';
 import '../../../models/super_admin_models/business_list_model.dart';
 import '../../../services/business/business_access_service.dart';
+import '../../../theme/app_colors.dart';
 import '../../../widgets/custom_button.dart';
+import '../../../widgets/custom_dialog.dart';
 
 class BusinessDetailPage extends StatefulWidget {
   final Business business;
@@ -45,7 +47,9 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
 
   void fetchAccess() async {
     try {
-      final result = await BusinessAccessService.fetchAccess(widget.business.id);
+      final result = await BusinessAccessService.fetchAccess(
+        widget.business.id,
+      );
 
       setState(() {
         access = result;
@@ -56,6 +60,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
       loadingAccess = false;
     }
   }
+
   @override
   void dispose() {
     _animController.dispose();
@@ -69,6 +74,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
+      appBar: _topBar(context, b),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,
@@ -76,11 +82,12 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
             position: _slideAnim,
             child: Column(
               children: [
-                _topBar(context, b),
-
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Column(
                       children: [
                         _heroCard(b, isActive),
@@ -106,7 +113,6 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-
                               /// 🔥 BUSINESS INFO
                               Text(
                                 "BUSINESS INFO",
@@ -158,14 +164,14 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
 
                         loadingAccess
                             ? const Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: CircularProgressIndicator(),
-                        )
+                                padding: EdgeInsets.only(top: 10),
+                                child: CircularProgressIndicator(),
+                              )
                             : _accessControls(),
                       ],
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -175,43 +181,41 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
   }
 
   Widget _divider() {
-    return Divider(
-      height: 1,
-      color: Colors.grey.shade200,
-    );
+    return Divider(height: 1, color: Colors.grey.shade200);
   }
+
   Widget _accessControls() {
     return Column(
       children: [
         _switchTile(
           "Reminder",
           access!.reminderEnabled,
-              (v) => setState(() => access!.reminderEnabled = v),
+          (v) => setState(() => access!.reminderEnabled = v),
           icon: Icons.notifications_active,
         ),
 
         _switchTile(
           "Income",
           access!.incomeEnabled,
-              (v) => setState(() => access!.incomeEnabled = v),
+          (v) => setState(() => access!.incomeEnabled = v),
           icon: Icons.trending_up,
         ),
         _switchTile(
           "Expense",
           access!.expenseEnabled,
-              (v) => setState(() => access!.expenseEnabled = v),
+          (v) => setState(() => access!.expenseEnabled = v),
           icon: Icons.trending_down,
         ),
         _switchTile(
           "Customers",
           access!.customersEnabled,
-              (v) => setState(() => access!.customersEnabled = v),
+          (v) => setState(() => access!.customersEnabled = v),
           icon: Icons.people,
         ),
         _switchTile(
           "Support",
           access!.supportQueriesEnabled,
-              (v) => setState(() => access!.supportQueriesEnabled = v),
+          (v) => setState(() => access!.supportQueriesEnabled = v),
           icon: Icons.support_agent,
         ),
 
@@ -220,17 +224,35 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
         TextField(
           controller: maxCustomerController,
           keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          cursorColor: AppColors.primary,
+
           decoration: InputDecoration(
             labelText: "Max Customers",
+
+            labelStyle: TextStyle(color: Colors.grey.shade700),
+
+            floatingLabelStyle: const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(
+
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
           ),
+
           onChanged: (val) {
             access!.maxCustomers = int.tryParse(val) ?? 0;
           },
@@ -239,6 +261,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
         const SizedBox(height: 16),
 
         CustomButton(
+          backgroundColor: AppColors.primary,
           label: "Save Changes",
           onTap: () async {
             final text = maxCustomerController.text.trim();
@@ -262,8 +285,9 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
             try {
               await BusinessAccessService.updateAccess(access!);
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Updated Successfully")),
+              CustomDialog.showSuccessSnack(
+                context,
+                "Changes Saved Successfully!",
               );
             } catch (e) {
               _showError("Update failed. Try again.");
@@ -273,20 +297,17 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
       ],
     );
   }
+
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red,
-      ),
-    );
+    CustomDialog.showErrorSnack(context, msg);
   }
+
   Widget _switchTile(
-      String title,
-      bool value,
-      Function(bool) onChanged, {
-        IconData? icon, // 🔥 optional icon
-      }) {
+    String title,
+    bool value,
+    Function(bool) onChanged, {
+    IconData? icon, // 🔥 optional icon
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -296,17 +317,16 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
       ),
       child: Row(
         children: [
-
           /// 🔥 ICON (if provided)
           if (icon != null) ...[
             Container(
               height: 36,
               width: 36,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: Colors.black87),
+              child: Icon(icon, size: 18, color: AppColors.primary),
             ),
             const SizedBox(width: 10),
           ],
@@ -321,36 +341,41 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
 
           /// 🔥 SWITCH
           Switch(
+            inactiveThumbColor: AppColors.primaryDark,
+            trackOutlineColor: WidgetStatePropertyAll( AppColors.primaryDark.withOpacity(0.3)),
+            hoverColor: AppColors.primary,
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.green,
-          )
+            activeColor: AppColors.primary,
+          ),
         ],
       ),
     );
   }
-  Widget _topBar(BuildContext context, Business b) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: Colors.black),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              b.name,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-          ),
-        ],
+
+  PreferredSizeWidget _topBar(BuildContext context, Business b) {
+    return AppBar(
+      backgroundColor: AppColors.primary,
+      leading: IconButton(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
       ),
+
+      titleSpacing: 0,
+
+      title: Text(
+        b.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+          letterSpacing: 0.2,
+        ),
+      ),
+
+      centerTitle: false,
     );
   }
 
@@ -368,13 +393,13 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
             width: 50,
             decoration: BoxDecoration(
               color: isActive
-                  ? Colors.blueAccent.withOpacity(0.1)
+                  ? AppColors.primary.withOpacity(0.1)
                   : Colors.grey.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               Icons.store,
-              color: isActive ? Colors.blueAccent : Colors.grey,
+              color: isActive ? AppColors.primary : Colors.grey,
             ),
           ),
           const SizedBox(width: 16),
@@ -398,7 +423,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                         ),
                       ),
                     ),
-                   SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -421,7 +446,6 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                   ],
                 ),
                 Text(b.category, style: TextStyle(color: Colors.grey.shade600)),
-
               ],
             ),
           ),
@@ -456,16 +480,15 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
       ),
       child: Row(
         children: [
-
           /// 🔥 ICON CONTAINER (UPDATED)
           Container(
             height: 36,
             width: 36,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: Colors.black87),
+            child: Icon(icon, size: 18, color: AppColors.primary),
           ),
 
           const SizedBox(width: 10),
@@ -477,10 +500,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -506,16 +526,11 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                   color: Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.copy,
-                  size: 14,
-                  color: Colors.black54,
-                ),
+                child: const Icon(Icons.copy, size: 14, color: Colors.black54),
               ),
             ),
         ],
       ),
     );
   }
-
 }

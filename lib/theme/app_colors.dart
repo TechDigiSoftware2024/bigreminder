@@ -12,7 +12,7 @@ class AppColors {
   static const Color darkGrey = Color(0xFF374151);
 
   // ⚪ BACKGROUND SYSTEM
-  static const Color background = Color(0xFFF9FAFB);
+  static const Color background = Colors.white;
   static const Color surface = Color(0xFFF3F4F6);
   static const Color card = primaryDark;
   static const Color cardText = Colors.white;

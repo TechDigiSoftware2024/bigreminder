@@ -6,6 +6,7 @@ import '../../providers/auth/auth_provider.dart';
 import '../../providers/business/business_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/enum_classes.dart';
+import 'create_purchase_screen.dart';
 import '../../widgets/custom_bottom_bar.dart';
 
 
@@ -53,19 +54,23 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
       }
     });
   }
-
   void onTabTapped(int index) {
+
+    /// 🔥 CENTER BUTTON
     if (index == 2) {
-      showModalBottomSheet(
-        context: context,
-        builder: (_) => const SizedBox(
-          height: 200,
-          child: Center(child: Text("Add Action")),
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+          const CreatePurchaseScreen(),
         ),
       );
+
       return;
     }
 
+    /// 🔥 CHANGE TAB
     setState(() {
       currentIndex = index;
     });

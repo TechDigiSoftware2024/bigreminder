@@ -97,7 +97,7 @@ class _AddExpenseScreenState
 
                   _inputField(
                     controller: categoryCtrl,
-                    label: "Category",
+                    label: "Reason for Expense",
                     hint: "e.g. Rent / Water Bill",
                     icon: Icons.category,
                   ),

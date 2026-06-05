@@ -99,8 +99,8 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                   /// 🏷 SOURCE
                   _inputField(
                     controller: sourceCtrl,
-                    label: "Source",
-                    hint: "e.g. UPI / Cash / Bank",
+                    label: "Income Source",
+                    hint: "e.g. Fees / Product Sale",
                     icon: Icons.account_balance_wallet,
                   ),
                 ],
@@ -166,7 +166,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
 
       await ref.read(incomeServiceProvider).addIncome(req);
 
-      _showSnack("Income added successfully");
+      _showSnack("Income added successfully",isSuccess: true);
 
       Future.delayed(const Duration(milliseconds: 300), () {
         Navigator.pop(context, true); // 🔥 RETURN TRUE
@@ -174,14 +174,14 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
       amountCtrl.clear();
       sourceCtrl.clear();
     } catch (e) {
-      _showSnack(e.toString());
+      _showSnack(e.toString(), isSuccess: false);
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
   /// 💬 SNACK
-  void _showSnack(String msg, {bool isSuccess = true,}) {
+  void _showSnack(String msg, {required bool isSuccess}) {
     if (isSuccess) {
       CustomDialog.showSuccessSnack(context, msg);
     } else {

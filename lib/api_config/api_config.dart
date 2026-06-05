@@ -1,11 +1,6 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
 class ApiConfig {
   // ================= BASE URL =================
-  static const String baseUrl =
-      "https://bizzreminderbackend.onrender.com";
+  static const String baseUrl = "https://sakshamdigitaltechnology.in";
 
   // ================= ENDPOINTS =================
   static const String login = "/api/v1/auth/login";
@@ -15,6 +10,10 @@ class ApiConfig {
   static const String totalUserList = "/api/v1/users";
   static const String subscriptions = "/api/v1/subscriptions";
   static const String addCustomer = "/api/v1/customers";
+  static const String purchases = "/api/v1/purchases";
+
+  static const String createQuery = "$baseUrl/api/v1/queries";
+
 
   static Uri url(String endpoint) {
     return Uri.parse(baseUrl + endpoint);

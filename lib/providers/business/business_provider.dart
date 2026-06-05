@@ -1,5 +1,6 @@
 import 'package:bigreminder/api_config/api_config.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,12 +8,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_dashboard_model.dart';
 import '../../models/business_models/business_model.dart';
+import '../../models/business_models/create_purchase_model.dart';
+import '../../models/business_models/query_model.dart';
 import '../../models/super_admin_models/create_business_model.dart';
 import '../../models/super_admin_models/create_business_request_model.dart';
 import '../../services/business/business_service.dart';
 import '../../services/business/business_state.dart';
 import '../../services/business/dashboard_service.dart';
 import '../../services/business/fetch_business_list.dart';
+import '../../services/business/purchase_service.dart';
+import '../../services/business/query_service.dart';
 import '../../services/notification_service.dart';
 import '../auth/auth_provider.dart';
 
@@ -21,10 +26,10 @@ class BusinessController extends StateNotifier<BusinessState> {
   final BusinessService service;
 
   BusinessController(this.service) : super(const BusinessState());
-
   // =========================================================
   // 🔥 FETCH MY BUSINESSES (LOGIN FLOW)
   // =========================================================
+
   Future<void> fetchMyBusinesses(String token) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
@@ -65,6 +70,48 @@ class BusinessController extends StateNotifier<BusinessState> {
       rethrow;
     }
   }
+
+  Future<void> createPurchase({
+    required CreatePurchaseModel model,
+  }) async {
+
+    try {
+
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+      );
+
+      final prefs =
+      await SharedPreferences.getInstance();
+
+      final token =
+          prefs.getString("token") ?? "";
+
+      final message =
+      await PurchaseService.createPurchase(
+        token: token,
+        model: model,
+      );
+
+      debugPrint(message);
+
+      state = state.copyWith(
+        isLoading: false,
+        message: message,
+      );
+
+    } catch (e) {
+
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+
+      rethrow;
+    }
+  }
+
   // ================= DELETE =================
   Future<void> deleteBusinessById(int businessId) async {
     try {
@@ -127,6 +174,8 @@ class BusinessController extends StateNotifier<BusinessState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+
 }
 
 //✅ PROVIDERS (clean setup)
@@ -181,7 +230,8 @@ final customerProvider = FutureProvider<List<CustomerResponseModel>>((ref) async
 final dashboardProvider =
 FutureProvider.family<BusinessDashboardModel, int>((ref, businessId) async {
 
-  final token = ref.watch(tokenProvider);
+  // ✅ Use ref.read instead of ref.watch inside FutureProvider
+  final token = ref.read(tokenProvider);
 
   final data = await fetchDashboard(
     token: token,
@@ -239,3 +289,22 @@ class CreateExpenseNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+
+
+final queryServiceProvider =
+Provider<QueryService>((ref) {
+  return QueryService();
+});
+final queryListProvider =
+FutureProvider<List<QueryModel>>(
+      (ref) async {
+    final token =
+    ref.read(tokenProvider);
+
+    return ref
+        .read(queryServiceProvider)
+        .getQueries(
+      token: token,
+    );
+  },
+);
