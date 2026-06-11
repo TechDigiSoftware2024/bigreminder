@@ -435,17 +435,17 @@ class _BusinessNotificationScreenState
   Widget _buildChannelToggle(ColorScheme cs) {
     final channels = [
       {"id": "push", "label": "WhatsApp", "icon": Icons.notifications_rounded},
-
-      {"id": "email", "label": "Email", "icon": Icons.email_rounded},
-
-      {"id": "sms", "label": "SMS", "icon": Icons.sms_rounded},
+      //
+      // {"id": "email", "label": "Email", "icon": Icons.email_rounded},
+      //
+      // {"id": "sms", "label": "SMS", "icon": Icons.sms_rounded},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
-        _sectionLabel("Channels", cs),
+        _sectionLabel("Channel", cs),
 
         const SizedBox(height: 8),
 
@@ -455,70 +455,66 @@ class _BusinessNotificationScreenState
 
             final isOn = sendVia.contains(id);
 
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isOn) {
-                      if (sendVia.length > 1) {
-                        sendVia.remove(id);
-                      }
-                    } else {
-                      sendVia.add(id);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isOn) {
+                    if (sendVia.length > 1) {
+                      sendVia.remove(id);
                     }
-                  });
-                },
+                  } else {
+                    sendVia.add(id);
+                  }
+                });
+              },
 
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
 
-                  margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 6),
 
-                  padding: const EdgeInsets.symmetric(vertical: 7),
+                decoration: BoxDecoration(
+                  color: isOn
+                      ? cs.primary.withOpacity(0.14)
+                      : cs.onSurface.withOpacity(0.04),
 
-                  decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+
+                  border: Border.all(
                     color: isOn
-                        ? cs.primary.withOpacity(0.14)
-                        : cs.onSurface.withOpacity(0.04),
-
-                    borderRadius: BorderRadius.circular(14),
-
-                    border: Border.all(
-                      color: isOn
-                          ? cs.primary.withOpacity(0.45)
-                          : cs.onSurface.withOpacity(0.07),
-                    ),
+                        ? cs.primary.withOpacity(0.45)
+                        : cs.onSurface.withOpacity(0.07),
                   ),
+                ),
 
-                  child: Column(
-                    children: [
-                      Icon(
-                        ch["icon"] as IconData,
+                child: Column(
+                  children: [
+                    Icon(
+                      ch["icon"] as IconData,
 
-                        size: 15,
+                      size: 15,
 
+                      color: isOn
+                          ? cs.primary
+                          : cs.onSurface.withOpacity(0.25),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      ch["label"] as String,
+
+                      style: TextStyle(
                         color: isOn
                             ? cs.primary
-                            : cs.onSurface.withOpacity(0.25),
+                            : cs.onSurface.withOpacity(0.3),
+
+                        fontSize: 9,
+
+                        fontWeight: FontWeight.w600,
                       ),
-
-                      const SizedBox(height: 5),
-
-                      Text(
-                        ch["label"] as String,
-
-                        style: TextStyle(
-                          color: isOn
-                              ? cs.primary
-                              : cs.onSurface.withOpacity(0.3),
-
-                          fontSize: 9,
-
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -546,9 +542,9 @@ class _BusinessNotificationScreenState
       },
 
       {
-        "title": "Send Custom",
+        "title": "Send to Customer",
 
-        "subtitle": "With scheduling",
+        "subtitle": "Send to selected customer",
 
         "icon": Icons.schedule_send_rounded,
 
@@ -556,7 +552,7 @@ class _BusinessNotificationScreenState
       },
 
       {
-        "title": "Broadcast",
+        "title": "Send Broadcast",
 
         "subtitle": "All customers",
 
@@ -643,13 +639,10 @@ class _BusinessNotificationScreenState
                             fontSize: 13.5,
                           ),
                         ),
-
                         Text(
                           a["subtitle"] as String,
-
                           style: TextStyle(
                             color: cs.onSurface.withOpacity(0.38),
-
                             fontSize: 11,
                           ),
                         ),

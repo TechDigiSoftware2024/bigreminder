@@ -10,8 +10,10 @@ import '../../models/business_models/business_dashboard_model.dart';
 import '../../models/business_models/business_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/query_model.dart';
+import '../../models/super_admin_models/business_list_model.dart';
 import '../../models/super_admin_models/create_business_model.dart';
 import '../../models/super_admin_models/create_business_request_model.dart';
+import '../../models/super_admin_models/business_create_reminder.dart';
 import '../../services/business/business_service.dart';
 import '../../services/business/business_state.dart';
 import '../../services/business/dashboard_service.dart';
@@ -19,6 +21,7 @@ import '../../services/business/fetch_business_list.dart';
 import '../../services/business/purchase_service.dart';
 import '../../services/business/query_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/super_admin/business_reminder_service.dart';
 import '../auth/auth_provider.dart';
 
 // ================= CONTROLLER =================
@@ -230,7 +233,6 @@ final customerProvider = FutureProvider<List<CustomerResponseModel>>((ref) async
 final dashboardProvider =
 FutureProvider.family<BusinessDashboardModel, int>((ref, businessId) async {
 
-  // ✅ Use ref.read instead of ref.watch inside FutureProvider
   final token = ref.read(tokenProvider);
 
   final data = await fetchDashboard(
@@ -289,12 +291,161 @@ class CreateExpenseNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+final reminderServiceProvider =
+Provider<SuperReminderService>((ref) {
+  return SuperReminderService();
+});
+// ✅ UPDATE THIS PROVIDER
+final reminderListProvider = FutureProvider<List<BusinessReminderModel>>(
+      (ref) async {
+    final token = ref.read(tokenProvider);
+
+    // ✅ GET BUSINESS ID FROM SHARED PREFERENCES
+    final prefs = await SharedPreferences.getInstance();
+    final businessId = prefs.getInt("businessId") ?? 0;
+
+    if (businessId == 0) {
+      throw Exception("Business ID not found");
+    }
+
+    return ref.read(reminderServiceProvider).getReminders(
+      token: token,
+      businessId: businessId, // ✅ PASS BUSINESS ID
+    );
+  },
+);
+
+
+final createReminderProvider =
+StateNotifierProvider<
+    CreateReminderNotifier,
+    AsyncValue<BusinessReminderModel?>>(
+      (ref) {
+    return CreateReminderNotifier(
+      ref,
+    );
+  },
+);
+
+class CreateReminderNotifier
+    extends StateNotifier<
+        AsyncValue<BusinessReminderModel?>> {
+
+  final Ref ref;
+
+  CreateReminderNotifier(
+      this.ref,
+      ) : super(
+    const AsyncData(
+      null,
+    ),
+  );
+
+  Future<void> createReminder({
+    required String message,
+    required DateTime scheduledAt,
+    required String targetGender,
+    required int businessId,
+  }) async {
+
+    state =
+    const AsyncLoading();
+
+    try {
+
+      final token =
+      ref.read(
+        tokenProvider,
+      );
+
+      final reminder =
+      await ref
+          .read(
+        reminderServiceProvider,
+      )
+          .createReminder(
+        message: message,
+        scheduledAt:
+        scheduledAt,
+        targetGender:
+        targetGender,
+        businessId:
+        businessId,
+        token: token,
+      );
+
+      ref.invalidate(
+        reminderListProvider,
+      );
+
+      state =
+          AsyncData(
+            reminder,
+          );
+
+    } catch (e, st) {
+
+      state =
+          AsyncError(
+            e,
+            st,
+          );
+
+      rethrow;
+    }
+  }
+}
+
+final deleteReminderProvider =
+StateNotifierProvider<
+    DeleteReminderNotifier,
+    AsyncValue<void>>(
+      (ref) {
+    return DeleteReminderNotifier(
+      ref,
+    );
+  },
+);
+
+// ✅ UPDATE DELETE NOTIFIER
+class DeleteReminderNotifier extends StateNotifier<AsyncValue<void>> {
+  final Ref ref;
+
+  DeleteReminderNotifier(this.ref) : super(const AsyncData(null));
+
+  Future<void> deleteReminder({
+    required int reminderId,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      final token = ref.read(tokenProvider);
+
+      // ✅ GET BUSINESS ID
+      final prefs = await SharedPreferences.getInstance();
+      final businessId = prefs.getInt("businessId") ?? 0;
+
+      await ref.read(reminderServiceProvider).deleteReminder(
+        reminderId: reminderId,
+        token: token,
+        businessId: businessId, // ✅ PASS BUSINESS ID
+      );
+
+      ref.invalidate(reminderListProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
 
 
 final queryServiceProvider =
 Provider<QueryService>((ref) {
   return QueryService();
 });
+
 final queryListProvider =
 FutureProvider<List<QueryModel>>(
       (ref) async {
@@ -308,3 +459,28 @@ FutureProvider<List<QueryModel>>(
     );
   },
 );
+
+final currentBusinessProvider =
+Provider<Business?>((ref) {
+
+  final state =
+  ref.watch(
+    businessControllerProvider,
+  );
+
+  if (state.businesses.isEmpty) {
+    return null;
+  }
+
+  return state.businesses.first;
+});
+final businessNameProvider = Provider<String>((ref) {
+
+  final state = ref.watch(businessControllerProvider,);
+
+  if (state.businesses.isNotEmpty) {
+    return state.businesses.first.name;
+  }
+
+  return "Business";
+});

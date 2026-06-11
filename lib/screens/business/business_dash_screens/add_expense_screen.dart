@@ -1,3 +1,4 @@
+import 'package:bigreminder/widgets/custom_dropdown_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_models/business_create_expense_model.dart';
@@ -16,8 +17,10 @@ class _AddExpenseScreenState
     extends ConsumerState<AddExpenseScreen> {
   final amountCtrl = TextEditingController();
   final categoryCtrl = TextEditingController();
+  final sourceCtrl = TextEditingController();
 
   bool loading = false;
+  String? selectedSource;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +98,24 @@ class _AddExpenseScreenState
 
                   const SizedBox(height: 14),
 
+                  CustomDropdownTextField(
+                    label: "Source",
+                    hint: "e.g. Cash / UPI",
+                    icon: Icons.category,
+                      value: selectedSource,
+                      items: const [
+                        "Cash",
+                        "UPI",
+                        "Card",
+                        "Other",
+                      ],
+                      onChanged: (value){
+                      setState(() {
+                        selectedSource = value;
+                      });
+                      },
+                  ),
+                  const SizedBox(height: 14),
                   _inputField(
                     controller: categoryCtrl,
                     label: "Reason for Expense",
@@ -151,6 +172,7 @@ class _AddExpenseScreenState
         amount: amount,
         category: categoryCtrl.text.trim(),
         businessId: businessId,
+        source: selectedSource.toString().toLowerCase(),
       );
 
       await ref

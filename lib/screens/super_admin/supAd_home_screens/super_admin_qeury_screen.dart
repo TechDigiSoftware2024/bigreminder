@@ -1,3 +1,4 @@
+import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -86,10 +87,12 @@ class SuperAdminQueryScreen extends ConsumerWidget {
                               title: "Total",
                               count: total,
                               icon: Icons.support_agent_rounded,
-                              color: Colors.red,
-                              backgroundColor: Colors.red.withOpacity(0.05),
-                              textColor: Colors.red,
-                              titleColor: Colors.red,
+                              color: AppColors.primary,
+                              backgroundColor: AppColors.primary.withOpacity(
+                                0.05,
+                              ),
+                              textColor: AppColors.primary,
+                              titleColor: AppColors.primary,
                             ),
                           ),
                           _buildDivider(),
@@ -603,8 +606,7 @@ class _QueryCard extends StatelessWidget {
                   children: [
                     Text(
                       "Business ID: ${query.businessId}",
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
                           context,
                         ).colorScheme.onSurface.withOpacity(0.5),
@@ -638,42 +640,32 @@ class _QueryCard extends StatelessWidget {
                             query.status,
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
-                              color: statusColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10,),
+                    const SizedBox(width: 10),
                     GestureDetector(
                       onTap: () {
-                        _showDeleteDialog(
-                          context,
-                          query.id,
-                        );
+                        _showDeleteDialog(context, query.id);
                       },
                       child: Container(
-                        padding:
-                        const EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red
-                              .withOpacity(0.1),
-                          borderRadius:
-                          BorderRadius.circular(
-                            20,
-                          ),
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.red
-                                .withOpacity(0.3),
+                            color: Colors.red.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
-                          mainAxisSize:
-                          MainAxisSize.min,
+                          mainAxisSize: MainAxisSize.min,
                           children: const [
                             Icon(
                               Icons.delete_outline,
@@ -804,108 +796,44 @@ class _QueryCard extends StatelessWidget {
     );
   }
 }
-void _showDeleteDialog(
-    BuildContext context,
-    int queryId,
-    ) {
-  showDialog(
+
+void _showDeleteDialog(BuildContext context, int queryId) {
+  CustomDialog.showConfirmDialog(
     context: context,
-    builder: (_) {
-      return AlertDialog(
-        title: const Text(
-          "Delete Query",
-        ),
-        content: const Text(
-          "Are you sure you want to delete this query? This action cannot be undone.",
-        ),
-        actions: [
+    title: "Delete Query",
+    message:
+        "Are you sure you want to delete this query? This action cannot be undone.",
+    onConfirm: () async {
+      try {
+        final container = ProviderScope.containerOf(context);
 
-          TextButton(
-            onPressed: () {
-              Navigator.pop(
-                context,
-              );
-            },
-            child: const Text(
-              "Cancel",
-            ),
+        final token = container.read(tokenProvider);
+
+        await container
+            .read(queryServiceProvider)
+            .deleteQuery(queryId: queryId, token: token);
+
+        container.invalidate(adminQueryProvider);
+
+        if (!context.mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Query deleted successfully"),
+            backgroundColor: Colors.green,
           ),
+        );
+      } catch (e) {
+        if (!context.mounted) {
+          return;
+        }
 
-          ElevatedButton(
-            style:
-            ElevatedButton.styleFrom(
-              backgroundColor:
-              Colors.red,
-            ),
-            onPressed: () async {
-
-              try {
-
-                final container =
-                ProviderScope
-                    .containerOf(
-                  context,
-                );
-
-                final token =
-                container.read(
-                  tokenProvider,
-                );
-
-                await container
-                    .read(
-                  queryServiceProvider,
-                )
-                    .deleteQuery(
-                  queryId: queryId,
-                  token: token,
-                );
-
-                container.invalidate(
-                  adminQueryProvider,
-                );
-
-                if (!context.mounted) {
-                  return;
-                }
-
-                Navigator.pop(
-                  context,
-                );
-
-                ScaffoldMessenger.of(
-                    context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Query deleted successfully",
-                    ),
-                    backgroundColor:
-                    Colors.green,
-                  ),
-                );
-              } catch (e) {
-
-                ScaffoldMessenger.of(
-                    context)
-                    .showSnackBar(
-                  SnackBar(
-                    content:
-                    Text(
-                      e.toString(),
-                    ),
-                    backgroundColor:
-                    Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text(
-              "Delete",
-            ),
-          ),
-        ],
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
     },
   );
 }

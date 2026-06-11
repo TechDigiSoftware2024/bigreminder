@@ -1,10 +1,6 @@
-/// 🔥 MODERN COMPACT CREATE PURCHASE SCREEN
-/// premium compact UI + better spacing + internal customer scrolling
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/business_models/create_item_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/customer_list_model.dart';
@@ -136,7 +132,10 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        title: const Text("Create Purchase",style: TextStyle( fontWeight: FontWeight.bold ),),
+        title: const Text(
+          "Create Purchase",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
 
       bottomNavigationBar: Container(
@@ -164,49 +163,40 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-          
                   crossAxisAlignment: CrossAxisAlignment.start,
-          
                   children: [
                     Text(
                       "₹$totalAmount",
-          
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-          
                         color: theme.primaryColor,
                       ),
                     ),
-          
                     Text(
                       "Pending ₹$pendingAmount",
-          
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
-          
               const SizedBox(width: 14),
-          
               Expanded(
                 child: SizedBox(
                   height: 50,
-          
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
-          
                       backgroundColor: theme.primaryColor,
-          
                       foregroundColor: Colors.white,
-          
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-          
+
                     onPressed: isCreating
                         ? null
                         : () async {
@@ -215,23 +205,23 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                 context,
                                 "Select customer",
                               );
-          
+
                               return;
                             }
-          
+
                             if (items.isEmpty) {
                               CustomDialog.showErrorSnack(
                                 context,
                                 "Add items first",
                               );
-          
+
                               return;
                             }
-          
+
                             setState(() {
                               isCreating = true;
                             });
-          
+
                             try {
                               final purchaseItems = items.map((e) {
                                 return PurchaseItemModel(
@@ -240,40 +230,43 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                   quantity: e["quantity"],
                                 );
                               }).toList();
-          
+
                               final model = CreatePurchaseModel(
                                 customerId: selectedCustomerId!,
-          
+
                                 businessId: businessId,
-          
+
                                 items: purchaseItems,
-          
+
                                 totalAmount: totalAmount,
-          
+
                                 paid: double.tryParse(paidCtrl.text) ?? 0,
-          
+
                                 pending: pendingAmount,
-          
+
                                 date: DateTime.now()
                                     .toIso8601String()
                                     .split("T")
                                     .first,
                               );
-          
+
                               await ref
                                   .read(businessControllerProvider.notifier)
                                   .createPurchase(model: model);
-          
+
                               if (context.mounted) {
                                 CustomDialog.showSuccessSnack(
                                   context,
                                   "Purchase created",
                                 );
-          
+
                                 Navigator.pop(context);
                               }
                             } catch (e) {
-                              CustomDialog.showErrorSnack(context, e.toString());
+                              CustomDialog.showErrorSnack(
+                                context,
+                                e.toString(),
+                              );
                             } finally {
                               if (mounted) {
                                 setState(() {
@@ -282,7 +275,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                               }
                             }
                           },
-          
+
                     child: Text(isCreating ? "Creating..." : "Create"),
                   ),
                 ),
@@ -319,7 +312,6 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
                     child: Column(
                       children: [
-
                         /// SELECT BUTTON
                         InkWell(
                           borderRadius: BorderRadius.circular(16),
@@ -339,14 +331,11 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
 
-                              border: Border.all(
-                                color: Colors.grey.shade300,
-                              ),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
 
                             child: Row(
                               children: [
-
                                 Icon(
                                   Icons.person_outline,
                                   color: theme.primaryColor,
@@ -373,9 +362,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                   turns: isCustomerExpanded ? 0.5 : 0,
                                   duration: const Duration(milliseconds: 250),
 
-                                  child: const Icon(
-                                    Icons.keyboard_arrow_down,
-                                  ),
+                                  child: const Icon(Icons.keyboard_arrow_down),
                                 ),
                               ],
                             ),
@@ -383,7 +370,6 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         ),
 
                         if (isCustomerExpanded) ...[
-
                           const SizedBox(height: 14),
 
                           /// SEARCH
@@ -426,9 +412,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                             child: Container(
                               width: double.infinity,
 
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
 
                               decoration: BoxDecoration(
                                 color: theme.primaryColor.withOpacity(0.08),
@@ -444,11 +428,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
 
                                 children: [
-
-                                  Icon(
-                                    Icons.add,
-                                    color: theme.primaryColor,
-                                  ),
+                                  Icon(Icons.add, color: theme.primaryColor),
 
                                   const SizedBox(width: 8),
 
@@ -469,9 +449,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
                           /// CUSTOMER LIST
                           ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxHeight: 250,
-                            ),
+                            constraints: const BoxConstraints(maxHeight: 250),
 
                             child: ListView.separated(
                               shrinkWrap: true,
@@ -481,10 +459,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                               itemCount: filteredCustomers.length,
 
                               separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                                  const SizedBox(height: 8),
 
                               itemBuilder: (_, i) {
-
                                 final customer = filteredCustomers[i];
 
                                 final isSelected =
@@ -495,7 +472,6 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
                                   onTap: () {
                                     setState(() {
-
                                       selectedCustomer = customer;
 
                                       selectedCustomerId = customer.id;
@@ -525,7 +501,6 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
                                     child: Row(
                                       children: [
-
                                         Container(
                                           height: 44,
                                           width: 44,
@@ -533,10 +508,12 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                           decoration: BoxDecoration(
                                             color: isSelected
                                                 ? theme.primaryColor
-                                                : theme.primaryColor.withOpacity(0.1),
+                                                : theme.primaryColor
+                                                      .withOpacity(0.1),
 
-                                            borderRadius:
-                                            BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
                                           ),
 
                                           alignment: Alignment.center,
@@ -559,10 +536,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                                CrossAxisAlignment.start,
 
                                             children: [
-
                                               Text(
                                                 customer.name,
 
@@ -605,7 +581,8 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14,),
+                  const SizedBox(height: 14),
+
                   /// 🔥 ADD ITEM
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -915,8 +892,8 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
       ),
     );
   }
-  void _showAddCustomerDialog(BuildContext context) async {
 
+  void _showAddCustomerDialog(BuildContext context) async {
     final theme = Theme.of(context);
 
     final nameController = TextEditingController();
@@ -929,34 +906,26 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
       context: context,
 
       builder: (_) {
-
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-
             return AlertDialog(
-
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
               ),
 
               title: const Text(
                 "Add Customer",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     TextField(
                       controller: nameController,
 
-                      decoration: _inputDecoration(
-                        "Customer Name *",
-                      ),
+                      decoration: _inputDecoration("Customer Name *"),
                     ),
 
                     const SizedBox(height: 14),
@@ -965,9 +934,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
 
-                      decoration: _inputDecoration(
-                        "Phone Number *",
-                      ),
+                      decoration: _inputDecoration("Phone Number *"),
                     ),
 
                     const SizedBox(height: 14),
@@ -975,16 +942,13 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     TextField(
                       controller: emailController,
 
-                      decoration: _inputDecoration(
-                        "Email (Optional)",
-                      ),
+                      decoration: _inputDecoration("Email (Optional)"),
                     ),
 
                     const SizedBox(height: 18),
 
                     Row(
                       children: [
-
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
@@ -994,21 +958,16 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                             },
 
                             child: AnimatedContainer(
-                              duration: const Duration(
-                                milliseconds: 200,
-                              ),
+                              duration: const Duration(milliseconds: 200),
 
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
 
                               decoration: BoxDecoration(
                                 color: selectedGender == "male"
                                     ? theme.primaryColor
                                     : const Color(0xffF5F7FB),
 
-                                borderRadius:
-                                BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(14),
                               ),
 
                               alignment: Alignment.center,
@@ -1039,21 +998,16 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                             },
 
                             child: AnimatedContainer(
-                              duration: const Duration(
-                                milliseconds: 200,
-                              ),
+                              duration: const Duration(milliseconds: 200),
 
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
 
                               decoration: BoxDecoration(
                                 color: selectedGender == "female"
                                     ? theme.primaryColor
                                     : const Color(0xffF5F7FB),
 
-                                borderRadius:
-                                BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(14),
                               ),
 
                               alignment: Alignment.center,
@@ -1079,7 +1033,6 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
               ),
 
               actions: [
-
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -1095,19 +1048,13 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                   ),
 
                   onPressed: () async {
+                    final name = nameController.text.trim();
 
-                    final name =
-                    nameController.text.trim();
+                    final phone = phoneController.text.trim();
 
-                    final phone =
-                    phoneController.text.trim();
+                    final email = emailController.text.trim();
 
-                    final email =
-                    emailController.text.trim();
-
-                    if (name.isEmpty ||
-                        phone.isEmpty) {
-
+                    if (name.isEmpty || phone.isEmpty) {
                       CustomDialog.showErrorSnack(
                         context,
                         "Please enter required fields",
@@ -1117,12 +1064,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     }
 
                     try {
+                      final prefs = await SharedPreferences.getInstance();
 
-                      final prefs =
-                      await SharedPreferences.getInstance();
-
-                      final token =
-                          prefs.getString("token") ?? "";
+                      final token = prefs.getString("token") ?? "";
 
                       await BusinessService().addCustomer(
                         name: name,
@@ -1132,6 +1076,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         email: email,
                         gender: selectedGender,
                         fcmToken: '',
+                        pendingAmount: pendingAmount.toString(),
                       );
 
                       await _fetchCustomers();
@@ -1139,11 +1084,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                       final newCustomer = customers.last;
 
                       setState(() {
-
                         selectedCustomer = newCustomer;
 
-                        selectedCustomerId =
-                            newCustomer.id;
+                        selectedCustomerId = newCustomer.id;
                       });
 
                       Navigator.pop(context);
@@ -1152,13 +1095,8 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         this.context,
                         "Customer Added",
                       );
-
                     } catch (e) {
-
-                      CustomDialog.showErrorSnack(
-                        context,
-                        e.toString(),
-                      );
+                      CustomDialog.showErrorSnack(context, e.toString());
                     }
                   },
 
@@ -1171,6 +1109,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
       },
     );
   }
+
   Widget _chip(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

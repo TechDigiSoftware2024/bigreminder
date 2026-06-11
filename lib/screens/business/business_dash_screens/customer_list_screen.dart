@@ -24,6 +24,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     _fetchCustomers();
   }
 
+  final TextEditingController searchController = TextEditingController();
+  String searchQuery = "";
   Future<void> _fetchCustomers() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -31,8 +33,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       final token = prefs.getString("token") ?? "";
       final businessId = prefs.getInt("businessId") ?? 0;
 
-      final data = await BusinessService()
-          .fetchCustomers(
+      final data = await BusinessService().fetchCustomers(
         token: token,
         businessId: businessId,
       );
@@ -43,9 +44,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         customers = data;
         isLoading = false;
       });
-
     } catch (e) {
-
       if (!mounted) return;
 
       setState(() {
@@ -54,10 +53,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
       debugPrint(e.toString());
 
-      CustomDialog.showErrorSnack(
-        context,
-        e.toString(),
-      );
+      CustomDialog.showErrorSnack(context, e.toString());
     }
   }
 
@@ -84,142 +80,241 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : customers.isEmpty
-          ? _emptyState(context, customerLabel)
-          : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: customers.length,
-        itemBuilder: (_, i) {
-          final c = customers[i];
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          : Column(
               children: [
-
-                /// Avatar
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: primary,
-                  child: Text(
-                    c.name.isNotEmpty
-                        ? c.name[0].toUpperCase()
-                        : "?",
-                    style: TextStyle(
+                /// Search Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: Container(
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: primary.withOpacity(0.08)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value.toLowerCase().trim();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Search customer...",
+                        hintStyle: TextStyle(color: Colors.grey.shade500),
+                        prefixIcon: Icon(Icons.search_rounded, color: primary),
+                        suffixIcon: searchQuery.isNotEmpty
+                            ? IconButton(
+                                onPressed: () {
+                                  searchController.clear();
+
+                                  setState(() {
+                                    searchQuery = "";
+                                  });
+                                },
+                                icon: const Icon(Icons.close_rounded),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 14),
-
-                /// Details
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  child: Builder(
+                    builder: (context) {
+                      final filteredCustomers = customers.where((customer) {
+                        final query = searchQuery.toLowerCase().trim();
 
-                      /// Name
-                      Text(
-                        c.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
+                        if (query.isEmpty) return true;
 
-                      const SizedBox(height: 8),
+                        return customer.name.toLowerCase().contains(query) ||
+                            customer.phone.toLowerCase().contains(query) ||
+                            customer.gender.toLowerCase().contains(query) ||
+                            customer.pendingAmount
+                                .toString()
+                                .toLowerCase()
+                                .contains(query);
+                      }).toList();
 
-                      /// Phone
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            c.phone,
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
+                      if (filteredCustomers.isEmpty) {
+                        return _emptyState(context, customerLabel);
+                      }
 
-                      /// Email
-                      if ((c.email ?? "").isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredCustomers.length,
+                        itemBuilder: (_, i) {
+                          final c = filteredCustomers[i];
 
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.email_outlined,
-                              size: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 6),
-
-                            Expanded(
-                              child: Text(
-                                c.email ?? "",
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ],
+                            ),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                                splashColor: Colors.transparent,
+                                highlightColor: Colors.transparent,
+                                hoverColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                backgroundColor: Colors.white,
+                                collapsedBackgroundColor: Colors.white,
+
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+
+                                collapsedShape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+
+                                tilePadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+
+                                leading: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: primary,
+                                  child: Text(
+                                    c.name.isNotEmpty
+                                        ? c.name[0].toUpperCase()
+                                        : "?",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+
+                                title: Text(
+                                  c.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+
+                                trailing:
+                                    (double.tryParse(c.pendingAmount) ?? 0) > 0
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withOpacity(0.08),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "₹${c.pendingAmount}",
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+
+                                childrenPadding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  16,
+                                ),
+
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.phone_outlined,
+                                        size: 16,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(c.phone),
+                                    ],
+                                  ),
+
+                                  if (c.email.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.email_outlined,
+                                          size: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(c.email)),
+                                      ],
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 12),
+
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (c.gender.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: primary.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            c.gender.toUpperCase(),
+                                            style: TextStyle(
+                                              color: primary,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-
-                      /// Gender Chip
-                      if ((c.gender ?? "").isNotEmpty) ...[
-                        const SizedBox(height: 12),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primary.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            c.gender!.toUpperCase(),
-                            style: TextStyle(
-                              color: primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
             ),
-          );
-        },
-      ),
 
       // ✅ FAB is preserved and correctly wired
       floatingActionButton: FloatingActionButton(
@@ -241,10 +336,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           const SizedBox(height: 12),
           Text(
             "No $label Yet",
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
@@ -264,6 +356,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     final emailController = TextEditingController();
 
     String selectedGender = "male";
+    String pendingAmount = "0";
 
     showDialog(
       context: context,
@@ -276,9 +369,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               ),
               title: const Text(
                 "Add Customer",
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
 
               content: SizedBox(
@@ -287,19 +378,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-
                       /// Name (Required)
                       TextField(
                         controller: nameController,
                         decoration: InputDecoration(
                           hintText: "Customer Name *",
-                          prefixIcon:
-                          const Icon(Icons.person_outline),
+                          prefixIcon: const Icon(Icons.person_outline),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                           border: OutlineInputBorder(
-                            borderRadius:
-                            BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -313,13 +401,11 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           hintText: "Phone Number *",
-                          prefixIcon:
-                          const Icon(Icons.phone_outlined),
+                          prefixIcon: const Icon(Icons.phone_outlined),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                           border: OutlineInputBorder(
-                            borderRadius:
-                            BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -333,13 +419,11 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: "Email (Optional)",
-                          prefixIcon:
-                          const Icon(Icons.email_outlined),
+                          prefixIcon: const Icon(Icons.email_outlined),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                           border: OutlineInputBorder(
-                            borderRadius:
-                            BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -352,12 +436,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade100,
-                          borderRadius:
-                          BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
-
                             /// Male
                             Expanded(
                               child: GestureDetector(
@@ -367,29 +449,22 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                   });
                                 },
                                 child: AnimatedContainer(
-                                  duration: const Duration(
-                                      milliseconds: 220),
-                                  padding:
-                                  const EdgeInsets.symmetric(
+                                  duration: const Duration(milliseconds: 220),
+                                  padding: const EdgeInsets.symmetric(
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color:
-                                    selectedGender == "male"
+                                    color: selectedGender == "male"
                                         ? primary
                                         : Colors.transparent,
-                                    borderRadius:
-                                    BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
                                     child: Text(
                                       "Male",
                                       style: TextStyle(
-                                        fontWeight:
-                                        FontWeight.w600,
-                                        color:
-                                        selectedGender ==
-                                            "male"
+                                        fontWeight: FontWeight.w600,
+                                        color: selectedGender == "male"
                                             ? Colors.white
                                             : Colors.black87,
                                       ),
@@ -408,30 +483,22 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                   });
                                 },
                                 child: AnimatedContainer(
-                                  duration: const Duration(
-                                      milliseconds: 220),
-                                  padding:
-                                  const EdgeInsets.symmetric(
+                                  duration: const Duration(milliseconds: 220),
+                                  padding: const EdgeInsets.symmetric(
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color:
-                                    selectedGender ==
-                                        "female"
+                                    color: selectedGender == "female"
                                         ? primary
                                         : Colors.transparent,
-                                    borderRadius:
-                                    BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
                                     child: Text(
                                       "Female",
                                       style: TextStyle(
-                                        fontWeight:
-                                        FontWeight.w600,
-                                        color:
-                                        selectedGender ==
-                                            "female"
+                                        fontWeight: FontWeight.w600,
+                                        color: selectedGender == "female"
                                             ? Colors.white
                                             : Colors.black87,
                                       ),
@@ -449,7 +516,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               ),
 
               actions: [
-
                 /// Cancel
                 TextButton(
                   onPressed: () {
@@ -478,7 +544,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     final email = emailController.text.trim();
 
                     if (name.isEmpty || phone.isEmpty) {
-                      CustomDialog.showErrorSnack(dialogContext, "Please enter required fields");
+                      CustomDialog.showErrorSnack(
+                        dialogContext,
+                        "Please enter required fields",
+                      );
                       return;
                     }
 
@@ -502,6 +571,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         email: email,
                         gender: selectedGender,
                         fcmToken: '',
+                        pendingAmount: pendingAmount.toString(),
                       );
 
                       await _fetchCustomers();
@@ -510,9 +580,11 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                       rootNav.pop(); // close loader
 
                       if (context.mounted) {
-                        CustomDialog.showSuccessSnack(context, "Customer added successfully");
+                        CustomDialog.showSuccessSnack(
+                          context,
+                          "Customer added successfully",
+                        );
                       }
-
                     } catch (e) {
                       rootNav.pop(); // close loader
 

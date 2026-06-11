@@ -12,7 +12,7 @@ class BusinessIncomeRequest {
   Map<String, dynamic> toJson() {
     return {
       "amount": amount,
-      "source": source,
+      "source": source.toString().toLowerCase(),
       "business_id": businessId,
     };
   }

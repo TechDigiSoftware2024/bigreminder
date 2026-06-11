@@ -284,18 +284,10 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
           // ✅ Android-style back button (not iOS chevron)
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              color: Colors.white,
+              size: 26,
             ),
           ),
           const SizedBox(width: 14),

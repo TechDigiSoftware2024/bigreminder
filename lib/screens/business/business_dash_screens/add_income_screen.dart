@@ -1,4 +1,6 @@
 import 'package:bigreminder/widgets/custom_dialog.dart';
+import 'package:bigreminder/widgets/custom_dropdown.dart';
+import 'package:bigreminder/widgets/custom_dropdown_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,9 +16,10 @@ class AddIncomeScreen extends ConsumerStatefulWidget {
 
 class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
   final amountCtrl = TextEditingController();
-  final sourceCtrl = TextEditingController();
+  final categoryCtrl = TextEditingController();
 
   bool loading = false;
+  String? selectedSource;
 
   @override
   Widget build(BuildContext context) {
@@ -95,18 +98,34 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                   ),
 
                   const SizedBox(height: 14),
-
-                  /// 🏷 SOURCE
-                  _inputField(
-                    controller: sourceCtrl,
-                    label: "Income Source",
-                    hint: "e.g. Fees / Product Sale",
+                CustomDropdownTextField(
+                    label: "Source",
+                    hint: "e.g. Cash / UPI",
                     icon: Icons.account_balance_wallet,
+                    value: selectedSource,
+                    items: const [
+                      "Cash",
+                      "UPI",
+                      "Card",
+                      "Other",
+                    ],
+                    onChanged: (value){
+                      setState(() {
+                        selectedSource = value;
+                      });
+                    },
+                ),
+                  const SizedBox(height: 14),
+                  _inputField(
+                    controller: categoryCtrl,
+                    label: "Income remarks",
+                    hint: "e.g. Fees / Product sold",
+                    icon: Icons.currency_rupee,
+                    keyboard: TextInputType.number,
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
 
             /// 🚀 BUTTON
@@ -160,7 +179,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
 
       final req = BusinessIncomeRequest(
         amount: double.parse(amount.toStringAsFixed(2)),
-        source: sourceCtrl.text.trim(),
+        source: selectedSource.toString().toLowerCase(),
         businessId: businessId,
       );
 
@@ -172,7 +191,6 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
         Navigator.pop(context, true); // 🔥 RETURN TRUE
       });
       amountCtrl.clear();
-      sourceCtrl.clear();
     } catch (e) {
       _showSnack(e.toString(), isSuccess: false);
     } finally {

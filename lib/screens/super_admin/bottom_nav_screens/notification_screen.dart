@@ -1,30 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../providers/business/business_provider.dart';
 import '../../../theme/app_colors.dart';
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  ConsumerState<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
+class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   final TextEditingController titleController = TextEditingController();
+
   final TextEditingController bodyController = TextEditingController();
 
   String selectedAudience = "All Users";
 
-  void sendNotification() {
+  Future<void> sendNotification() async {
     HapticFeedback.mediumImpact();
 
-    // TODO: integrate FCM
-    print("Send: ${titleController.text} - ${bodyController.text}");
+    try {
+      // TODO:
+      // Replace with selected business id
+      const int businessId = 1;
+
+      await ref
+          .read(createReminderProvider.notifier)
+          .createReminder(
+            message: bodyController.text.trim(),
+            scheduledAt: DateTime.now(),
+            targetGender: "all",
+            businessId: businessId,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Reminder sent successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final reminderState = ref.watch(createReminderProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
@@ -40,7 +76,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             /// 🔹 HEADER
             const Text(
               "Send notification to users",
@@ -84,13 +119,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
             _card(
               child: DropdownButtonFormField<String>(
                 value: selectedAudience,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                ),
+                decoration: const InputDecoration(border: InputBorder.none),
                 items: const [
-                  DropdownMenuItem(value: "All Users", child: Text("All Users")),
-                  DropdownMenuItem(value: "Active Users", child: Text("Active Users")),
-                  DropdownMenuItem(value: "Premium Users", child: Text("Premium Users")),
+                  DropdownMenuItem(
+                    value: "All Users",
+                    child: Text("All Users"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Active Users",
+                    child: Text("Active Users"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Premium Users",
+                    child: Text("Premium Users"),
+                  ),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -113,14 +155,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
               child: Row(
                 children: [
                   Container(
-                    decoration : BoxDecoration(
-                  color: AppColors.primaryDark,
-                      borderRadius: BorderRadius.circular(8)
-              ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Icon(Icons.notifications_on_outlined, color: AppColors.iconColor),
-                      )),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(
+                        Icons.notifications_on_outlined,
+                        color: AppColors.iconColor,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -232,16 +278,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         // 👇 focused state (important)
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
 
         // optional (clean UX)
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onChanged: (_) => setState(() {}),
     );

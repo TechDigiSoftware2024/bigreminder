@@ -1,9 +1,9 @@
 import 'package:bigreminder/screens/business/business_dash_screens/business_calculator_screen.dart';
+import 'package:bigreminder/screens/business/business_dash_screens/business_reminder_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/customer_list_screen.dart';
 import 'package:flutter/material.dart';
 import '../../utils/enum_classes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/business_models/business_dashboard_model.dart';
 import '../../providers/business/business_provider.dart';
 import 'business_dash_screens/add_expense_screen.dart';
@@ -22,33 +22,18 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
   late String businessName = DashboardText.title(widget.type);
 
   @override
-  void initState() {
-    super.initState();
-    _loadBusinessId();
-  }
-
-  Future<void> _loadBusinessId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getInt("businessId") ?? 0;
-    final busName = prefs.getString("businessName") ?? "";
-    setState(() {
-      businessId = id;
-      businessName = busName;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+
+    final businessId = ref.watch(businessIdProvider);
+    final businessName = ref.watch(businessNameProvider);
 
     final metrics = DashboardText.metrics(widget.type);
     final actions = DashboardText.actions(widget.type);
 
-    if (businessId == 0) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    // if (businessId == 0) {
+    //   return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // }
 
     final dashboardAsync = ref.watch(dashboardProvider(businessId));
 
@@ -60,15 +45,12 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
         backgroundColor: primary,
         title: Text(
           businessName,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
 
       body: dashboardAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: $e")),
         data: (data) {
           return _buildContent(context, data, metrics, actions);
@@ -78,11 +60,11 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
   }
 
   Widget _buildContent(
-      BuildContext context,
-      BusinessDashboardModel data,
-      List<String> metrics,
-      List<String> actions,
-      ) {
+    BuildContext context,
+    BusinessDashboardModel data,
+    List<String> metrics,
+    List<String> actions,
+  ) {
     final primary = Theme.of(context).colorScheme.primary;
     final customerCountAsync = ref.watch(customerCountProvider);
 
@@ -103,18 +85,16 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-
               /// ================= REVENUE CARD =================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                 color: primary,
+                  color: primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-
                     /// 🔵 REVENUE
                     Expanded(
                       child: Column(
@@ -214,7 +194,6 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 mainAxisSpacing: 14,
                 childAspectRatio: 1.22,
                 children: [
-
                   _MetricCard(
                     title: metrics[0],
                     value: customerCountAsync.when(
@@ -250,7 +229,6 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     value: "+92%",
                     icon: Icons.trending_up,
                   ),
-
                 ],
               ),
 
@@ -274,13 +252,15 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     children: [
                       Expanded(
                         child: _ActionBtn(
+                          bgColor: Colors.white,
                           title: actions[0],
                           icon: Icons.person_add,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => CustomerListScreen(type: widget.type),
+                                builder: (_) =>
+                                    CustomerListScreen(type: widget.type),
                               ),
                             );
                           },
@@ -289,6 +269,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _ActionBtn(
+                          bgColor: Colors.white,
                           title: actions[1],
                           icon: Icons.payment,
                           onTap: () async {
@@ -299,7 +280,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                               ),
                             );
                             if (result == true) {
-                              await ref.refresh(dashboardProvider(businessId).future);
+                              await ref.refresh(
+                                dashboardProvider(businessId).future,
+                              );
                             }
                           },
                         ),
@@ -314,6 +297,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     children: [
                       Expanded(
                         child: _ActionBtn(
+                          bgColor: Colors.white,
                           title: actions[2],
                           icon: Icons.receipt_long,
                           onTap: () async {
@@ -324,7 +308,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                               ),
                             );
                             if (result == true) {
-                              await ref.refresh(dashboardProvider(businessId).future);
+                              await ref.refresh(
+                                dashboardProvider(businessId).future,
+                              );
                             }
                           },
                         ),
@@ -332,17 +318,47 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _ActionBtn(
+                          bgColor: Colors.white,
                           title: actions[3],
                           icon: Icons.calculate_outlined,
                           onTap: () async {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const BusinessCalculatorScreen(),
+                                builder: (_) =>
+                                    const BusinessCalculatorScreen(),
                               ),
                             );
                             if (result == true) {
-                              await ref.refresh(dashboardProvider(businessId).future);
+                              await ref.refresh(
+                                dashboardProvider(businessId).future,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ActionBtn(
+                          bgColor: primary.withOpacity(0.08),
+                          title: "Send Reminder to Customer",
+                          icon: Icons.notifications_on_outlined,
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BusinessRemindersScreen(),
+                              ),
+                            );
+                            if (result == true) {
+                              await ref.refresh(
+                                dashboardProvider(businessId).future,
+                              );
                             }
                           },
                         ),
@@ -404,14 +420,11 @@ class _MetricCard extends StatelessWidget {
               ),
               child: Icon(icon, color: primary),
             ),
-           const Spacer(),
+            const Spacer(),
             Text(
               value,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Text(
               title,
@@ -428,14 +441,11 @@ class _MetricCard extends StatelessWidget {
 /// ================= ACTION BUTTON =================
 class _ActionBtn extends StatelessWidget {
   final String title;
+  final Color bgColor;
   final IconData icon;
   final VoidCallback? onTap;
 
-  const _ActionBtn({
-    required this.title,
-    required this.icon,
-    this.onTap,
-  });
+  const _ActionBtn({required this.title, required this.icon, this.onTap,required this.bgColor});
 
   @override
   Widget build(BuildContext context) {
@@ -451,12 +461,9 @@ class _ActionBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: bgColor,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: primary.withOpacity(0.12),
-              width: 1.2,
-            ),
+            border: Border.all(color: primary.withOpacity(0.12), width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),

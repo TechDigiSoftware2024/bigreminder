@@ -188,6 +188,7 @@ class BusinessService {
     required int businessId,
     required String name,
     required String phone,
+    required String pendingAmount,
     required String token,
 
     // ✅ Optional fields
@@ -199,11 +200,13 @@ class BusinessService {
       final body = {
         "name": name,
         "phone": phone,
+        "pending_amount": pendingAmount,
         "business_id": businessId,
 
         // ✅ Optional fields
         if (gender != null && gender.isNotEmpty) "gender": gender,
         if (email != null && email.isNotEmpty) "email": email,
+        if (pendingAmount.isNotEmpty) "pending_amount": pendingAmount,
         if (fcmToken != null && fcmToken.isNotEmpty) "fcm_token": fcmToken,
       };
 
