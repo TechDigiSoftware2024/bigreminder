@@ -497,54 +497,40 @@ WidgetRef ref,) {
             const SizedBox(width: 10),
 
             InkWell(
-              onTap: () async {
-
-                final confirmed = await showDialog<bool>(
+              onTap: () {
+                CustomDialog.showConfirmDialog(
                   context: context,
-                  builder: (_) {
-                    return AlertDialog(
-                      title: const Text("Delete Feature"),
-                      content: Text(
-                        "Are you sure you want to delete '${f.name}'?",
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context, false);
-                          },
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context, true);
-                          },
-                          child: const Text(
-                            "Delete",
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    );
+                  title: "Delete Feature",
+                  message:
+                  "This action cannot be undone.\n'${f.name}' will be permanently removed.",
+                  onConfirm: () async {
+                    try {
+                      final message =
+                      await DeleteService.deleteFeature(
+                        featureId: f.id,
+                        token: ref.read(tokenProvider),
+                      );
+
+                      if (!context.mounted) return;
+
+                      CustomDialog.showSuccessSnack(
+                        context,
+                        message,
+                      );
+
+                      await ref
+                          .read(subscriptionProvider)
+                          .loadFeatures();
+                    } catch (e) {
+                      if (!context.mounted) return;
+
+                      CustomDialog.showErrorSnack(
+                        context,
+                        e.toString(),
+                      );
+                    }
                   },
                 );
-
-                if (confirmed != true) return;
-
-                final message = await DeleteService.deleteFeature(
-                  featureId: f.id,
-                  token: ref.read(tokenProvider),
-                );
-
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(message),
-                  ),
-                );
-
-                /// Refresh list
-                await ref.read(subscriptionProvider).loadFeatures();
               },
               borderRadius: BorderRadius.circular(30),
               child: Container(

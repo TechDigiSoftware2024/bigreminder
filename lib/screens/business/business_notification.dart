@@ -119,8 +119,8 @@ class _BusinessNotificationScreenState
 
                     const SizedBox(height: 8),
 
-                    /// 🔥 CHANNELS
-                    _buildChannelToggle(cs),
+                    // /// 🔥 CHANNELS
+                    // _buildChannelToggle(cs),
 
                     const SizedBox(height: 10),
 
@@ -432,97 +432,97 @@ class _BusinessNotificationScreenState
   /// CHANNELS
   /// =====================================================
 
-  Widget _buildChannelToggle(ColorScheme cs) {
-    final channels = [
-      {"id": "push", "label": "WhatsApp", "icon": Icons.notifications_rounded},
-      //
-      // {"id": "email", "label": "Email", "icon": Icons.email_rounded},
-      //
-      // {"id": "sms", "label": "SMS", "icon": Icons.sms_rounded},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-
-      children: [
-        _sectionLabel("Channel", cs),
-
-        const SizedBox(height: 8),
-
-        Row(
-          children: channels.map((ch) {
-            final id = ch["id"] as String;
-
-            final isOn = sendVia.contains(id);
-
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (isOn) {
-                    if (sendVia.length > 1) {
-                      sendVia.remove(id);
-                    }
-                  } else {
-                    sendVia.add(id);
-                  }
-                });
-              },
-
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-
-                padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 6),
-
-                decoration: BoxDecoration(
-                  color: isOn
-                      ? cs.primary.withOpacity(0.14)
-                      : cs.onSurface.withOpacity(0.04),
-
-                  borderRadius: BorderRadius.circular(14),
-
-                  border: Border.all(
-                    color: isOn
-                        ? cs.primary.withOpacity(0.45)
-                        : cs.onSurface.withOpacity(0.07),
-                  ),
-                ),
-
-                child: Column(
-                  children: [
-                    Icon(
-                      ch["icon"] as IconData,
-
-                      size: 15,
-
-                      color: isOn
-                          ? cs.primary
-                          : cs.onSurface.withOpacity(0.25),
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    Text(
-                      ch["label"] as String,
-
-                      style: TextStyle(
-                        color: isOn
-                            ? cs.primary
-                            : cs.onSurface.withOpacity(0.3),
-
-                        fontSize: 9,
-
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  // Widget _buildChannelToggle(ColorScheme cs) {
+  //   final channels = [
+  //     {"id": "push", "label": "WhatsApp", "icon": Icons.notifications_rounded},
+  //     //
+  //     // {"id": "email", "label": "Email", "icon": Icons.email_rounded},
+  //     //
+  //     // {"id": "sms", "label": "SMS", "icon": Icons.sms_rounded},
+  //   ];
+  //
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //
+  //     children: [
+  //       _sectionLabel("Channel", cs),
+  //
+  //       const SizedBox(height: 8),
+  //
+  //       Row(
+  //         children: channels.map((ch) {
+  //           final id = ch["id"] as String;
+  //
+  //           final isOn = sendVia.contains(id);
+  //
+  //           return GestureDetector(
+  //             onTap: () {
+  //               setState(() {
+  //                 if (isOn) {
+  //                   if (sendVia.length > 1) {
+  //                     sendVia.remove(id);
+  //                   }
+  //                 } else {
+  //                   sendVia.add(id);
+  //                 }
+  //               });
+  //             },
+  //
+  //             child: AnimatedContainer(
+  //               duration: const Duration(milliseconds: 180),
+  //
+  //               padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 6),
+  //
+  //               decoration: BoxDecoration(
+  //                 color: isOn
+  //                     ? cs.primary.withOpacity(0.14)
+  //                     : cs.onSurface.withOpacity(0.04),
+  //
+  //                 borderRadius: BorderRadius.circular(14),
+  //
+  //                 border: Border.all(
+  //                   color: isOn
+  //                       ? cs.primary.withOpacity(0.45)
+  //                       : cs.onSurface.withOpacity(0.07),
+  //                 ),
+  //               ),
+  //
+  //               child: Column(
+  //                 children: [
+  //                   Icon(
+  //                     ch["icon"] as IconData,
+  //
+  //                     size: 15,
+  //
+  //                     color: isOn
+  //                         ? cs.primary
+  //                         : cs.onSurface.withOpacity(0.25),
+  //                   ),
+  //
+  //                   const SizedBox(height: 5),
+  //
+  //                   Text(
+  //                     ch["label"] as String,
+  //
+  //                     style: TextStyle(
+  //                       color: isOn
+  //                           ? cs.primary
+  //                           : cs.onSurface.withOpacity(0.3),
+  //
+  //                       fontSize: 9,
+  //
+  //                       fontWeight: FontWeight.w600,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           );
+  //         }).toList(),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   /// =====================================================
   /// ACTIONS

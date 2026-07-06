@@ -5,15 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/business_models/add_product_model.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_dashboard_model.dart';
 import '../../models/business_models/business_model.dart';
+import '../../models/business_models/business_purchase_list_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/query_model.dart';
+import '../../models/business_models/receive_payment_request_model.dart';
 import '../../models/super_admin_models/business_list_model.dart';
 import '../../models/super_admin_models/create_business_model.dart';
 import '../../models/super_admin_models/create_business_request_model.dart';
 import '../../models/super_admin_models/business_create_reminder.dart';
+import '../../repository/business_repo.dart';
+import '../../services/business/add_product_service.dart';
+import '../../services/business/bill_service.dart';
 import '../../services/business/business_service.dart';
 import '../../services/business/business_state.dart';
 import '../../services/business/dashboard_service.dart';
@@ -50,7 +56,6 @@ class BusinessController extends StateNotifier<BusinessState> {
 
         print("✅ SAVED BUSINESS ID: ${firstBusiness.id}");
         print("🏢 BUSINESS NAME: ${firstBusiness.name}");
-
       } else {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove("businessId");
@@ -59,57 +64,32 @@ class BusinessController extends StateNotifier<BusinessState> {
       }
 
       /// 🔥 UPDATE STATE
-      state = state.copyWith(
-        isLoading: false,
-        businesses: list,
-      );
-
+      state = state.copyWith(isLoading: false, businesses: list);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
 
       rethrow;
     }
   }
 
-  Future<void> createPurchase({
-    required CreatePurchaseModel model,
-  }) async {
-
+  Future<void> createPurchase({required CreatePurchaseModel model}) async {
     try {
+      state = state.copyWith(isLoading: true, error: null);
 
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-      );
+      final prefs = await SharedPreferences.getInstance();
 
-      final prefs =
-      await SharedPreferences.getInstance();
+      final token = prefs.getString("token") ?? "";
 
-      final token =
-          prefs.getString("token") ?? "";
-
-      final message =
-      await PurchaseService.createPurchase(
+      final message = await PurchaseService.createPurchase(
         token: token,
         model: model,
       );
 
       debugPrint(message);
 
-      state = state.copyWith(
-        isLoading: false,
-        message: message,
-      );
-
+      state = state.copyWith(isLoading: false, message: message);
     } catch (e) {
-
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
 
       rethrow;
     }
@@ -177,8 +157,6 @@ class BusinessController extends StateNotifier<BusinessState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
-
-
 }
 
 //✅ PROVIDERS (clean setup)
@@ -215,45 +193,99 @@ final businessIdProvider = Provider<int>((ref) {
   throw Exception("BusinessId missing in state");
 });
 
-
-
-final customerProvider = FutureProvider<List<CustomerResponseModel>>((ref) async {
+final customerProvider = FutureProvider<List<CustomerResponseModel>>((
+  ref,
+) async {
   final prefs = await SharedPreferences.getInstance();
 
   final token = prefs.getString("token") ?? "";
   final businessId = prefs.getInt("businessId") ?? 0;
 
-  return BusinessService().fetchCustomers(
-    token: token,
-    businessId: businessId,
-  );
+  return BusinessService().fetchCustomers(token: token, businessId: businessId);
 });
 
-
-final dashboardProvider =
-FutureProvider.family<BusinessDashboardModel, int>((ref, businessId) async {
-
+final dashboardProvider = FutureProvider.family<BusinessDashboardModel, int>((
+  ref,
+  businessId,
+) async {
   final token = ref.read(tokenProvider);
 
-  final data = await fetchDashboard(
-    token: token,
-    businessId: businessId,
-  );
+  final data = await fetchDashboard(token: token, businessId: businessId);
 
   return BusinessDashboardModel.fromJson(data);
 });
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService(
-    baseUrl: ApiConfig.baseUrl,
-    ref: ref,
-  );
+  return NotificationService(baseUrl: ApiConfig.baseUrl, ref: ref);
 });
 
+final purchaseServiceProvider = Provider<PurchaseService>(
+  (ref) => PurchaseService(),
+);
+final purchasesProvider = FutureProvider.family<List<PurchaseModel>, int?>((
+  ref,
+  customerId,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final token = prefs.getString("token") ?? "";
+
+  final businessId = prefs.getInt("businessId") ?? 0;
+
+  return ref
+      .read(purchaseServiceProvider)
+      .getPurchases(
+        token: token,
+        businessId: businessId,
+        customerId: customerId,
+      );
+});
 
 final incomeServiceProvider = Provider<IncomeService>((ref) {
   return IncomeService(ref);
 });
+
+final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
+  return BusinessRepository(ref.read(businessServiceProvider));
+});
+
+final receivePaymentProvider =
+    StateNotifierProvider<ReceivePaymentNotifier, AsyncValue<void>>(
+      (ref) => ReceivePaymentNotifier(ref),
+    );
+
+class ReceivePaymentNotifier extends StateNotifier<AsyncValue<void>> {
+  final Ref ref;
+
+  ReceivePaymentNotifier(this.ref) : super(const AsyncData(null));
+
+  Future<void> receivePayment({
+    required int purchaseId,
+    required double amount,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      final request = ReceivePaymentRequest(
+        purchaseId: purchaseId,
+        receivedAmount: amount,
+      );
+
+      final result = await ref
+          .read(businessRepositoryProvider)
+          .receivePayment(request: request);
+
+      debugPrint("Updated Pending = ${result.pending}");
+
+      /// Refresh purchase history
+      ref.invalidate(purchasesProvider(null));
+
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  }
+}
 
 final customerCountProvider = FutureProvider<int>((ref) async {
   final customers = await ref.watch(customerProvider.future);
@@ -262,9 +294,9 @@ final customerCountProvider = FutureProvider<int>((ref) async {
 
 // ✅ ADD THIS
 final createExpenseProvider =
-StateNotifierProvider<CreateExpenseNotifier, AsyncValue<void>>(
+    StateNotifierProvider<CreateExpenseNotifier, AsyncValue<void>>(
       (ref) => CreateExpenseNotifier(ref),
-);
+    );
 
 // ✅ YOUR NOTIFIER
 class CreateExpenseNotifier extends StateNotifier<AsyncValue<void>> {
@@ -272,18 +304,15 @@ class CreateExpenseNotifier extends StateNotifier<AsyncValue<void>> {
 
   CreateExpenseNotifier(this.ref) : super(const AsyncData(null));
 
-  Future<void> createExpense({
-    required BusinessExpenseModel expense,
-  }) async {
+  Future<void> createExpense({required BusinessExpenseModel expense}) async {
     state = const AsyncLoading();
 
     try {
       final token = ref.read(tokenProvider);
 
-      await ref.read(businessServiceProvider).createExpense(
-        token: token,
-        expense: expense,
-      );
+      await ref
+          .read(businessServiceProvider)
+          .createExpense(token: token, expense: expense);
 
       state = const AsyncData(null);
     } catch (e, st) {
@@ -291,55 +320,45 @@ class CreateExpenseNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
-final reminderServiceProvider =
-Provider<SuperReminderService>((ref) {
+
+final reminderServiceProvider = Provider<SuperReminderService>((ref) {
   return SuperReminderService();
 });
 // ✅ UPDATE THIS PROVIDER
-final reminderListProvider = FutureProvider<List<BusinessReminderModel>>(
-      (ref) async {
-    final token = ref.read(tokenProvider);
+final reminderListProvider = FutureProvider<List<BusinessReminderModel>>((
+  ref,
+) async {
+  final token = ref.read(tokenProvider);
 
-    // ✅ GET BUSINESS ID FROM SHARED PREFERENCES
-    final prefs = await SharedPreferences.getInstance();
-    final businessId = prefs.getInt("businessId") ?? 0;
+  // ✅ GET BUSINESS ID FROM SHARED PREFERENCES
+  final prefs = await SharedPreferences.getInstance();
+  final businessId = prefs.getInt("businessId") ?? 0;
 
-    if (businessId == 0) {
-      throw Exception("Business ID not found");
-    }
+  if (businessId == 0) {
+    throw Exception("Business ID not found");
+  }
 
-    return ref.read(reminderServiceProvider).getReminders(
-      token: token,
-      businessId: businessId, // ✅ PASS BUSINESS ID
-    );
-  },
-);
-
+  return ref
+      .read(reminderServiceProvider)
+      .getReminders(
+        token: token,
+        businessId: businessId, // ✅ PASS BUSINESS ID
+      );
+});
 
 final createReminderProvider =
-StateNotifierProvider<
-    CreateReminderNotifier,
-    AsyncValue<BusinessReminderModel?>>(
-      (ref) {
-    return CreateReminderNotifier(
-      ref,
-    );
-  },
-);
+    StateNotifierProvider<
+      CreateReminderNotifier,
+      AsyncValue<BusinessReminderModel?>
+    >((ref) {
+      return CreateReminderNotifier(ref);
+    });
 
 class CreateReminderNotifier
-    extends StateNotifier<
-        AsyncValue<BusinessReminderModel?>> {
-
+    extends StateNotifier<AsyncValue<BusinessReminderModel?>> {
   final Ref ref;
 
-  CreateReminderNotifier(
-      this.ref,
-      ) : super(
-    const AsyncData(
-      null,
-    ),
-  );
+  CreateReminderNotifier(this.ref) : super(const AsyncData(null));
 
   Future<void> createReminder({
     required String message,
@@ -347,49 +366,26 @@ class CreateReminderNotifier
     required String targetGender,
     required int businessId,
   }) async {
-
-    state =
-    const AsyncLoading();
+    state = const AsyncLoading();
 
     try {
+      final token = ref.read(tokenProvider);
 
-      final token =
-      ref.read(
-        tokenProvider,
-      );
-
-      final reminder =
-      await ref
-          .read(
-        reminderServiceProvider,
-      )
+      final reminder = await ref
+          .read(reminderServiceProvider)
           .createReminder(
-        message: message,
-        scheduledAt:
-        scheduledAt,
-        targetGender:
-        targetGender,
-        businessId:
-        businessId,
-        token: token,
-      );
-
-      ref.invalidate(
-        reminderListProvider,
-      );
-
-      state =
-          AsyncData(
-            reminder,
+            message: message,
+            scheduledAt: scheduledAt,
+            targetGender: targetGender,
+            businessId: businessId,
+            token: token,
           );
 
+      ref.invalidate(reminderListProvider);
+
+      state = AsyncData(reminder);
     } catch (e, st) {
-
-      state =
-          AsyncError(
-            e,
-            st,
-          );
+      state = AsyncError(e, st);
 
       rethrow;
     }
@@ -397,15 +393,9 @@ class CreateReminderNotifier
 }
 
 final deleteReminderProvider =
-StateNotifierProvider<
-    DeleteReminderNotifier,
-    AsyncValue<void>>(
-      (ref) {
-    return DeleteReminderNotifier(
-      ref,
-    );
-  },
-);
+    StateNotifierProvider<DeleteReminderNotifier, AsyncValue<void>>((ref) {
+      return DeleteReminderNotifier(ref);
+    });
 
 // ✅ UPDATE DELETE NOTIFIER
 class DeleteReminderNotifier extends StateNotifier<AsyncValue<void>> {
@@ -413,9 +403,7 @@ class DeleteReminderNotifier extends StateNotifier<AsyncValue<void>> {
 
   DeleteReminderNotifier(this.ref) : super(const AsyncData(null));
 
-  Future<void> deleteReminder({
-    required int reminderId,
-  }) async {
+  Future<void> deleteReminder({required int reminderId}) async {
     state = const AsyncLoading();
 
     try {
@@ -425,11 +413,13 @@ class DeleteReminderNotifier extends StateNotifier<AsyncValue<void>> {
       final prefs = await SharedPreferences.getInstance();
       final businessId = prefs.getInt("businessId") ?? 0;
 
-      await ref.read(reminderServiceProvider).deleteReminder(
-        reminderId: reminderId,
-        token: token,
-        businessId: businessId, // ✅ PASS BUSINESS ID
-      );
+      await ref
+          .read(reminderServiceProvider)
+          .deleteReminder(
+            reminderId: reminderId,
+            token: token,
+            businessId: businessId, // ✅ PASS BUSINESS ID
+          );
 
       ref.invalidate(reminderListProvider);
       state = const AsyncData(null);
@@ -440,33 +430,18 @@ class DeleteReminderNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-
-final queryServiceProvider =
-Provider<QueryService>((ref) {
+final queryServiceProvider = Provider<QueryService>((ref) {
   return QueryService();
 });
 
-final queryListProvider =
-FutureProvider<List<QueryModel>>(
-      (ref) async {
-    final token =
-    ref.read(tokenProvider);
+final queryListProvider = FutureProvider<List<QueryModel>>((ref) async {
+  final token = ref.read(tokenProvider);
 
-    return ref
-        .read(queryServiceProvider)
-        .getQueries(
-      token: token,
-    );
-  },
-);
+  return ref.read(queryServiceProvider).getQueries(token: token);
+});
 
-final currentBusinessProvider =
-Provider<Business?>((ref) {
-
-  final state =
-  ref.watch(
-    businessControllerProvider,
-  );
+final currentBusinessProvider = Provider<Business?>((ref) {
+  final state = ref.watch(businessControllerProvider);
 
   if (state.businesses.isEmpty) {
     return null;
@@ -475,12 +450,97 @@ Provider<Business?>((ref) {
   return state.businesses.first;
 });
 final businessNameProvider = Provider<String>((ref) {
-
-  final state = ref.watch(businessControllerProvider,);
+  final state = ref.watch(businessControllerProvider);
 
   if (state.businesses.isNotEmpty) {
     return state.businesses.first.name;
   }
 
   return "Business";
+});
+final billDetailProvider = FutureProvider.family<PurchaseModel, int>((ref, billId) async {
+  final token = ref.read(tokenProvider);
+  return BillService().getBillDetail(token: token, billId: billId);
+});
+final productServiceProvider = Provider<ProductService>((ref) {
+  return ProductService();
+});
+
+final productListProvider = FutureProvider.family<List<ProductModel>, String>((
+  ref,
+  token,
+) async {
+  final service = ref.read(productServiceProvider);
+  final businessId = ref.read(businessIdProvider);
+
+  return service.getProducts(token: token, businessId: businessId);
+});
+
+final createProductProvider =
+    FutureProvider.family<ProductModel, ({String token, ProductModel product})>(
+      (ref, data) async {
+        final service = ref.read(productServiceProvider);
+
+        return service.createProduct(token: data.token, product: data.product);
+      },
+    );
+
+class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
+  final ProductService _service = ProductService();
+
+  @override
+  Future<List<ProductModel>> build() async {
+    return [];
+  }
+  Future<void> updateProduct(
+      String token,
+      int productId,
+      ProductModel product,
+      ) async {
+    await _service.updateProduct(
+      token: token,
+      productId: productId,
+      product: product,
+    );
+
+    final businessId = ref.read(businessIdProvider);
+    await loadProducts(token, businessId.toString());
+  }
+
+  Future<void> deleteProduct(
+      String token,
+      int productId,
+      ) async {
+    await _service.deleteProduct(
+      token: token,
+      productId: productId,
+    );
+
+    final businessId = ref.read(businessIdProvider);
+    await loadProducts(token, businessId.toString());
+  }
+  Future<void> loadProducts(String token, String businessId) async {
+    state = const AsyncLoading();
+
+    final businessId = ref.watch(businessIdProvider);
+    state = await AsyncValue.guard(() async {
+      return _service.getProducts(businessId: businessId, token: token);
+    });
+  }
+
+  Future<void> addProduct(String token, ProductModel product) async {
+    await _service.createProduct(token: token, product: product);
+    final businessId = ref.read(businessIdProvider);
+    await loadProducts(token, businessId.toString());
+  }
+}
+
+final productProvider =
+    AsyncNotifierProvider<ProductNotifier, List<ProductModel>>(
+      ProductNotifier.new,
+    );
+final customerDetailProvider =
+FutureProvider.family<CustomerResponseModel, int>((ref, customerId) async {
+  final token = ref.read(tokenProvider);
+  return BusinessService().getCustomerById(token: token, customerId: customerId);
 });

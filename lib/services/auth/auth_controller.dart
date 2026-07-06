@@ -29,22 +29,34 @@ class AuthController extends StateNotifier<AuthState> {
 
   // ================= LOGIN =================
   Future<void> login(String phone, String password) async {
+    print("LOGIN START");
+
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+      );
 
-      final user = await service.login(phone, password);
+      print("BEFORE API");
 
-      // 🔥 validate + save
+      final user = await service.login(
+        phone,
+        password,
+      );
+
+      print("AFTER API");
+
       await _saveUser(user);
 
       state = state.copyWith(
         isLoading: false,
         user: user,
-        token: user.accessToken, // 🔥 ADD THIS
+        token: user.accessToken,
         error: null,
       );
-
     } catch (e) {
+      print("LOGIN ERROR => $e");
+
       state = state.copyWith(
         isLoading: false,
         user: null,
@@ -52,7 +64,6 @@ class AuthController extends StateNotifier<AuthState> {
       );
     }
   }
-
   // ================= SIGNUP + AUTO LOGIN =================
   Future<void> signup({
     required String ownerName,
@@ -129,13 +140,34 @@ class AuthController extends StateNotifier<AuthState> {
   String _mapError(dynamic error) {
     final msg = error.toString().toLowerCase();
 
-    if (msg.contains("socket")) return "No internet connection";
-    if (msg.contains("timeout")) return "Server is slow, try again";
-    if (msg.contains("already")) return "User already registered";
-    if (msg.contains("invalid")) return "Invalid phone or password";
-    if (msg.contains("token")) return "Authentication failed";
+    if (msg.contains("incorrect phone or password")) {
+      return "Incorrect phone or password";
+    }
 
-    return "Something went wrong";
+    if (msg.contains("socket")) {
+      return "No internet connection";
+    }
+
+    if (msg.contains("timeout")) {
+      return "Server is slow, try again";
+    }
+
+    if (msg.contains("already")) {
+      return "User already registered";
+    }
+
+    if (msg.contains("invalid")) {
+      return "Invalid phone or password";
+    }
+
+    if (msg.contains("token")) {
+      return "Authentication failed";
+    }
+
+    return error.toString().replaceFirst(
+      "Exception: ",
+      "",
+    );
   }
 
 

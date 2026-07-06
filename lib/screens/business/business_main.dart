@@ -11,7 +11,7 @@ import '../../widgets/custom_bottom_bar.dart';
 
 
 class BusinessMain extends ConsumerStatefulWidget {
-  const BusinessMain({super.key});
+  const BusinessMain({super.key,});
 
   @override
   ConsumerState<BusinessMain> createState() => _BusinessMainState();
@@ -55,21 +55,6 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
     });
   }
   void onTabTapped(int index) {
-
-    /// 🔥 CENTER BUTTON
-    if (index == 2) {
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-          const CreatePurchaseScreen(),
-        ),
-      );
-
-      return;
-    }
-
     /// 🔥 CHANGE TAB
     setState(() {
       currentIndex = index;

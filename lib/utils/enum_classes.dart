@@ -92,6 +92,50 @@ class DashboardText {
         return "Business Dashboard";
     }
   }
+static String searchBarTitle(AppType type) {
+    switch (type) {
+      case AppType.gym:
+        return "Search Member";
+      case AppType.shop:
+        return "Search Customer";
+      case AppType.institute:
+        return "Search Student";
+      case AppType.salon:
+        return "Search Customer";
+      case AppType.hospital:
+        return "Search Patient";
+      case AppType.restaurant:
+        return "Search Customer";
+      case AppType.finance:
+        return "Search Client";
+      case AppType.realEstate:
+        return "Search Client";
+      case AppType.generic:
+        return "Search...";
+    }
+  }
+  static String customerName(AppType type) {
+    switch (type) {
+      case AppType.gym:
+        return "Member Name";
+      case AppType.shop:
+        return "Customer Name";
+      case AppType.institute:
+        return "Student Name";
+      case AppType.salon:
+        return "Customer Name";
+      case AppType.hospital:
+        return "Patient Name";
+      case AppType.restaurant:
+        return "Customer Name";
+      case AppType.finance:
+        return "Client Name";
+      case AppType.realEstate:
+        return "Client Name";
+      case AppType.generic:
+        return "Name";
+    }
+  }
 
   static List<String> metrics(AppType type) {
     switch (type) {

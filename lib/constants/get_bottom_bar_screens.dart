@@ -1,7 +1,9 @@
 import 'package:bigreminder/screens/business/business_home.dart' hide AppType;
 import 'package:bigreminder/screens/business/business_notification.dart';
+import 'package:bigreminder/screens/business/create_purchase_screen.dart';
 import 'package:flutter/material.dart';
 import '../screens/business/business_profile.dart';
+import '../screens/business/business_purchase_history.dart';
 import '../screens/business/business_subs_screen.dart';
 import '../utils/enum_classes.dart';
 
@@ -9,16 +11,12 @@ import '../utils/enum_classes.dart';
 List<Widget> getBottomBarScreens(AppType type) {
 
   return [
-
-    BusinessHome(type: type), // 0
-
-    BusinessSubscriptionScreen(), // 1
-
-    const SizedBox(), // 2 CENTER BUTTON PLACEHOLDER
-
-    BusinessNotificationScreen(), // 3
-
-    BusinessProfile(), // 4
+    BusinessHome(type: type),
+    // BusinessSubscriptionScreen(),
+    BusinessPurchaseHistoryScreen(),
+    CreatePurchaseScreen(),
+    BusinessNotificationScreen(),
+    BusinessProfile(),
   ];
 }
 
@@ -27,8 +25,8 @@ List<Widget> getBottomBarScreens(AppType type) {
 List<String> getBottomBarLabels(AppType type) {
   return const [
     "Home",
-    "Plans",
-    " ",
+    "History",
+    "Purchase",
     "Notify",
     "Profile",
   ];

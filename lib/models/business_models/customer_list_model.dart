@@ -24,9 +24,9 @@ class CustomerResponseModel {
       ) {
     return CustomerResponseModel(
       id: json['id'] ?? 0,
-      name: json['name'] ?? "",
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
       email: json['email'] ?? "",
-      phone: json['phone'] ?? "",
       pendingAmount: json['pending_amount'] ?? "",
       gender: json['gender'] ?? "",
       businessId: json['business_id'] ?? 0,

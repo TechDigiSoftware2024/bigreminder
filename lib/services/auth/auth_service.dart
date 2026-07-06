@@ -6,24 +6,22 @@ import 'package:http/http.dart' as http;
 class AuthService {
 
   // ================= LOGIN =================
-  Future<AuthUserModel> login(String phone, String password) async {
-    try {
-      final res = await http.post(
-        ApiConfig.url(ApiConfig.login),
-        headers: ApiConfig.headers(),
-        body: jsonEncode({
-          "phone": phone,
-          "password": password,
-        }),
-      ).timeout(const Duration(seconds: 15));
+  Future<AuthUserModel> login(
+      String phone,
+      String password,
+      ) async {
+    final res = await http.post(
+      ApiConfig.url(ApiConfig.login),
+      headers: ApiConfig.headers(),
+      body: jsonEncode({
+        "phone": phone,
+        "password": password,
+      }),
+    ).timeout(const Duration(seconds: 15));
 
-      final data = _handleResponse(res);
+    final data = _handleResponse(res);
 
-      return AuthUserModel.fromJson(data);
-
-    } catch (e) {
-      throw Exception(_handleError(e));
-    }
+    return AuthUserModel.fromJson(data);
   }
 
   // ================= SIGNUP + AUTO LOGIN =================
@@ -74,19 +72,26 @@ class AuthService {
 
   // ================= RESPONSE =================
   Map<String, dynamic> _handleResponse(http.Response res) {
-    final data = res.body.isNotEmpty ? jsonDecode(res.body) : {};
+    print("STATUS => ${res.statusCode}");
+    print("BODY => ${res.body}");
 
-    if (res.statusCode >= 200 && res.statusCode < 300) {
+    final data =
+    res.body.isNotEmpty
+        ? jsonDecode(res.body)
+        : {};
+
+    if (res.statusCode >= 200 &&
+        res.statusCode < 300) {
       return data;
-    } else {
-      throw Exception(
-        data['message'] ??
-            data['error'] ??
-            "Server error (${res.statusCode})",
-      );
     }
-  }
 
+    throw Exception(
+      data["detail"] ??
+          data["message"] ??
+          data["error"] ??
+          "Server error (${res.statusCode})",
+    );
+  }
   // ================= ERROR HANDLER =================
   String _handleError(dynamic error) {
     final msg = error.toString().toLowerCase();

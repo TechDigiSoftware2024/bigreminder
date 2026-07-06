@@ -133,7 +133,7 @@ class SuperReminderService {
       'business_id': businessId.toString(),
     });
 
-    final response = await http.put(
+    final response = await http.patch(
       uri,
       headers: ApiConfig.headers(
         token: token,

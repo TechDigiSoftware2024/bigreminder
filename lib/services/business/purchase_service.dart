@@ -1,13 +1,66 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import '../../api_config/api_config.dart';
+import '../../models/business_models/business_purchase_list_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 
 class PurchaseService {
+  Future<List<PurchaseModel>> getPurchases({
+    required String token,
+    required int businessId,
+    int? customerId,
+  }) async {
+    try {
+      final queryParams = {
+        'business_id': businessId.toString(),
+        if (customerId != null)
+          'customer_id': customerId.toString(),
+      };
 
+      final uri = ApiConfig.url(
+        ApiConfig.purchases,
+      ).replace(
+        queryParameters: queryParams,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: ApiConfig.headers(
+          token: token,
+        ),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load purchases (${response.statusCode})',
+        );
+      }
+
+      final Map<String, dynamic> jsonData =
+      jsonDecode(response.body);
+debugPrint("RESPONSE BODY:${response.body}");
+      if (jsonData['success'] != true) {
+        throw Exception(
+          'API returned success = false',
+        );
+      }
+
+      final List<dynamic> data =
+          jsonData['data'] as List<dynamic>? ?? [];
+
+      return data
+          .map((e) => PurchaseModel.fromJson(e))
+          .toList();
+    } catch (e) {
+      throw Exception(
+        'Failed to load purchases: $e',
+      );
+    }
+  }
   static Future<String> createPurchase({
     required String token,
     required CreatePurchaseModel model,
@@ -29,8 +82,7 @@ class PurchaseService {
       if (response.statusCode == 200 ||
           response.statusCode == 201) {
 
-        return data["message"] ??
-            "Purchase created successfully";
+        return data["message"] ?? "Purchase created successfully";
       }
 
       /// 🔥 API ERROR

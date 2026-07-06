@@ -32,7 +32,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
         elevation: 0,
         title: const Text(
           "Add Income",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w700,fontSize: 17),
         ),
       ),
 

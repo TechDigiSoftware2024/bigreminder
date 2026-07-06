@@ -53,6 +53,7 @@ Future<void> restoreAppType(WidgetRef ref) async {
 
   print("🔥 RESTORED APP TYPE: $appType");
 }
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -62,7 +63,7 @@ void main() async {
 
   await initFCM(); // 🚀 yaha call kiya
 
-  runApp(ProviderScope(child: const MyApp()));
+  runApp(ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {

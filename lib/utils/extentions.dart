@@ -30,7 +30,14 @@ extension ContextExtension on BuildContext {
     FocusScope.of(this).unfocus();
   }
 }
-
+extension PriceFormatter on double {
+  String get cleanPrice {
+    if (this == truncateToDouble()) {
+      return toInt().toString();
+    }
+    return toString();
+  }
+}
 /// 📦 WIDGET EXTENSIONS (VERY USEFUL 🔥)
 extension WidgetExtension on Widget {
   Widget paddingAll(double value) {

@@ -1,5 +1,6 @@
 import 'package:bigreminder/screens/auth/login_screen.dart';
 import 'package:bigreminder/screens/business/business_main.dart';
+import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +12,7 @@ import '../../screens/super_admin/bottom_nav_screens/super_admin_main.dart';
 import 'auth_gate.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
-  const AuthGate({super.key});
+  const AuthGate({super.key,});
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -35,9 +36,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
 
-    if (!_ready || state.isLoading) {
+    if (!_ready) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -47,7 +50,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       if (user.isSuperAdmin) {
         return const SuperAdminMain();
       } else {
-        return const BusinessMain();
+        return BusinessMain();
       }
     }
 

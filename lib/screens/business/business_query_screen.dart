@@ -1,3 +1,4 @@
+import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/business/business_provider.dart';
@@ -32,96 +33,46 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
   }
 
   Future<void> _submitQuery() async {
-    final message =
-    _messageController.text.trim();
+    final message = _messageController.text.trim();
 
     if (message.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter your query',
-          ),
-        ),
-      );
+      CustomDialog.showErrorSnack(context, "Please enter your query");
       return;
     }
 
     try {
-      final token =
-      ref.read(tokenProvider);
+      final token = ref.read(tokenProvider);
 
-      final businessId =
-      ref.read(
-        businessIdProvider,
-      );
+      final businessId = ref.read(businessIdProvider);
 
-      print(
-        "================================",
-      );
-      print(
-        "CREATE QUERY",
-      );
-      print(
-        "MESSAGE => $message",
-      );
-      print(
-        "BUSINESS ID => $businessId",
-      );
-      print(
-        "TOKEN => ${token.substring(0, 20)}...",
-      );
-      print(
-        "================================",
-      );
+      print("================================");
+      print("CREATE QUERY");
+      print("MESSAGE => $message");
+      print("BUSINESS ID => $businessId");
+      print("TOKEN => ${token.substring(0, 20)}...");
+      print("================================");
 
       await ref
-          .read(
-        queryProvider.notifier,
-      )
-          .createQuery(
-        message: message,
-        businessId: businessId,
-        token: token,
-      );
+          .read(queryProvider.notifier)
+          .createQuery(message: message, businessId: businessId, token: token);
 
       if (!context.mounted) return;
 
       _messageController.clear();
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Query submitted successfully",
-          ),
-          backgroundColor:
-          Colors.green,
-        ),
-      );
+      CustomDialog.showSuccessSnack(context, "Query submitted successfully");
     } catch (e, st) {
-      debugPrint(
-        "CREATE QUERY ERROR => $e",
-      );
+      debugPrint("CREATE QUERY ERROR => $e");
 
-      debugPrint(
-        st.toString(),
-      );
+      debugPrint(st.toString());
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor:
-          Colors.red,
-          duration:
-          const Duration(
-            seconds: 5,
-          ),
-          content: Text(
-            e.toString(),
-          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          content: Text(e.toString()),
         ),
       );
     }
@@ -181,11 +132,9 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 
-    late final queryState =
-    ref.watch(queryProvider);
+    late final queryState = ref.watch(queryProvider);
 
-    late final queryList =
-    ref.watch(queryListProvider);
+    late final queryList = ref.watch(queryListProvider);
 
     ref.listen(queryProvider, (previous, next) {
       next.whenOrNull(
@@ -213,6 +162,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
           "Support Center",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
+            fontSize: 17,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
@@ -247,7 +197,9 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         width: 32,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -260,10 +212,14 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.2),
                             ),
                           ),
                           child: Icon(
@@ -279,17 +235,23 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                             children: [
                               Text(
                                 "New Support Query",
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 "Describe your issue in detail",
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
                               ),
                             ],
                           ),
@@ -308,21 +270,28 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                       ),
                       decoration: InputDecoration(
                         hintText: "Type your message here...",
-                        hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                        ),
+                        hintStyle: Theme.of(context).textTheme.bodyLarge
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.4),
+                            ),
                         filled: true,
                         fillColor: Theme.of(context).colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withOpacity(0.5),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withOpacity(0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -345,16 +314,24 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         onPressed: queryState.isLoading
                             ? null
                             : () async {
-                          await _submitQuery();
-                          if (mounted) {
-                            Navigator.pop(context);
-                          }
-                        },
+                                await _submitQuery();
+                                if (mounted) {
+                                  Navigator.pop(context);
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          disabledBackgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
-                          disabledForegroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
+                          disabledBackgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.12),
+                          disabledForegroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.38),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -362,20 +339,23 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         ),
                         child: queryState.isLoading
                             ? SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        )
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
+                              )
                             : Text(
-                          "Submit Query",
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white
-                          ),
-                        ),
+                                "Submit Query",
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                              ),
                       ),
                     ),
 
@@ -387,7 +367,10 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
           );
         },
         icon: const Icon(Icons.add_rounded, size: 25),
-        label: const Text("New Query",style: TextStyle(fontWeight: FontWeight.w600),),
+        label: const Text(
+          "New Query",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 4,
@@ -408,36 +391,6 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Info Banner
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            "Track your support requests and responses",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
                   // Header Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -452,9 +405,14 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                       ),
                       queryList.when(
                         data: (queries) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondaryContainer,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondaryContainer,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -463,15 +421,20 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                               Icon(
                                 Icons.question_answer_outlined,
                                 size: 14,
-                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 "${queries.length}",
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
                             ],
                           ),
@@ -500,31 +463,41 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.question_answer_outlined,
                                 size: 48,
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.6),
                               ),
                             ),
                             const SizedBox(height: 24),
                             Text(
                               "No Queries Yet",
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               "Tap the button below to create your first support query",
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                height: 1.4,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.6),
+                                    height: 1.4,
+                                  ),
                             ),
                           ],
                         ),
@@ -534,9 +507,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
 
                   return RefreshIndicator(
                     onRefresh: () async {
-                      await ref.refresh(
-                        queryListProvider.future,
-                      );
+                      await ref.refresh(queryListProvider.future);
                     },
                     color: Theme.of(context).colorScheme.primary,
                     backgroundColor: Theme.of(context).colorScheme.surface,
@@ -545,7 +516,10 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                       itemCount: queries.length,
                       itemBuilder: (context, index) {
                         final query = queries[index];
-                        final statusColor = _getStatusColor(query.status, context);
+                        final statusColor = _getStatusColor(
+                          query.status,
+                          context,
+                        );
                         final isLastItem = index == queries.length - 1;
 
                         return Padding(
@@ -563,7 +537,9 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.12),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline.withOpacity(0.12),
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -580,9 +556,13 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: statusColor.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
                                             border: Border.all(
-                                              color: statusColor.withOpacity(0.3),
+                                              color: statusColor.withOpacity(
+                                                0.3,
+                                              ),
                                             ),
                                           ),
                                           child: Row(
@@ -599,38 +579,48 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 query.status,
-                                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                  color: statusColor,
-                                                  fontWeight: FontWeight.w600,
-                                                  letterSpacing: 0.3,
-                                                ),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: statusColor,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      letterSpacing: 0.3,
+                                                    ),
                                               ),
                                             ],
                                           ),
                                         ),
-
                                       ],
                                     ),
                                     // Header Row
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 query.message,
-                                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                  height: 1.4,
-                                                ),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                      height: 1.4,
+                                                    ),
                                                 maxLines: 3,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               const SizedBox(height: 12),
-
                                             ],
                                           ),
                                         ),
@@ -644,50 +634,80 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                         width: double.infinity,
                                         padding: const EdgeInsets.all(14),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary.withOpacity(0.04),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.04),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border(
                                             left: BorderSide(
-                                              color: Theme.of(context).colorScheme.primary,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
                                               width: 3,
                                             ),
                                           ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.all(4),
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
                                                   decoration: BoxDecoration(
-                                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
                                                   ),
                                                   child: Icon(
                                                     Icons.reply_rounded,
                                                     size: 12,
-                                                    color: Theme.of(context).colorScheme.primary,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
                                                   "Admin Response",
-                                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                    fontWeight: FontWeight.w700,
-                                                    letterSpacing: 0.5,
-                                                  ),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .labelSmall
+                                                      ?.copyWith(
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 0.5,
+                                                      ),
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
                                               query.adminResponse,
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                                height: 1.5,
-                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.7),
+                                                    height: 1.5,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -717,7 +737,9 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -729,17 +751,19 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         const SizedBox(height: 20),
                         Text(
                           "Failed to load queries",
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Please check your connection and try again",
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.6),
+                              ),
                         ),
                         const SizedBox(height: 24),
                         FilledButton.icon(
@@ -747,7 +771,10 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text("Retry"),
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ],

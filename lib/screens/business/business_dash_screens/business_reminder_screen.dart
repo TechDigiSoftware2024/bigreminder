@@ -381,8 +381,7 @@ class _BusinessRemindersScreenState
     ).whenComplete(() => _resetForm());
   }
 
-  Future<void> _submit(
-      BuildContext sheetCtx, StateSetter setBottomSheetState) async {
+  Future<void> _submit(BuildContext sheetCtx, StateSetter setBottomSheetState) async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     // Update BOTH parent state and sheet state so button reacts
@@ -538,7 +537,7 @@ class _BusinessRemindersScreenState
       appBar: AppBar(
         title: const Text(
           'Reminders',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(fontWeight: FontWeight.w700,fontSize: 17),
         ),
         backgroundColor: primary,
         foregroundColor: Colors.white,
@@ -580,6 +579,7 @@ class _BusinessRemindersScreenState
             onRefresh: () async => ref.invalidate(reminderListProvider),
             color: primary,
             child: ListView.builder(
+              reverse: true,
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: reminders.length,
               itemBuilder: (ctx, i) => _ReminderCard(

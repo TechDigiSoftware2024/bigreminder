@@ -1,6 +1,8 @@
 import 'package:bigreminder/screens/business/business_dash_screens/business_calculator_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_reminder_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/customer_list_screen.dart';
+import 'package:bigreminder/screens/business/business_purchase_history.dart';
+import 'package:bigreminder/screens/business/business_query_screen.dart';
 import 'package:flutter/material.dart';
 import '../../utils/enum_classes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../models/business_models/business_dashboard_model.dart';
 import '../../providers/business/business_provider.dart';
 import 'business_dash_screens/add_expense_screen.dart';
 import 'business_dash_screens/add_income_screen.dart';
+import 'business_dash_screens/products_screen.dart';
 
 class BusinessHome extends ConsumerStatefulWidget {
   final AppType type;
@@ -36,7 +39,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     // }
 
     final dashboardAsync = ref.watch(dashboardProvider(businessId));
-
+    final queryList = ref.watch(queryListProvider);
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
 
@@ -47,6 +50,64 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
           businessName,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
+
+        actions: [
+          queryList.when(
+            data: (queries) {
+              final openCount = queries.where((q) {
+                final status = q.status.toLowerCase().trim();
+
+                return status != 'resolved' &&
+                    status != 'completed' &&
+                    status != 'closed';
+              }).length;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BusinessQueryScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      size: 26,
+                    ),
+                  ),
+
+                  if (openCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          openCount > 9 ? '9+' : '$openCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+            loading: () => const SizedBox(),
+            error: (_, __) => const SizedBox(),
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
 
       body: dashboardAsync.when(
@@ -71,13 +132,19 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
-        ref.invalidate(dashboardProvider(businessId));
-        ref.invalidate(customerProvider);
+        print("REFRESH START");
 
-        await Future.wait([
-          ref.read(dashboardProvider(businessId).future),
-          ref.read(customerProvider.future),
-        ]);
+        final currentBusinessId = ref.read(businessIdProvider);
+
+        final dashboard = await ref.refresh(
+          dashboardProvider(currentBusinessId).future,
+        );
+
+        print(dashboard.totalIncomeValue);
+
+        await ref.refresh(customerProvider.future);
+
+        print("REFRESH END");
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -88,102 +155,60 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
               /// ================= REVENUE CARD =================
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: primary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withOpacity(.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    /// 🔵 REVENUE
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Revenue",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "₹${data.totalIncomeValue.toStringAsFixed(0)}",
-                            overflow: TextOverflow.visible,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      child: _metricItem(
+                        title: "Revenue",
+                        amount: data.totalIncomeValue,
+                        growth: data.revenueGrowthPercentValue,
                       ),
                     ),
 
-                    /// DIVIDER
                     Container(
-                      height: 45,
+                      height: 55,
                       width: 1,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withOpacity(.25),
                     ),
 
-                    /// 🟠 EXPENSE
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Expenses",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "₹${data.totalExpensesValue.toStringAsFixed(0)}",
-                            overflow: TextOverflow.visible,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                      child: _metricItem(
+                        title: "Expenses",
+                        amount: data.totalExpensesValue,
+                        growth: data.expenseGrowthPercentValue,
                       ),
                     ),
 
-                    /// DIVIDER
                     Container(
-                      height: 45,
+                      height: 55,
                       width: 1,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withOpacity(.25),
                     ),
 
-                    /// 🟢 NET
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            data.netValue >= 0 ? "Net Profit" : "Net Loss",
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "₹${data.netValue.toStringAsFixed(0)}",
-                            overflow: TextOverflow.visible,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      child: _metricItem(
+                        title: data.netValue >= 0 ? "Profit" : "Loss",
+                        amount: data.netValue.abs(),
+                        growth: data.profitGrowthPercentValue,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               /// ================= METRICS =================
               GridView.count(
@@ -205,167 +230,196 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => CustomerListScreen(type: widget.type),
-                        ),
+                        MaterialPageRoute(builder: (_) => CustomerListScreen()),
                       );
                     },
                   ),
 
                   _MetricCard(
                     title: "Pending Amount",
-                    value: "₹6520",
+                    value:
+                        "₹${data.grandTotalPendingAmountValue.toStringAsFixed(0)}",
                     icon: Icons.account_balance_wallet_rounded,
-                  ),
-
-                  _MetricCard(
-                    title: "Current Plan",
-                    value: "Free" ?? "Active Plan",
-                    icon: Icons.workspace_premium_rounded,
-                  ),
-
-                  _MetricCard(
-                    title: "Monthly Growth",
-                    value: "+92%",
-                    icon: Icons.trending_up,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BusinessPurchaseHistoryScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              /// ================= QUICK ACTIONS =================
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Quick Actions",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-
               const SizedBox(height: 6),
 
-              Column(
-                children: [
-                  // Row 1
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionBtn(
-                          bgColor: Colors.white,
-                          title: actions[0],
-                          icon: Icons.person_add,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    CustomerListScreen(type: widget.type),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _ActionBtn(
-                          bgColor: Colors.white,
-                          title: actions[1],
-                          icon: Icons.payment,
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AddIncomeScreen(),
-                              ),
-                            );
-                            if (result == true) {
-                              await ref.refresh(
-                                dashboardProvider(businessId).future,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ],
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: Colors.grey.shade200,
                   ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
-                  const SizedBox(height: 8),
+                    const Text(
+                      "Quick Actions",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
 
-                  // Row 2
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionBtn(
-                          bgColor: Colors.white,
-                          title: actions[2],
-                          icon: Icons.receipt_long,
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AddExpenseScreen(),
-                              ),
-                            );
-                            if (result == true) {
-                              await ref.refresh(
-                                dashboardProvider(businessId).future,
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionBtn(
+                            bgColor: Colors.grey.shade50,
+                            title: actions[0],
+                            icon: Icons.person_add_alt_1_rounded,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CustomerListScreen(),
+                                ),
                               );
-                            }
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _ActionBtn(
-                          bgColor: Colors.white,
-                          title: actions[3],
-                          icon: Icons.calculate_outlined,
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const BusinessCalculatorScreen(),
-                              ),
-                            );
-                            if (result == true) {
-                              await ref.refresh(
-                                dashboardProvider(businessId).future,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionBtn(
+                            bgColor: Colors.grey.shade50,
+                            title: actions[1],
+                            icon: Icons.payments_rounded,
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AddIncomeScreen(),
+                                ),
                               );
-                            }
-                          },
+
+                              if (result == true) {
+                                ref.refresh(dashboardProvider(businessId).future);
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _ActionBtn(
-                          bgColor: primary.withOpacity(0.08),
-                          title: "Send Reminder to Customer",
-                          icon: Icons.notifications_on_outlined,
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const BusinessRemindersScreen(),
-                              ),
-                            );
-                            if (result == true) {
-                              await ref.refresh(
-                                dashboardProvider(businessId).future,
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionBtn(
+                            bgColor: Colors.grey.shade50,
+                            title: actions[2],
+                            icon: Icons.receipt_long_rounded,
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AddExpenseScreen(),
+                                ),
                               );
-                            }
-                          },
+
+                              if (result == true) {
+                                ref.refresh(dashboardProvider(businessId).future);
+                              }
+                            },
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionBtn(
+                            bgColor: Colors.grey.shade50,
+                            title: actions[3],
+                            icon: Icons.calculate_rounded,
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const BusinessCalculatorScreen(),
+                                ),
+                              );
+
+                              if (result == true) {
+                                ref.refresh(dashboardProvider(businessId).future);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionBtn(
+                            bgColor: Colors.grey.shade50,
+                            title: "Products",
+                            icon: Icons.inventory_2_rounded,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ProductScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: primary.withOpacity(.08),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                    ],
-                  ),
-                ],
+                      child: _ActionBtn(
+                        bgColor: Colors.transparent,
+                        title: "Send Reminder to Customer",
+                        icon: Icons.notifications_active_outlined,
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BusinessRemindersScreen(),
+                            ),
+                          );
+
+                          if (result == true) {
+                            ref.refresh(dashboardProvider(businessId).future);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 30),
             ],
@@ -374,6 +428,70 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       ),
     );
   }
+}
+
+Widget _metricItem({
+  required String title,
+  required double amount,
+  required double growth,
+}) {
+  final isPositive = growth >= 0;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          "₹${amount.toStringAsFixed(0)}",
+          maxLines: 4,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        if (growth != 0)
+          Row(
+            children: [
+              Icon(
+                isPositive
+                    ? Icons.trending_up_rounded
+                    : Icons.trending_down_rounded,
+                size: 14,
+                color: isPositive ? Colors.white : Colors.white,
+              ),
+
+              const SizedBox(width: 4),
+
+              Text(
+                "${isPositive ? '+' : ''}${growth.toStringAsFixed(1)}%",
+                style: TextStyle(
+                  color: isPositive ? Colors.white : Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+      ],
+    ),
+  );
 }
 
 /// ================= METRIC CARD =================
@@ -445,7 +563,12 @@ class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
 
-  const _ActionBtn({required this.title, required this.icon, this.onTap,required this.bgColor});
+  const _ActionBtn({
+    required this.title,
+    required this.icon,
+    this.onTap,
+    required this.bgColor,
+  });
 
   @override
   Widget build(BuildContext context) {

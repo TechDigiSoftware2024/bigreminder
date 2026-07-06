@@ -32,34 +32,11 @@ class CustomBottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildItem(Icons.home_rounded, labels[0], 0, context),
-            _buildItem(Icons.wallet_rounded, labels[1], 1, context),
-
-            // ✅ CENTER BUTTON (NO SELECTION STATE)
-            GestureDetector(
-              onTap: () => onTap(2),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 26),
-              ),
-            ),
-
-            _buildItem(Icons.bar_chart_rounded, labels[3], 3, context),
-            _buildItem(Icons.person_rounded, labels[4], 4, context),
+            _buildItem(Icons.home, labels[0], 0, context),
+            _buildItem(Icons.history, labels[1], 1, context),
+            _buildItem(Icons.shopping_bag, labels[2], 2, context),
+            _buildItem(Icons.notifications, labels[3], 3, context),
+            _buildItem(Icons.person, labels[4], 4, context),
           ],
         ),
       ),

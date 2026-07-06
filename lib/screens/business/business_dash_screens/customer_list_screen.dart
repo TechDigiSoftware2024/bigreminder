@@ -1,20 +1,23 @@
+import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/services/business/business_service.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../models/business_models/business_customer_req_model.dart';
+import '../../../models/business_models/customer_list_model.dart';
+import '../../../providers/business/business_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/enum_classes.dart';
 
-class CustomerListScreen extends StatefulWidget {
-  final AppType type;
-
-  const CustomerListScreen({super.key, required this.type});
+class CustomerListScreen extends ConsumerStatefulWidget {
+  const CustomerListScreen({super.key});
 
   @override
-  State<CustomerListScreen> createState() => _CustomerListScreenState();
+  ConsumerState<CustomerListScreen> createState() => _CustomerListScreenState();
 }
 
-class _CustomerListScreenState extends State<CustomerListScreen> {
+class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   List<dynamic> customers = [];
   bool isLoading = true;
 
@@ -59,21 +62,21 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final type = ref.watch(appTypeProvider);
     final primary = Theme.of(context).colorScheme.primary;
-    final metrics = DashboardText.metrics(widget.type);
+    final metrics = DashboardText.metrics(type);
     final customerLabel = metrics[0];
 
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
-
       appBar: AppBar(
         backgroundColor: primary,
         title: Text(
           customerLabel,
           style: const TextStyle(
             color: AppColors.appBarText,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
           ),
         ),
       ),
@@ -106,7 +109,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: "Search customer...",
+                        hintText: DashboardText.searchBarTitle(type),
                         hintStyle: TextStyle(color: Colors.grey.shade500),
                         prefixIcon: Icon(Icons.search_rounded, color: primary),
                         suffixIcon: searchQuery.isNotEmpty
@@ -217,11 +220,15 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                   ),
                                 ),
 
-                                trailing:
-                                    (double.tryParse(c.pendingAmount) ?? 0) > 0
-                                    ? Container(
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if ((double.tryParse(c.pendingAmount) ??
+                                            0) >
+                                        0)
+                                      Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
+                                          horizontal: 10,
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
@@ -238,8 +245,153 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                             fontSize: 12,
                                           ),
                                         ),
-                                      )
-                                    : null,
+                                      ),
+
+                                    PopupMenuButton<String>(
+                                      tooltip: "More",
+                                      elevation: 8,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      position: PopupMenuPosition.under,
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.more_vert_rounded,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case "edit":
+                                            _showEditCustomerDialog(c,type);
+                                            break;
+
+                                          case "delete":
+                                            final pendingAmount =
+                                                double.tryParse(
+                                                  c.pendingAmount,
+                                                ) ??
+                                                0;
+
+                                            if (pendingAmount > 0) {
+                                              CustomDialog.showErrorSnack(
+                                                context,
+                                                "Clear pending amount first before deleting customer.",
+                                              );
+                                              return;
+                                            }
+
+                                            CustomDialog.showConfirmDialog(
+                                              context: context,
+                                              title: "Delete Customer",
+                                              message:
+                                                  "Are you sure you want to delete ${c.name}?",
+                                              onConfirm: () async {
+                                                try {
+                                                  await ref
+                                                      .read(
+                                                        businessRepositoryProvider,
+                                                      )
+                                                      .deleteCustomer(c.id);
+
+                                                  await _fetchCustomers();
+
+                                                  if (context.mounted) {
+                                                    CustomDialog.showSuccessSnack(
+                                                      context,
+                                                      "Customer deleted successfully.",
+                                                    );
+                                                  }
+                                                } catch (e) {
+                                                  if (context.mounted) {
+                                                    CustomDialog.showErrorSnack(
+                                                      context,
+                                                      e.toString(),
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                            );
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem<String>(
+                                          value: "edit",
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue
+                                                      .withOpacity(0.08),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.edit_rounded,
+                                                  color: Colors.blue,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              const Text(
+                                                "Edit",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+
+                                        PopupMenuDivider(),
+
+                                        PopupMenuItem<String>(
+                                          value: "delete",
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.withOpacity(
+                                                    0.08,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.delete_rounded,
+                                                  color: Colors.red,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              const Text(
+                                                "Delete",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
 
                                 childrenPadding: const EdgeInsets.fromLTRB(
                                   16,
@@ -322,6 +474,233 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         onPressed: () => _showAddCustomerDialog(context),
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+
+  Future<void> _showEditCustomerDialog(CustomerResponseModel customer, AppType type) async {
+    final nameCtrl = TextEditingController(text: customer.name);
+    final phoneCtrl = TextEditingController(text: customer.phone);
+    final emailCtrl = TextEditingController(text: customer.email);
+
+    String selectedGender = customer.gender;
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(.1),
+                        child: Text(
+                          customer.name.isNotEmpty
+                              ? customer.name[0].toUpperCase()
+                              : "?",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      const Text(
+                        "Edit Customer",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      TextField(
+                        controller: nameCtrl,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          labelText: DashboardText.customerName(type),
+                          prefixIcon: const Icon(Icons.person_outline),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          labelText: "Phone Number",
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      TextField(
+                        controller: emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          labelText: "Email",
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text("Male"),
+                              selected: selectedGender == "male",
+                              onSelected: (_) {
+                                setDialogState(() {
+                                  selectedGender = "male";
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text("Female"),
+                              selected: selectedGender == "female",
+                              onSelected: (_) {
+                                setDialogState(() {
+                                  selectedGender = "female";
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        height: 42,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                child: const Text("Cancel"),
+                              ),
+                            ),
+
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: isLoading ? null : () async {
+                                try {
+                                  if (nameCtrl.text.trim().isEmpty) {
+                                    CustomDialog.showErrorSnack(
+                                      context,
+                                      "Customer name required",
+                                    );
+                                    return;
+                                  }
+
+                                  setDialogState(() {
+                                    isLoading = true;
+                                  });
+
+                                  final request = UpdateCustomerRequestModel(
+                                    name: nameCtrl.text.trim(),
+                                    phone: phoneCtrl.text.trim(),
+                                    gender: selectedGender,
+                                    email: emailCtrl.text.trim(),
+                                    fcmToken: "",
+                                    pendingAmount:
+                                    double.tryParse(
+                                      customer.pendingAmount,
+                                    ) ??
+                                        0,
+                                  );
+
+                                  await ref
+                                      .read(businessRepositoryProvider)
+                                      .updateCustomer(
+                                    customerId: customer.id,
+                                    request: request,
+                                  );
+
+                                  await _fetchCustomers();
+
+                                  if (!context.mounted) return;
+
+                                  Navigator.pop(dialogContext);
+
+                                  CustomDialog.showSuccessSnack(
+                                    this.context,
+                                    "Customer updated successfully",
+                                  );
+                                } catch (e) {
+                                  setDialogState(() {
+                                    isLoading = false;
+                                  });
+
+                                  CustomDialog.showErrorSnack(
+                                    context,
+                                    e.toString(),
+                                  );
+                                }
+                              },
+                              child: isLoading
+                                  ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                                  : const Text("Update"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

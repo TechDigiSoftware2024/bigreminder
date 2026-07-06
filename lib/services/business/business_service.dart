@@ -4,13 +4,18 @@ import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/super_admin_models/create_business_model.dart';
+import 'package:bigreminder/services/business/receive_payment_service.dart' as service;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../../api_config/api_config.dart';
+import '../../models/business_models/BusinessMonthlyGrowthModel.dart';
 import '../../models/business_models/business_create_expense_model.dart';
+import '../../models/business_models/business_customer_req_model.dart';
 import '../../models/business_models/business_income_req_model.dart';
 import '../../models/business_models/notification_req_model.dart';
+import '../../models/business_models/receive_payment_request_model.dart';
+import '../../models/business_models/receive_payment_response_model.dart';
 import '../../models/super_admin_models/business_list_model.dart';
 import '../../models/super_admin_models/create_business_request_model.dart';
 import '../../providers/business/business_provider.dart';
@@ -72,6 +77,7 @@ class BusinessService {
     }
   }
 
+
   Future<Map<String, dynamic>> fetchDashboard({
     required String token,
     required int businessId,
@@ -96,7 +102,73 @@ class BusinessService {
       throw Exception("Dashboard fetch failed");
     }
   }
+  Future<BusinessMonthlyGrowthModel>
+  fetchBusinessTrends({
+    required String token,
+    required int businessId,
+    required int months,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        ApiConfig.businessTrends(
+          businessId,
+          months,
+        ),
+      ),
+      headers: ApiConfig.headers(
+        token: token,
+      ),
+    );
 
+    if (response.statusCode == 200) {
+      return BusinessMonthlyGrowthModel.fromJson(
+        jsonDecode(response.body),
+      );
+    }
+
+    throw Exception(
+      "Failed to fetch trends",
+    );
+  }
+  Future<ReceivePaymentResponse> receivePayment({
+    required ReceivePaymentRequest request,
+    required String token,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+          ApiConfig.recordPayment(
+            request.purchaseId,
+          ),
+        ),
+        headers: ApiConfig.headers(
+          token: token,
+        ),
+        body: jsonEncode({
+          "received_amount":
+          request.receivedAmount,
+        }),
+      );
+
+      final data =
+      jsonDecode(response.body);
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 201) {
+        return ReceivePaymentResponse
+            .fromJson(data);
+      }
+
+      throw Exception(
+        data["message"] ??
+            "Failed to record payment",
+      );
+    } catch (e) {
+      throw Exception(
+        "Receive Payment Error: $e",
+      );
+    }
+  }
   Future<BusinessModel> createBusinessApi({
     required String token,
     required CreateBusinessRequestModel model,
@@ -138,7 +210,34 @@ class BusinessService {
       throw Exception("Error: ${response.statusCode}");
     }
   }
+  Future<CustomerResponseModel> getCustomerById({
+    required String token,
+    required int customerId,
+  }) async {
+    final uri = Uri.parse("${ApiConfig.baseUrl}${ApiConfig.addCustomer}/$customerId");
 
+    final response = await http.get(
+      uri,
+      headers: ApiConfig.headers(token: token),
+    );
+
+    print("Status Code: ${response.statusCode}");
+    print("Response: ${response.body}");
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body);
+      // Some APIs wrap the object in {"success":true,"data":{...}} —
+      // handle both shapes safely.
+      final data = decoded is Map && decoded.containsKey('data')
+          ? decoded['data']
+          : decoded;
+      return CustomerResponseModel.fromJson(data);
+    }
+
+    throw Exception(
+      "Failed to load customer (${response.statusCode}): ${response.body}",
+    );
+  }
   Future<List<CustomerResponseModel>> fetchCustomers({
     required String token,
     required int businessId,
@@ -183,7 +282,77 @@ class BusinessService {
       throw e.toString();
     }
   }
+  Future<String> updateCustomer({
+    required String token,
+    required int customerId,
+    required UpdateCustomerRequestModel request,
+  }) async {
+    try {
+      final response = await http.patch(
+        Uri.parse(
+          "${ApiConfig.baseUrl}/api/v1/customers/$customerId",
+        ),
+        headers: ApiConfig.headers(token: token),
+        body: jsonEncode(request.toJson()),
+      );
 
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data["message"] ??
+            "Customer updated successfully";
+      }
+
+      throw data["detail"] ??
+          data["message"] ??
+          "Failed to update customer";
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+  Future<void> deleteCustomer({
+    required String token,
+    required int customerId,
+  }) async {
+    try {
+      final url = Uri.parse(
+        "${ApiConfig.baseUrl}/api/v1/customers/$customerId",
+      );
+
+      final response = await http.delete(
+        url,
+        headers: ApiConfig.headers(token: token),
+      );
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 204) {
+        return;
+      }
+
+      switch (response.statusCode) {
+        case 401:
+          throw "Session expired. Please login again.";
+
+        case 403:
+          throw "You don't have permission to delete this customer.";
+
+        case 404:
+          throw "Customer not found.";
+
+        case 500:
+          throw "Server error. Try again later.";
+
+        default:
+          throw "Unable to delete customer.";
+      }
+    } catch (e) {
+      if (e.toString().contains("SocketException")) {
+        throw "No internet connection.";
+      }
+
+      throw e.toString();
+    }
+  }
   Future<void> addCustomer({
     required int businessId,
     required String name,
