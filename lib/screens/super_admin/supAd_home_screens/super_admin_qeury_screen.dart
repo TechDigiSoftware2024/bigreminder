@@ -1,3 +1,4 @@
+import 'package:bigreminder/services/business/business_service.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,7 @@ class SuperAdminQueryScreen extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
             color: Colors.white,
+            fontSize: 17
           ),
         ),
         centerTitle: false,
@@ -137,8 +139,8 @@ class SuperAdminQueryScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -310,8 +312,8 @@ class SuperAdminQueryScreen extends ConsumerWidget {
                               child: Text(
                                 "Reply to Query",
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -522,12 +524,12 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: BorderRadius.circular(14),
@@ -551,7 +553,7 @@ class _StatCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: textColor,
-                letterSpacing: -0.5,
+                fontSize: 18,
               ),
             ),
           ),
@@ -581,7 +583,6 @@ class _QueryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOpen = query.status.toLowerCase() == "open";
     final statusColor = isOpen ? Colors.orange : Colors.green;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -591,7 +592,7 @@ class _QueryCard extends StatelessWidget {
           onTap: () {},
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               border: Border.all(
                 color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
@@ -616,8 +617,8 @@ class _QueryCard extends StatelessWidget {
                     Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 6,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
@@ -654,12 +655,12 @@ class _QueryCard extends StatelessWidget {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                          horizontal: 6,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: Colors.red.withOpacity(0.3),
                           ),
@@ -696,7 +697,7 @@ class _QueryCard extends StatelessWidget {
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.onSurface,
-                                  height: 1.4,
+                              fontSize: 13
                                 ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
@@ -712,7 +713,7 @@ class _QueryCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.04),
                       borderRadius: BorderRadius.circular(12),
@@ -767,7 +768,7 @@ class _QueryCard extends StatelessWidget {
 
                 // Reply Button
                 if (isOpen) ...[
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
                     child: ElevatedButton.icon(
@@ -781,8 +782,8 @@ class _QueryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                          horizontal: 12,
+                          vertical: 4,
                         ),
                       ),
                     ),

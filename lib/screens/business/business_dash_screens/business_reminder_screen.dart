@@ -211,6 +211,7 @@ class _BusinessRemindersScreenState
                         style: tt.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface,
+                          fontSize: 16
                         ),
                       ),
                     ],

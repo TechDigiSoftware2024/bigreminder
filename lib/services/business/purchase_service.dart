@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../api_config/api_config.dart';
 import '../../models/business_models/business_purchase_list_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
+import '../../models/business_models/create_purchase_response_model.dart';
 
 class PurchaseService {
   Future<List<PurchaseModel>> getPurchases({
@@ -61,46 +62,82 @@ debugPrint("RESPONSE BODY:${response.body}");
       );
     }
   }
-  static Future<String> createPurchase({
+  // static Future<String> createPurchase({
+  //   required String token,
+  //   required CreatePurchaseModel model,
+  // }) async {
+  //
+  //   try {
+  //
+  //     final response = await http.post(
+  //       ApiConfig.url(ApiConfig.purchases),
+  //
+  //       headers: ApiConfig.headers(token: token),
+  //
+  //       body: jsonEncode(model.toJson()),
+  //     );
+  //
+  //     final data = jsonDecode(response.body);
+  //
+  //     /// 🔥 SUCCESS
+  //     if (response.statusCode == 200 ||
+  //         response.statusCode == 201) {
+  //
+  //       return data["message"] ?? "Purchase created successfully";
+  //     }
+  //
+  //     /// 🔥 API ERROR
+  //     throw Exception(
+  //       data["detail"] ??
+  //           data["message"] ??
+  //           "Failed to create purchase",
+  //     );
+  //
+  //   } on SocketException {
+  //     throw Exception("No internet connection");
+  //
+  //   } on HttpException {
+  //     throw Exception("Server error");
+  //
+  //   } on FormatException {
+  //     throw Exception("Invalid server response");
+  //
+  //   } catch (e) {
+  //     throw Exception(e.toString());
+  //   }
+  // }
+
+  static Future<CreatePurchaseResponseModel> createPurchase({
     required String token,
     required CreatePurchaseModel model,
   }) async {
-
     try {
-
       final response = await http.post(
         ApiConfig.url(ApiConfig.purchases),
-
         headers: ApiConfig.headers(token: token),
-
         body: jsonEncode(model.toJson()),
       );
 
       final data = jsonDecode(response.body);
 
-      /// 🔥 SUCCESS
-      if (response.statusCode == 200 ||
-          response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Handles both a bare bill object and one wrapped in "data".
+        final billJson = (data is Map && data['data'] is Map)
+            ? data['data'] as Map<String, dynamic>
+            : data as Map<String, dynamic>;
 
-        return data["message"] ?? "Purchase created successfully";
+        return CreatePurchaseResponseModel.fromJson(billJson);
       }
 
-      /// 🔥 API ERROR
       throw Exception(
-        data["detail"] ??
-            data["message"] ??
-            "Failed to create purchase",
+        data["detail"] ?? data["message"] ?? "Failed to create purchase",
       );
-
     } on SocketException {
       throw Exception("No internet connection");
-
     } on HttpException {
       throw Exception("Server error");
-
     } on FormatException {
       throw Exception("Invalid server response");
-
     } catch (e) {
       throw Exception(e.toString());
     }

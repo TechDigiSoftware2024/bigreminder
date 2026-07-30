@@ -2,6 +2,7 @@ import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/services/business/business_service.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/business_models/business_customer_req_model.dart';
@@ -87,7 +88,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               children: [
                 /// Search Bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -160,6 +161,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         itemCount: filteredCustomers.length,
                         itemBuilder: (_, i) {
                           final c = filteredCustomers[i];
+                          debugPrint(c.id.toString());
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 6),
@@ -216,7 +218,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                                   c.name,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: 14,
                                   ),
                                 ),
 
@@ -242,7 +244,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                                           style: const TextStyle(
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
-                                            fontSize: 12,
+                                            fontSize: 11,
                                           ),
                                         ),
                                       ),
@@ -431,7 +433,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                                   const SizedBox(height: 12),
 
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       if (c.gender.isNotEmpty)
                                         Container(
@@ -748,7 +750,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               ),
               title: const Text(
                 "Add Customer",
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(fontWeight: FontWeight.w700,fontSize: 16),
               ),
 
               content: SizedBox(
@@ -774,10 +776,14 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
                       const SizedBox(height: 14),
 
-                      /// Phone (Required)
                       TextField(
                         controller: phoneController,
-                        keyboardType: TextInputType.phone,
+                        keyboardType: TextInputType.number,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: InputDecoration(
                           hintText: "Phone Number *",
                           prefixIcon: const Icon(Icons.phone_outlined),
@@ -819,7 +825,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         ),
                         child: Row(
                           children: [
-                            /// Male
+                            /// Male 
                             Expanded(
                               child: GestureDetector(
                                 onTap: () {

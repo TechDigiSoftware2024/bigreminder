@@ -161,7 +161,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
         title: Text(
           "Support Center",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             fontSize: 17,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
@@ -210,7 +210,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: Theme.of(
                               context,
@@ -237,13 +237,13 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                 "New Support Query",
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.onSurface,
-                                    ),
+                                    )
                               ),
-                              const SizedBox(height: 2),
                               Text(
                                 "Describe your issue in detail",
                                 style: Theme.of(context).textTheme.bodySmall
@@ -269,7 +269,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
-                        hintText: "Type your message here...",
+                        hintText: "Type or Paste your message here...",
                         hintStyle: Theme.of(context).textTheme.bodyLarge
                             ?.copyWith(
                               color: Theme.of(
@@ -309,7 +309,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
 
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 45,
                       child: ElevatedButton(
                         onPressed: queryState.isLoading
                             ? null
@@ -401,6 +401,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 18
                         ),
                       ),
                       queryList.when(
@@ -461,7 +462,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(24),
+                              padding: const EdgeInsets.all(22),
                               decoration: BoxDecoration(
                                 color: Theme.of(
                                   context,
@@ -487,7 +488,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
                                     ).colorScheme.onSurface,
                                   ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               "Tap the button below to create your first support query",
                               textAlign: TextAlign.center,

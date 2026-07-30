@@ -114,6 +114,30 @@ static String searchBarTitle(AppType type) {
         return "Search...";
     }
   }
+
+  static String prsSearchCustomer(AppType type) {
+    switch (type) {
+      case AppType.gym:
+        return "Search Or Enter Member Name";
+      case AppType.shop:
+        return "Search Or Enter Customer Name";
+      case AppType.institute:
+        return "Search Or Enter Student Name";
+      case AppType.salon:
+        return "Search Or Enter Customer Name";
+      case AppType.hospital:
+        return "Search Or Enter Patient Name";
+      case AppType.restaurant:
+        return "Search Or Enter Customer Name";
+      case AppType.finance:
+        return "Search Or Enter Client Name";
+      case AppType.realEstate:
+        return "Search Or Enter Client Name";
+      case AppType.generic:
+        return "Search Or Enter Name...";
+    }
+  }
+
   static String customerName(AppType type) {
     switch (type) {
       case AppType.gym:

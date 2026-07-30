@@ -1,6 +1,4 @@
-import 'package:bigreminder/screens/business/business_dash_screens/customer_list_screen.dart';
-import 'package:bigreminder/screens/business/business_purchase_history.dart';
-import 'package:bigreminder/services/business/add_product_service.dart';
+import 'package:bigreminder/screens/business/receipt_preview_screen.dart';
 import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +8,7 @@ import '../../models/business_models/create_item_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/customer_list_model.dart';
 import '../../providers/business/business_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/business/business_service.dart';
 import '../../widgets/custom_dialog.dart';
 
@@ -26,8 +25,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
   final itemNameCtrl = TextEditingController();
   final itemBarCodeCtrl = TextEditingController();
+  final productGSTCtrl = TextEditingController();
   final itemPriceCtrl = TextEditingController();
-  final itemQtyCtrl = TextEditingController(text: "1");
+  final itemQtyCtrl = TextEditingController();
 
   /// This field now doubles as both the search box AND the
   /// new-customer name field.
@@ -62,6 +62,8 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
   double totalAmount = 0;
   double pendingAmount = 0;
+  double subtotalAmount = 0;
+  double totalGstAmount = 0;
 
   @override
   void initState() {
@@ -124,25 +126,33 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
   }
 
   void calculateAmounts(BuildContext context) {
-    totalAmount = items.fold(
+    subtotalAmount = items.fold<double>(
       0,
-          (sum, e) => sum + ((e["price"] as double) * (e["quantity"] as int)),
+      (sum, e) => sum + (e["line_subtotal"] as double),
+    );
+
+    totalGstAmount = items.fold<double>(
+      0,
+      (sum, e) => sum + (e["gst_amount"] as double),
+    );
+
+    totalAmount = items.fold<double>(
+      0,
+      (sum, e) => sum + (e["line_total"] as double),
     );
 
     final paid = double.tryParse(paidCtrl.text) ?? 0;
 
     if (paid > totalAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Paid amount can't exceed total amount"),
           backgroundColor: Colors.red,
         ),
       );
 
       paidCtrl.clear();
-
       pendingAmount = totalAmount;
-
       return;
     }
 
@@ -152,45 +162,65 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
   /// Reads the current product list from the provider safely,
   /// regardless of loading/error state.
   List<ProductModel> _currentProducts() {
-    return ref.read(productProvider).maybeWhen(
-      data: (value) => value,
-      orElse: () => <ProductModel>[],
-    );
+    return ref
+        .read(productProvider)
+        .maybeWhen(data: (value) => value, orElse: () => <ProductModel>[]);
   }
 
   void addItem() {
     if (itemNameCtrl.text.trim().isEmpty) {
+      CustomDialog.showErrorSnack(context, "Enter item name");
       return;
     }
 
-    final price = double.tryParse(itemPriceCtrl.text) ?? 0;
-    final qty = int.tryParse(itemQtyCtrl.text) ?? 1;
+    final price = double.tryParse(itemPriceCtrl.text.trim()) ?? 0;
+    final qty = int.tryParse(itemQtyCtrl.text.trim()) ?? 1;
+
+    if (price <= 0) {
+      CustomDialog.showErrorSnack(context, "Enter a valid price");
+      return;
+    }
 
     if (qty <= 0) {
       CustomDialog.showErrorSnack(context, "Enter a valid quantity");
       return;
     }
 
+    final products = _currentProducts();
+
+    double? gstPercent = 0;
+
+    // Product selected from catalog
     if (selectedProductId != null) {
-      final products = _currentProducts();
-      final matched =
-      products.where((p) => p.id == selectedProductId).toList();
-      if (matched.isNotEmpty && qty > matched.first.stock) {
-        CustomDialog.showErrorSnack(
-          context,
-          "Only ${matched.first.stock} in stock",
-        );
+      final product = products.firstWhere((p) => p.id == selectedProductId);
+
+      if (qty > product.stock) {
+        CustomDialog.showErrorSnack(context, "Only ${product.stock} in stock");
         return;
       }
+
+      gstPercent = (product.gst_percent?.toDouble() ?? 0);
     }
+    // Manual Item
+    else {
+      gstPercent = double.tryParse(productGSTCtrl.text.trim()) ?? 0;
+    }
+
+    final lineSubtotal = price * qty;
+    final gstAmount = lineSubtotal * gstPercent! / 100;
+    final lineTotal = lineSubtotal + gstAmount;
 
     setState(() {
       items.add({
-        "productId": selectedProductId,
+        "productId": selectedProductId ?? 0,
         "name": itemNameCtrl.text.trim(),
         "price": price,
         "quantity": qty,
-        "total": price * qty,
+        "barcode": itemBarCodeCtrl.text.trim(),
+        "gst_percent": gstPercent,
+        "gst_amount": gstAmount,
+        "line_subtotal": lineSubtotal,
+        "line_total": lineTotal,
       });
 
       calculateAmounts(context);
@@ -199,10 +229,75 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
       itemPriceCtrl.clear();
       itemQtyCtrl.text = "1";
       itemBarCodeCtrl.clear();
+      productGSTCtrl.clear();
+
       itemSearchQuery = "";
       selectedProductId = null;
     });
   }
+  // void addItem() {
+  //   if (itemNameCtrl.text
+  //       .trim()
+  //       .isEmpty) {
+  //     return;
+  //   }
+  //
+  //   final price = double.tryParse(itemPriceCtrl.text) ?? 0;
+  //   final qty = int.tryParse(itemQtyCtrl.text) ?? 1;
+  //
+  //   if (qty <= 0) {
+  //     CustomDialog.showErrorSnack(context, "Enter a valid quantity");
+  //     return;
+  //   }
+  //
+  //   if (selectedProductId != null) {
+  //     final products = _currentProducts();
+  //     final matched = products.where((p) => p.id == selectedProductId).toList();
+  //     if (matched.isNotEmpty && qty > matched.first.stock) {
+  //       CustomDialog.showErrorSnack(
+  //         context,
+  //         "Only ${matched.first.stock} in stock",
+  //       );
+  //       return;
+  //     }
+  //   }
+  //
+  //   final products = _currentProducts();
+  //   final product = products.firstWhere(
+  //         (p) => p.id == selectedProductId,
+  //   );
+  //
+  //   final gstPercent = product.gst_percent ?? 0;
+  //
+  //   final lineSubtotal = price * qty;
+  //   final gstAmount = lineSubtotal * gstPercent / 100;
+  //   final lineTotal = lineSubtotal + gstAmount;
+  //
+  //   setState(() {
+  //     items.add({
+  //       "productId": selectedProductId,
+  //       "name": itemNameCtrl.text.trim(),
+  //       "price": price,
+  //       "quantity": qty,
+  //
+  //       "gst_percent": gstPercent,
+  //       "gst_amount": gstAmount,
+  //       "line_subtotal": lineSubtotal,
+  //       "line_total": lineTotal,
+  //     });
+  //
+  //     calculateAmounts(context);
+  //
+  //     itemNameCtrl.clear();
+  //     itemPriceCtrl.clear();
+  //     itemQtyCtrl.text = "1";
+  //     itemBarCodeCtrl.clear();
+  //     itemSearchQuery = "";
+  //     selectedProductId = null;
+  //
+  //   });
+  //
+  // }
 
   void _clearCustomerSelection() {
     setState(() {
@@ -256,20 +351,20 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
     final showCreateCustomerForm =
         selectedCustomer == null &&
-            searchQuery.trim().isNotEmpty &&
-            filteredCustomers.isEmpty;
+        searchQuery.trim().isNotEmpty &&
+        filteredCustomers.isEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
         title: const Text(
           "Create Purchase",
-          style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
         ),
       ),
 
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
 
         decoration: BoxDecoration(
           color: Colors.white,
@@ -295,20 +390,41 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "₹$totalAmount",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: theme.primaryColor,
-                      ),
-                    ),
-                    Text(
-                      "Pending ₹$pendingAmount",
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "₹${totalAmount.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: theme.primaryColor,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          "Subtotal ₹${subtotalAmount.toStringAsFixed(0)}",
+                          style: const TextStyle(fontSize: 11),
+                        ),
+
+                        Text(
+                          "GST Total ₹${totalGstAmount.toStringAsFixed(0)}",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.green,
+                          ),
+                        ),
+
+                        Text(
+                          "Pending ₹${pendingAmount.toStringAsFixed(0)}",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -316,7 +432,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: SizedBox(
-                  height: 50,
+                  height: 40,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
@@ -326,156 +442,195 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-
                     onPressed: isCreating
                         ? null
                         : () async {
-                      // Capture messenger BEFORE any async gap.
-                      final messenger = ScaffoldMessenger.of(context);
+                            final messenger = ScaffoldMessenger.of(context);
+                            final navigator = Navigator.of(context);
 
-                      // 🔥 STEP 1 — Resolve/create the customer first.
-                      if (selectedCustomerId == null) {
-                        final typedName = searchCtrl.text.trim();
+                            if (selectedCustomerId == null) {
+                              final typedName = searchCtrl.text.trim();
 
-                        if (typedName.isEmpty) {
-                          CustomDialog.showErrorSnack(
-                            context,
-                            "Select or enter a customer",
-                          );
-                          return;
-                        }
+                              if (typedName.isEmpty) {
+                                CustomDialog.showErrorSnack(
+                                  context,
+                                  "Select or enter a customer",
+                                );
+                                return;
+                              }
 
-                        if (showCreateCustomerForm) {
-                          // No existing match — create the customer
-                          // inline, then continue to bill creation.
-                          final phone =
-                          _newCustomerPhoneCtrl.text.trim();
+                              if (showCreateCustomerForm) {
+                                final phone = _newCustomerPhoneCtrl.text.trim();
 
-                          if (phone.isEmpty) {
-                            CustomDialog.showErrorSnack(
-                              context,
-                              "Enter phone number for new customer",
-                            );
-                            return;
-                          }
+                                if (phone.isEmpty) {
+                                  CustomDialog.showErrorSnack(
+                                    context,
+                                    "Enter phone number for new customer",
+                                  );
+                                  return;
+                                }
 
-                          setState(() {
-                            isCreating = true;
-                          });
+                                setState(() {
+                                  isCreating = true;
+                                });
 
-                          try {
-                            final newCustomer = await _createCustomer(
-                              name: typedName,
-                              phone: phone,
-                            );
+                                try {
+                                  final newCustomer = await _createCustomer(
+                                    name: typedName,
+                                    phone: phone,
+                                  );
 
-                            if (!mounted) return;
+                                  if (!mounted) return;
 
-                            setState(() {
-                              selectedCustomer = newCustomer;
-                              selectedCustomerId = newCustomer.id;
-                            });
-                          } catch (e) {
-                            if (!mounted) return;
+                                  setState(() {
+                                    selectedCustomer = newCustomer;
+                                    selectedCustomerId = newCustomer.id;
+                                  });
+                                } catch (e) {
+                                  if (!mounted) return;
 
-                            setState(() {
-                              isCreating = false;
-                            });
+                                  setState(() {
+                                    isCreating = false;
+                                  });
 
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Failed to create customer: $e",
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Failed to create customer: $e",
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+
+                                  return;
+                                }
+                              } else {
+                                CustomDialog.showErrorSnack(
+                                  context,
+                                  "Select customer",
+                                );
+                                return;
+                              }
+                            }
+
+                            if (items.isEmpty) {
+                              CustomDialog.showErrorSnack(
+                                context,
+                                "Add items first",
+                              );
+
+                              if (mounted) {
+                                setState(() {
+                                  isCreating = false;
+                                });
+                              }
+
+                              return;
+                            }
+
+                            if (!isCreating) {
+                              setState(() {
+                                isCreating = true;
+                              });
+                            }
+
+                            try {
+                              final purchaseItems = items.map((e) {
+                                return PurchaseItemModel(
+                                  productId: e["productId"] ?? 0,
+                                  barcode: e["barcode"] ?? "",
+                                  name: e["name"],
+                                  price: e["price"],
+                                  quantity: e["quantity"],
+                                  gstPercent: e["gst_percent"],
+                                );
+                              }).toList();
+                              // final purchaseItems = items.map((e) {
+                              //   return PurchaseItemModel(
+                              //     productId: e["productId"],
+                              //     barcode: "",
+                              //     name: e["name"],
+                              //     price: e["price"],
+                              //     quantity: e["quantity"],
+                              //     gstPercent: e["gst_percent"],
+                              //   );
+                              // }).toList();
+
+                              final model = CreatePurchaseModel(
+                                customerId: selectedCustomerId!,
+                                businessId: businessId,
+                                items: purchaseItems,
+                                totalAmount: totalAmount,
+                                paid: double.tryParse(paidCtrl.text) ?? 0,
+                                pending: pendingAmount,
+                                date: DateTime.now()
+                                    .toIso8601String()
+                                    .split("T")
+                                    .first,
+                              );
+
+                              // Read before await
+                              final businessName = ref.read(
+                                businessNameProvider,
+                              );
+                              final businessPhone = ref.read(
+                                businessPhoneProvider,
+                              );
+                              final businessAddress = ref.read(
+                                businessAddressProvider,
+                              );
+
+                              debugPrint(model.toJson().toString());
+                              debugPrint(businessName);
+                              debugPrint(businessAddress);
+                              debugPrint(businessPhone);
+
+                              final createdBill = await ref
+                                  .read(businessControllerProvider.notifier)
+                                  .createPurchase(model: model);
+
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text("Purchase added successfully"),
+                                  backgroundColor: Colors.green,
                                 ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return; // Stop — don't create the bill.
-                          }
-                        } else {
-                          // Matches exist but user hasn't tapped one.
-                          CustomDialog.showErrorSnack(
-                            context,
-                            "Select customer",
-                          );
-                          return;
-                        }
-                      }
+                              );
 
-                      // 🔥 STEP 2 — Validate items.
-                      if (items.isEmpty) {
-                        CustomDialog.showErrorSnack(
-                          context,
-                          "Add items first",
-                        );
-
-                        if (mounted) {
-                          setState(() {
-                            isCreating = false;
-                          });
-                        }
-                        return;
-                      }
-
-                      if (!isCreating) {
-                        setState(() {
-                          isCreating = true;
-                        });
-                      }
-
-                      // 🔥 STEP 3 — Create the purchase.
-                      try {
-                        final purchaseItems = items.map((e) {
-                          return PurchaseItemModel(
-                            name: e["name"],
-                            price: e["price"],
-                            quantity: e["quantity"],
-                          );
-                        }).toList();
-
-                        final model = CreatePurchaseModel(
-                          customerId: selectedCustomerId!,
-                          businessId: businessId,
-                          items: purchaseItems,
-                          totalAmount: totalAmount,
-                          paid: double.tryParse(paidCtrl.text) ?? 0,
-                          pending: pendingAmount,
-                          date: DateTime.now()
-                              .toIso8601String()
-                              .split("T")
-                              .first,
-                        );
-
-                        await ref
-                            .read(businessControllerProvider.notifier)
-                            .createPurchase(model: model);
-
-                        // 🔥 no mounted check — messenger works regardless
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text("Purchase added successfully"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      } catch (e) {
-                        if (mounted) {
-                          CustomDialog.showErrorSnack(
-                            context,
-                            e.toString(),
-                          );
-                        }
-                      } finally {
-                        if (mounted) {
-                          setState(() {
-                            isCreating = false;
-                          });
-                        }
-                      }
-                    },
-                    child: Text(isCreating ? "Creating..." : "Create",style: TextStyle(
-                      fontWeight: FontWeight.bold
-                        ,fontSize: 17
-                    ),),
+                              if (!navigator.mounted) return;
+                              await navigator.push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReceiptPreviewScreen(
+                                    bill: createdBill,
+                                    businessName: businessName,
+                                    businessPhone: businessPhone,
+                                    businessAddress: businessAddress,
+                                    customerName: selectedCustomer?.name,
+                                    isThermal: true,
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              if (mounted) {
+                                CustomDialog.showErrorSnack(
+                                  context,
+                                  e.toString(),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  isCreating = false;
+                                });
+                              }
+                            }
+                          },
+                    child: Text(
+                      isCreating ? "Creating..." : "Create",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -487,220 +642,331 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-
-        child: Column(
-          children: [
-            /// 🔥 CUSTOMER SEARCH / CREATE
-            _buildCustomerSelector(
-              theme,
-              filteredCustomers,
-              showCreateCustomerForm,
-            ),
-            const SizedBox(height: 14),
-
-            /// 🔥 ADD ITEM — with product search + auto price fill
-            Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                    color: Colors.black.withOpacity(0.03),
-                  ),
-                ],
-              ),
 
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
+                  /// 🔥 CUSTOMER SEARCH / CREATE
+                  _buildCustomerSelector(
+                    theme,
+                    filteredCustomers,
+                    showCreateCustomerForm,
+                  ),
+                  const SizedBox(height: 7),
 
-                        /// PRODUCT SEARCH / NAME FIELD
-                        child: TextField(
-                          controller: itemNameCtrl,
+                  /// 🔥 ADD ITEM — with product search + auto price fill
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.03),
+                        ),
+                      ],
+                    ),
 
-                          onChanged: (v) {
-                            setState(() {
-                              itemSearchQuery = v;
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 45,
+                          child: TextField(
+                            controller: itemNameCtrl,
+                            onChanged: (v) {
+                              setState(() {
+                                itemSearchQuery = v;
 
-                              // Any manual edit after a selection
-                              // invalidates the selected product.
-                              if (selectedProductId != null) {
-                                final matched = products
-                                    .where(
-                                      (p) =>
-                                  p.id == selectedProductId,
-                                )
-                                    .toList();
-                                if (matched.isEmpty ||
-                                    matched.first.name != v) {
-                                  selectedProductId = null;
+                                // Any manual edit after a selection
+                                // invalidates the selected product.
+                                if (selectedProductId != null) {
+                                  final matched = products
+                                      .where((p) => p.id == selectedProductId)
+                                      .toList();
+                                  if (matched.isEmpty ||
+                                      matched.first.name != v) {
+                                    selectedProductId = null;
+                                  }
                                 }
-                              }
-                            });
-                          },
-
-                          decoration:
-                          _inputDecoration("Search or enter item")
-                              .copyWith(
-                            suffixIcon: selectedProductId != null
-                                ? const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 20,
-                            )
-                                : null,
+                              });
+                            },
+                            decoration:
+                                _inputDecoration(
+                                  "Search Or Enter Item/Service",
+                                ).copyWith(
+                                  suffixIcon: selectedProductId != null
+                                      ? const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                          size: 20,
+                                        )
+                                      : null,
+                                ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(width: 8),
+                        const SizedBox(height: 6),
 
-                      Expanded(
-                        child: TextField(
-                          controller: itemPriceCtrl,
-
-                          keyboardType: TextInputType.number,
-
-                          // Price locked once a catalog product is
-                          // selected — manual items keep it editable.
-                          readOnly: selectedProductId != null,
-
-                          decoration: _inputDecoration("Price"),
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      SizedBox(
-                        width: 68,
-
-                        /// QUANTITY — always manual entry
-                        child: TextField(
-                          controller: itemQtyCtrl,
-
-                          keyboardType: TextInputType.number,
-
-                          decoration: _inputDecoration("Qty"),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  /// 🔥 PRODUCT SUGGESTIONS — shown while typing and
-                  /// nothing is selected yet.
-                  if (itemSearchQuery.trim().isNotEmpty &&
-                      selectedProductId == null)
-                    _buildProductSuggestions(products, productsAsync),
-
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: itemBarCodeCtrl,
-
-                    readOnly: selectedProductId != null,
-
-                    decoration: _inputDecoration("Product Barcode"),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        /// SECOND ROW: PRICE AND QUANTITY
+                        SizedBox(
+                          height: 45,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: itemPriceCtrl,
+                                  keyboardType: TextInputType.number,
+                                  // Price locked once a catalog product is
+                                  // selected — manual items keep it editable.
+                                  readOnly: selectedProductId != null,
+                                  decoration: _inputDecoration("Price"),
+                                ),
                               ),
-                            ),
-                            onPressed: addItem,
-                            icon: const Icon(Icons.add, weight: 700, size: 20),
-                            label: const Text(
-                              "Add Item",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                child: TextField(
+                                  controller: itemQtyCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDecoration("Qty"),
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+
+                        /// 🔥 PRODUCT SUGGESTIONS — shown while typing and
+                        /// nothing is selected yet.
+                        if (itemSearchQuery.trim().isNotEmpty &&
+                            selectedProductId == null)
+                          _buildProductSuggestions(products, productsAsync),
+
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          height: 45,
+                          child: TextField(
+                            controller: itemBarCodeCtrl,
+
+                            readOnly: selectedProductId != null,
+
+                            decoration: _inputDecoration(
+                              "Product Barcode (Optional)",
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          height: 45,
+                          child: TextField(
+                            controller: productGSTCtrl,
+                            decoration: _inputDecoration("GST (Optional)"),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  onPressed: addItem,
+                                  icon: Icon(Icons.add, weight: 700, size: 20),
+                                  label: const Text(
+                                    "Add Item",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-            /// 🔥 ITEMS
-            if (items.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 34),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                      color: Colors.black.withOpacity(0.03),
-                    ),
-                  ],
-                ),
-
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.shopping_bag_outlined,
-
-                      size: 34,
-
-                      color: Colors.grey.shade400,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      "No items added yet",
-
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-
-                        fontSize: 13,
+                  /// 🔥 ITEMS
+                  if (items.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 34),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                            color: Colors.black.withOpacity(0.03),
+                          ),
+                        ],
                       ),
+
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.shopping_bag_outlined,
+
+                            size: 34,
+
+                            color: Colors.grey.shade400,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            "No item / service added yet",
+
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Column(
+                      children: List.generate(items.length, (i) {
+                        final item = items[i];
+
+                        final subtotal = item["line_subtotal"] as double;
+                        final gstPercent = item["gst_percent"] ?? 0;
+                        final gstAmount = item["gst_amount"] as double;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                                color: Colors.black.withOpacity(0.03),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item["name"],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 5),
+
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: [
+                                        _chip("₹${item["price"]}"),
+                                        _chip("Qty ${item["quantity"]}"),
+                                        _chip("GST $gstPercent%"),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "₹${subtotal.toStringAsFixed(0)}",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 2),
+
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      "GST ₹${gstAmount.toStringAsFixed(0)}",
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(20),
+                                    onTap: () {
+                                      setState(() {
+                                        items.removeAt(i);
+                                        calculateAmounts(context);
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.delete_outline,
+                                        size: 20,
+                                        color: Colors.red.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ),
-                  ],
-                ),
-              )
-            else
-              Column(
-                children: List.generate(items.length, (i) {
-                  final item = items[i];
 
-                  final total =
-                      (item["price"] as double) *
-                          (item["quantity"] as int);
+                  const SizedBox(height: 14),
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-
+                  /// 🔥 PAYMENT
+                  Container(
                     padding: const EdgeInsets.all(14),
 
                     decoration: BoxDecoration(
                       color: Colors.white,
 
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(22),
 
                       boxShadow: [
                         BoxShadow(
@@ -713,124 +979,27 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                       ],
                     ),
 
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    child: TextField(
+                      controller: paidCtrl,
 
-                            children: [
-                              Text(
-                                item["name"],
+                      keyboardType: TextInputType.number,
 
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                      // 🔥 FIXED — this must recalculate pending amount,
+                      // not touch item-search state (that was the bug).
+                      onChanged: (_) {
+                        setState(() {
+                          calculateAmounts(context);
+                        });
+                      },
 
-                                  fontSize: 14,
-                                ),
-                              ),
-
-                              const SizedBox(height: 5),
-
-                              Wrap(
-                                spacing: 6,
-
-                                children: [
-                                  _chip("₹${item["price"]}"),
-
-                                  _chip("Qty ${item["quantity"]}"),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-
-                          children: [
-                            Text(
-                              "₹$total",
-
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-
-                                fontSize: 15,
-                              ),
-                            ),
-
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-
-                              padding: EdgeInsets.zero,
-
-                              onPressed: () {
-                                setState(() {
-                                  items.removeAt(i);
-
-                                  calculateAmounts(context);
-                                });
-                              },
-
-                              icon: Icon(
-                                Icons.delete_outline,
-
-                                size: 20,
-
-                                color: Colors.red.shade400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      decoration: _inputDecoration("Enter Paid Amount"),
                     ),
-                  );
-                }),
-              ),
-
-            const SizedBox(height: 14),
-
-            /// 🔥 PAYMENT
-            Container(
-              padding: const EdgeInsets.all(14),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-
-                borderRadius: BorderRadius.circular(22),
-
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 12,
-
-                    offset: const Offset(0, 4),
-
-                    color: Colors.black.withOpacity(0.03),
                   ),
+
+                  const SizedBox(height: 120),
                 ],
               ),
-
-              child: TextField(
-                controller: paidCtrl,
-
-                keyboardType: TextInputType.number,
-
-                // 🔥 FIXED — this must recalculate pending amount,
-                // not touch item-search state (that was the bug).
-                onChanged: (_) {
-                  setState(() {
-                    calculateAmounts(context);
-                  });
-                },
-
-                decoration: _inputDecoration("Paid Amount"),
-              ),
             ),
-
-            const SizedBox(height: 120),
-          ],
-        ),
-      ),
     );
   }
 
@@ -838,9 +1007,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
   /// typing. Handles loading/error states from the provider and lets the
   /// user tap a product to auto-fill price + barcode.
   Widget _buildProductSuggestions(
-      List<ProductModel> products,
-      AsyncValue<List<ProductModel>> productsAsync,
-      ) {
+    List<ProductModel> products,
+    AsyncValue<List<ProductModel>> productsAsync,
+  ) {
     if (productsAsync.isLoading) {
       return Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -928,17 +1097,21 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
               onTap: outOfStock
                   ? null
                   : () {
-                setState(() {
-                  itemNameCtrl.text = product.name;
-                  itemPriceCtrl.text = product.price.toString();
-                  selectedProductId = product.id;
-                  itemSearchQuery = "";
+                      setState(() {
+                        itemNameCtrl.text = product.name;
+                        itemPriceCtrl.text = product.price.toString();
+                        selectedProductId = product.id;
+                        productGSTCtrl.text = product.gst_percent.toString();
+                        itemSearchQuery = "";
 
-                  if (product.barcode.isNotEmpty) {
-                    itemBarCodeCtrl.text = product.barcode;
-                  }
-                });
-              },
+                        if (product.barcode != null &&
+                            product.barcode!.trim().isNotEmpty) {
+                          itemBarCodeCtrl.text = product.barcode!;
+                        } else {
+                          itemBarCodeCtrl.clear();
+                        }
+                      });
+                    },
               child: Opacity(
                 opacity: outOfStock ? 0.5 : 1,
                 child: Container(
@@ -981,7 +1154,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         ),
                       ),
                       Text(
-                        "₹${product.price.toStringAsFixed(product.price % 1 == 0 ? 0 : 2)}",
+                        "₹${(product.price ?? 0).toStringAsFixed(((product.price ?? 0) % 1 == 0) ? 0 : 2)}",
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold,
@@ -1003,10 +1176,11 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
   /// always visible and acts as both search box and new-customer name
   /// field.
   Widget _buildCustomerSelector(
-      ThemeData theme,
-      List<CustomerResponseModel> filteredCustomers,
-      bool showCreateCustomerForm,
-      ) {
+    ThemeData theme,
+    List<CustomerResponseModel> filteredCustomers,
+    bool showCreateCustomerForm,
+  ) {
+    final type = ref.watch(appTypeProvider);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1024,40 +1198,63 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           /// SEARCH / NAME FIELD — always visible, no toggle required.
-          TextField(
-            controller: searchCtrl,
-            enabled: selectedCustomer == null,
-            onChanged: (v) {
-              setState(() {
-                searchQuery = v;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: "Search or enter customer name",
-              prefixIcon: Icon(Icons.person_outline, color: theme.primaryColor),
-              suffixIcon: selectedCustomer != null
-                  ? IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: _clearCustomerSelection,
-              )
-                  : (searchQuery.isNotEmpty
-                  ? IconButton(
-                icon: const Icon(Icons.clear, size: 20),
-                onPressed: () {
-                  setState(() {
-                    searchQuery = "";
-                    searchCtrl.clear();
-                  });
-                },
-              )
-                  : null),
-              filled: true,
-              fillColor: selectedCustomer != null
-                  ? theme.primaryColor.withOpacity(0.06)
-                  : const Color(0xffF5F7FB),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+          SizedBox(
+            height: 45,
+            child: TextField(
+              controller: searchCtrl,
+              readOnly: selectedCustomer != null,
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: DashboardText.prsSearchCustomer(type),
+                hintStyle: TextStyle(fontSize: 14),
+                prefixIcon: Icon(
+                  Icons.person_outline,
+                  color: theme.primaryColor,
+                ),
+                suffixIcon: selectedCustomer != null
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        tooltip: "Remove selected customer",
+                        onPressed: () {
+                          setState(() {
+                            selectedCustomer = null;
+                            searchQuery = "";
+                            searchCtrl.clear();
+                          });
+                        },
+                      )
+                    : (searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              tooltip: "Clear search",
+                              onPressed: () {
+                                setState(() {
+                                  searchQuery = "";
+                                  searchCtrl.clear();
+                                });
+                              },
+                            )
+                          : null),
+                filled: true,
+                fillColor: selectedCustomer != null
+                    ? theme.primaryColor.withOpacity(0.06)
+                    : const Color(0xffF5F7FB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
+                ),
               ),
             ),
           ),
@@ -1115,10 +1312,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
           const SizedBox(height: 4),
           Text(
             "Create a new customer or try different search",
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
           ),
         ],
       ),
@@ -1127,9 +1321,9 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
   /// CUSTOMER LIST — shown directly below the search field, no toggle.
   Widget _buildCustomerList(
-      ThemeData theme,
-      List<CustomerResponseModel> filteredCustomers,
-      ) {
+    ThemeData theme,
+    List<CustomerResponseModel> filteredCustomers,
+  ) {
     return ConstrainedBox(
       key: const ValueKey("customer_list"),
       constraints: const BoxConstraints(maxHeight: 250),
@@ -1247,25 +1441,31 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
 
           /// PHONE
-          TextField(
-            controller: _newCustomerPhoneCtrl,
-            keyboardType: TextInputType.phone,
+          SizedBox(
+            height: 45,
+            child: TextField(
+              controller: _newCustomerPhoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: "Phone Number",
+                filled: true,
+                fillColor: Colors.white,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
 
-            decoration: InputDecoration(
-              labelText: "Phone Number",
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: theme.primaryColor),
+                ),
               ),
             ),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           /// GENDER CHIPS
           Row(
@@ -1296,7 +1496,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
 
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 8),
 
           decoration: BoxDecoration(
             color: isSelected
@@ -1326,8 +1526,10 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final theme = ref.read((themeProvider));
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(fontSize: 14),
 
       filled: true,
 
@@ -1339,8 +1541,15 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: theme.primaryColor, width: 1.5),
       ),
     );
   }

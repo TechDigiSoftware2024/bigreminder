@@ -78,7 +78,7 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
     // 🔥 EMPTY STATE (login case)
     if (businessState.businesses.isEmpty) {
       return const Scaffold(
-        body: Center(child: Text("No business data found")),
+        body: Center(child: Text("No business data found",)),
       );
     }
 

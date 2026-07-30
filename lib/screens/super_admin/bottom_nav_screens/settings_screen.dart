@@ -26,7 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: AppColors.appBarBg,
         title: const Text(
           "Admin Settings",
-          style: TextStyle(fontWeight: FontWeight.w600,color: AppColors.appBarText),
+          style: TextStyle(fontWeight: FontWeight.w600,color: AppColors.appBarText,fontSize: 17),
         ),
       ),
 
@@ -340,17 +340,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
 
   Widget _card({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -379,6 +379,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         title,
         style: TextStyle(
           color: isDanger ? Colors.red : Colors.black,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),

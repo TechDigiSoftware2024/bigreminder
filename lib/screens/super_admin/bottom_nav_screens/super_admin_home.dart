@@ -73,7 +73,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                       loading: () => "...",
                       error: (_, __) => "0",
                     ),
-                    icon: Icons.people,
+                    icon: Icons.people_outline,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -86,7 +86,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                   CustomKPICard(
                     title: "Active Today",
                     value: "320",
-                    icon: Icons.flash_on,
+                    icon: Icons.flash_on_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -103,7 +103,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                       loading: () => "...",
                       error: (_, __) => "0",
                     ),
-                    icon: Icons.store,
+                    icon: Icons.store_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -116,7 +116,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                   CustomKPICard(
                     title: "Revenue",
                     value: "₹24K",
-                    icon: Icons.currency_rupee,
+                    icon: Icons.currency_rupee_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -174,7 +174,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -185,7 +185,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: Colors.orange
                                     .withOpacity(0.1),
@@ -210,11 +210,10 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                                     "Business Support Requests",
                                     style: TextStyle(
                                       fontWeight:
-                                      FontWeight.w600,
+                                      FontWeight.w500,
+                                      fontSize: 14
                                     ),
                                   ),
-
-                                  const SizedBox(height: 4),
 
                                   queryAsync.when(
                                     data: (queries) {
@@ -252,7 +251,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                                     const Text(
                                       "0 Open Requests",
                                       style: TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 10,
                                       ),
                                     ),
                                   ),
@@ -280,14 +279,14 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                                 return Container(
                                   padding:
                                   const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
+                                    horizontal: 8,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.orange,
                                     borderRadius:
                                     BorderRadius.circular(
-                                      20,
+                                      99,
                                     ),
                                   ),
                                   child: Text(
@@ -295,7 +294,8 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight:
-                                      FontWeight.bold,
+                                      FontWeight.w500,
+                                      fontSize: 12
                                     ),
                                   ),
                                 );
@@ -329,7 +329,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -338,7 +338,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),

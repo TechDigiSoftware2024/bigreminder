@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bigreminder/theme/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../../../models/business_models/add_product_model.dart';
 import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_csv_import_service.dart';
 import '../../../services/business/product_import_service.dart';
+import '../../../widgets/add_product.dart';
 import '../preview_product_screen.dart';
 
 class ProductScreen extends ConsumerStatefulWidget {
@@ -38,17 +40,13 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
     _searchController.addListener(_onSearchChanged);
   }
-  void showImportResult(
-      BuildContext context,
-      ImportResult result,
-      ) {
+
+  void showImportResult(BuildContext context, ImportResult result) {
     showModalBottomSheet(
       context: context,
       isDismissible: false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (_) {
         return Padding(
@@ -56,22 +54,18 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               Icon(
                 result.failed == 0
                     ? Icons.check_circle
                     : Icons.warning_amber_rounded,
-                color:
-                result.failed == 0 ? Colors.green : Colors.orange,
+                color: result.failed == 0 ? Colors.green : Colors.orange,
                 size: 70,
               ),
 
               const SizedBox(height: 20),
 
               Text(
-                result.failed == 0
-                    ? "Import Successful"
-                    : "Import Completed",
+                result.failed == 0 ? "Import Successful" : "Import Completed",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 22,
@@ -80,18 +74,14 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
               const SizedBox(height: 15),
 
-              Text(
-                "${result.uploaded} products imported successfully.",
-              ),
+              Text("${result.uploaded} products imported successfully."),
 
               if (result.failed > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     "${result.failed} products failed.",
-                    style: const TextStyle(
-                      color: Colors.red,
-                    ),
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
 
@@ -106,13 +96,13 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                   child: const Text("Done"),
                 ),
               ),
-
             ],
           ),
         );
       },
     );
   }
+
   void _showImportDialog() {
     showModalBottomSheet(
       context: context,
@@ -144,45 +134,42 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                   builder: (_) => PreviewProductsScreen(
                     products: result.products,
                     onUpload: () async {
-                      final uploadResult = await ProductImportService().uploadProducts(
-                        products: result.products,
-                        token: ref.read(tokenProvider),
-                        onProgress: (current, total) {
-                          debugPrint("$current / $total");
-                        },
-                      );
+                      final uploadResult = await ProductImportService()
+                          .uploadProducts(
+                            products: result.products,
+                            token: ref.read(tokenProvider),
+                            onProgress: (current, total) {
+                              debugPrint("$current / $total");
+                            },
+                          );
 
                       final token = ref.read(tokenProvider);
                       final businessId = ref.read(businessIdProvider);
 
-                      await ref.read(productProvider.notifier).loadProducts(
-                        token,
-                        businessId.toString(),
-                      );
+                      await ref
+                          .read(productProvider.notifier)
+                          .loadProducts(token, businessId.toString());
 
                       if (context.mounted) {
                         Navigator.pop(context);
 
-                        Future.delayed(
-                          const Duration(milliseconds: 300),
-                              () {
-                            if (context.mounted) {
-                              showImportResult(context, uploadResult);
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (context.mounted) {
+                            showImportResult(context, uploadResult);
 
-                              // Let them know some rows were skipped, if any.
-                              if (result.errors.isNotEmpty) {
-                                Future.delayed(
-                                  const Duration(milliseconds: 400),
-                                      () {
-                                    if (context.mounted) {
-                                      _showCsvErrorDialog(context, result.errors);
-                                    }
-                                  },
-                                );
-                              }
+                            // Let them know some rows were skipped, if any.
+                            if (result.errors.isNotEmpty) {
+                              Future.delayed(
+                                const Duration(milliseconds: 400),
+                                () {
+                                  if (context.mounted) {
+                                    _showCsvErrorDialog(context, result.errors);
+                                  }
+                                },
+                              );
                             }
-                          },
-                        );
+                          }
+                        });
                       }
                     },
                   ),
@@ -211,16 +198,16 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
           child: errors.isEmpty
               ? const Text("No valid products were found in this CSV file.")
               : ListView.builder(
-            shrinkWrap: true,
-            itemCount: errors.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                "• ${errors[i]}",
-                style: const TextStyle(fontSize: 13),
-              ),
-            ),
-          ),
+                  shrinkWrap: true,
+                  itemCount: errors.length,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      "• ${errors[i]}",
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
         ),
         actions: [
           TextButton(
@@ -231,6 +218,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       ),
     );
   }
+
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.trim().toLowerCase();
@@ -259,14 +247,19 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         backgroundColor: primary,
         title: const Text(
           "Products",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+          ),
         ),
         actions: [
           IconButton(
-            tooltip: "Import CSV",
-            icon: const Icon(Icons.upload_file_rounded, color: Colors.white),
+            tooltip: "Import product from CSV file",
+            icon: const Icon(Icons.upload_file_outlined, color: Colors.white),
             onPressed: _showImportDialog,
           ),
+          const SizedBox(width: 10),
         ],
       ),
 
@@ -275,7 +268,10 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         backgroundColor: primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text("Add Product"),
+        label: const Text(
+          "Add Product",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
 
       body: products.when(
@@ -300,8 +296,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         data: (items) {
           final filteredProducts = items.where((product) {
             if (_searchQuery.isEmpty) return true;
-            return product.name.toLowerCase().contains(_searchQuery) ||
-                product.barcode.toLowerCase().contains(_searchQuery);
+            return product.name.toLowerCase().contains(_searchQuery);
           }).toList();
 
           return Column(
@@ -320,31 +315,32 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                         child: filteredProducts.isEmpty
                             ? _buildNoResults()
                             : ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                itemCount: filteredProducts.length,
-                                itemBuilder: (_, index) {
-                                  return ProductCard(
-                                    product: filteredProducts[index],
-                                    onEdit: () {
-                                      _showAddProductDialog(
-                                        context,
-                                        product: filteredProducts[index],
-                                      );
-                                    },
-                                    onDelete: () async {
-                                      await ref
-                                          .read(productProvider.notifier)
-                                          .deleteProduct(
-                                            token,
-                                            filteredProducts[index].id!,
-                                          );
-                                    },
-                                  );
-                                },
-                              ),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (_, index) {
+                            final reverseIndex = filteredProducts.length - 1 - index;
+                            final product = filteredProducts[reverseIndex];
+
+                            return ProductCard(
+                              product: product,
+                              onEdit: () {
+                                _showAddProductDialog(
+                                  context,
+                                  product: product,
+                                );
+                              },
+                              onDelete: () async {
+                                await ref
+                                    .read(productProvider.notifier)
+                                    .deleteProduct(
+                                  token,
+                                  product.id!,
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],
@@ -356,7 +352,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
   Widget _buildSearchBar(Color primary) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -485,7 +481,9 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     );
 
     final nameController = TextEditingController(text: product?.name ?? '');
-
+    final productGSTController = TextEditingController(
+      text: product?.gst_percent.toString() ?? '',
+    );
     final priceController = TextEditingController(
       text: product != null ? product.price.toString() : '',
     );
@@ -542,7 +540,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                                 ? "Add New Product"
                                 : "Update Product",
                             style: const TextStyle(
-                              fontSize: 24,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
@@ -554,6 +552,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                                 : "Update the product details",
                             style: const TextStyle(
                               color: Colors.grey,
+                              fontWeight: FontWeight.w500,
                               fontSize: 14,
                             ),
                           ),
@@ -584,6 +583,16 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                             ),
                             textCapitalization: TextCapitalization.words,
                             autofocus: true,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: productGSTController,
+                            style: const TextStyle(color: Colors.black),
+                            decoration: _inputDecoration(
+                              "Product GST (Optional)",
+                              Icons.percent_outlined,
+                              primary,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -636,131 +645,44 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 10),
                           SizedBox(
                             width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: isSaving
-                                  ? null
-                                  : () async {
-                                      if (!formKey.currentState!.validate())
-                                        return;
+                            height: 45,
+                            child: ProductSaveButton(
+                              formKey: formKey,
+                              product: product,
+                              businessId: businessId,
+                              token: token,
+                              barcodeController: barcodeController,
+                              nameController: nameController,
+                              gstController: productGSTController,
+                              priceController: priceController,
+                              stockController: stockController,
+                              ref: ref,
+                              onSuccess: (savedProduct) {
+                                if (!context.mounted) return;
 
-                                      setModalState(() => isSaving = true);
+                                Navigator.pop(context);
 
-                                      try {
-                                        final productData = ProductModel(
-                                          id: product?.id,
-                                          businessId: businessId,
-                                          barcode: barcodeController.text
-                                              .trim(),
-                                          name: nameController.text.trim(),
-                                          price: double.parse(
-                                            priceController.text,
-                                          ),
-                                          stock: int.parse(
-                                            stockController.text,
-                                          ),
-                                        );
-
-                                        if (product == null) {
-                                          await ref
-                                              .read(productProvider.notifier)
-                                              .addProduct(token, productData);
-                                        } else {
-                                          await ref
-                                              .read(productProvider.notifier)
-                                              .updateProduct(
-                                                token,
-                                                product.id!,
-                                                productData,
-                                              );
-                                        }
-
-                                        if (context.mounted) {
-                                          Navigator.pop(context);
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                product == null
-                                                    ? "Product added successfully"
-                                                    : "Product updated successfully",
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                e.toString(),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
-                                      } finally {
-                                        if (context.mounted) {
-                                          setModalState(() => isSaving = false);
-                                        }
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primary,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: primary.withOpacity(
-                                  0.5,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: isSaving
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : Text(
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
                                       product == null
-                                          ? "Save Product"
-                                          : "Update Product",
+                                          ? "Product added successfully"
+                                          : "Product updated successfully",
                                       style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
                                         color: Colors.white,
                                       ),
                                     ),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -820,7 +742,8 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final bool lowStock = product.stock <= 10;
-    final bool hasBarcode = product.barcode.isNotEmpty;
+    final bool hasBarcode =
+        product.barcode != null && product.barcode!.trim().isNotEmpty;
     final bool isActive = product.stock > 0;
 
     return Container(
@@ -845,23 +768,23 @@ class ProductCard extends StatelessWidget {
             // Handle product tap
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      height: 52,
-                      width: 52,
+                      height: 30,
+                      width: 30,
                       decoration: BoxDecoration(
                         color: primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.inventory_2_rounded,
                         color: primary,
-                        size: 24,
+                        size: 18,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -871,15 +794,14 @@ class ProductCard extends StatelessWidget {
                         children: [
                           Text(
                             product.name,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
                           Row(
                             children: [
                               const Icon(
@@ -889,7 +811,7 @@ class ProductCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                hasBarcode ? product.barcode : "No Barcode",
+                                hasBarcode ? product.barcode! : "No Barcode",
                                 style: const TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w500,
@@ -936,9 +858,9 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
                 Divider(color: Colors.grey.shade200, height: 1),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Expanded(
@@ -958,25 +880,29 @@ class ProductCard extends StatelessWidget {
                       child: _InfoTile(
                         icon: Icons.currency_rupee,
                         title: "Price",
-                        value: "₹${product.price.toStringAsFixed(2)}",
+                        value: "₹${product.price}",
                         primary: primary,
+                        gst:
+                            (product.gst_percent != null &&
+                                product.gst_percent! > 0)
+                            ? product.gst_percent.toString()
+                            : null,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
+                        horizontal: 6,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
                         color: lowStock
                             ? Colors.red.shade50
                             : Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -994,7 +920,7 @@ class ProductCard extends StatelessWidget {
                             style: TextStyle(
                               color: lowStock ? Colors.red : Colors.green,
                               fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              fontSize: 10,
                             ),
                           ),
                         ],
@@ -1030,20 +956,26 @@ class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
+  final String? gst;
   final Color primary;
 
   const _InfoTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
     required this.primary,
+    this.gst,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasGst = gst != null && gst!.trim().isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -1051,29 +983,57 @@ class _InfoTile extends StatelessWidget {
               color: primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: primary),
+            child: Icon(icon, size: 14, color: primary),
           ),
+
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: Colors.black,
+
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-            ],
+
+                if (hasGst) ...[
+                  const SizedBox(height: 2),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "+ ${gst!}% GST",
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.green,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1092,7 +1052,6 @@ class ImportCsvDialog extends StatefulWidget {
 
 class _ImportCsvDialogState extends State<ImportCsvDialog> {
   File? selectedFile;
-
   bool loading = false;
 
   Future<void> pickCsv() async {
@@ -1110,113 +1069,281 @@ class _ImportCsvDialogState extends State<ImportCsvDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.upload_file_rounded, size: 70, color: Colors.blue),
-
-          const SizedBox(height: 15),
-
-          const Text(
-            "Import Products",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          // Header icon in a soft circular container instead of a bare icon
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.upload_file_rounded,
+                size: 36,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
           ),
 
           const SizedBox(height: 10),
 
           Text(
-            "Upload a CSV file containing your products.",
+            "Import Products",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade700),
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+              fontSize: 18
+            ),
           ),
 
-          const SizedBox(height: 25),
+          const SizedBox(height: 6),
 
+          Text(
+            "Upload a CSV file containing your products.",
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Required columns + sample, using a bordered surface (no shadow)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(15),
+              color: colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Required Columns",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Required Columns",
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                Text("• barcode"),
-                Text("• name"),
-                Text("• price"),
-                Text("• stock"),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['name', 'price', 'stock']
+                      .map(
+                        (col) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            col,
+                            style: textTheme.labelMedium?.copyWith(
+                              color: colorScheme.onSecondaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                Divider(),
+                Divider(color: colorScheme.outlineVariant, height: 1),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 16),
 
                 Text(
                   "Sample CSV",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                Text(
-                  "barcode,name,price,stock",
-                  style: TextStyle(fontFamily: 'monospace'),
-                ),
-
-                Text(
-                  "890123,Coke,20,50",
-                  style: TextStyle(fontFamily: 'monospace'),
-                ),
-
-                Text(
-                  "890124,Pepsi,40,25",
-                  style: TextStyle(fontFamily: 'monospace'),
+                Container(
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: colorScheme.outlineVariant),
+                  ),
+                  child: Table(
+                    border: TableBorder(
+                      horizontalInside: BorderSide(
+                        color: colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                      verticalInside: BorderSide(
+                        color: colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                    ),
+                    columnWidths: const {
+                      0: FlexColumnWidth(1.3),
+                      1: FlexColumnWidth(1.2),
+                      2: FlexColumnWidth(0.9),
+                      3: FlexColumnWidth(0.9),
+                      4: FlexColumnWidth(0.8),
+                    },
+                    children: [
+                      // Header row
+                      TableRow(
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondaryContainer,
+                        ),
+                        children: ['barcode', 'name', 'price', 'stock', 'gst%']
+                            .map(
+                              (col) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  col,
+                                  style: textTheme.labelMedium?.copyWith(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      // Data row 1
+                      TableRow(
+                        children: ['890123', 'Coke', '20', '50', '18']
+                            .map(
+                              (val) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  val,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    fontFamily: 'monospace',
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      // Data row 2
+                      TableRow(
+                        children: ['890124', 'Pepsi', '40', '25', '18']
+                            .map(
+                              (val) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  val,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    fontFamily: 'monospace',
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 25),
+          const SizedBox(height: 20),
 
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: pickCsv,
-              icon: const Icon(Icons.folder_open),
-              label: const Text("Choose CSV File"),
+          // File picker button
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: colorScheme.outline),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              foregroundColor: colorScheme.primary,
             ),
+            onPressed: pickCsv,
+            icon: const Icon(Icons.folder_open_rounded),
+            label: const Text("Choose CSV File"),
           ),
 
           if (selectedFile != null) ...[
-            const SizedBox(height: 15),
-
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green),
-
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                   const SizedBox(width: 10),
-
-                  Expanded(child: Text(selectedFile!.path.split('/').last)),
+                  Expanded(
+                    child: Text(
+                      selectedFile!.path.split('/').last,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                    onPressed: () => setState(() => selectedFile = null),
+                    tooltip: 'Remove file',
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                  ),
                 ],
               ),
             ),
@@ -1225,25 +1352,34 @@ class _ImportCsvDialogState extends State<ImportCsvDialog> {
           const SizedBox(height: 20),
 
           SizedBox(
-            width: double.infinity,
             height: 52,
             child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                disabledBackgroundColor: colorScheme.onSurface.withOpacity(0.03,),
+                disabledForegroundColor: colorScheme.onSurface.withOpacity(0.03,),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2))
+                ),
+              ),
               onPressed: selectedFile == null
                   ? null
                   : () {
                       Navigator.pop(context);
                       widget.onFileSelected(selectedFile!);
                     },
-              icon: const Icon(Icons.upload, color: Colors.white),
-              label: const Text(
+              icon: Icon(Icons.upload_rounded, color: colorScheme.primaryContainer,),
+              label: Text(
                 "Continue",
-                style: TextStyle(color: Colors.white),
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primaryContainer,
+                ),
               ),
             ),
           ),
-
-          const SizedBox(height: 15),
         ],
       ),
     );

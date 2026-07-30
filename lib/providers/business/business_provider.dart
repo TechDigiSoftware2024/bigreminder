@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/business_models/add_product_model.dart';
+import '../../models/business_models/business_analysis_model.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_dashboard_model.dart';
 import '../../models/business_models/business_model.dart';
 import '../../models/business_models/business_purchase_list_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
+import '../../models/business_models/create_purchase_response_model.dart';
 import '../../models/business_models/query_model.dart';
 import '../../models/business_models/receive_payment_request_model.dart';
 import '../../models/super_admin_models/business_list_model.dart';
@@ -72,7 +74,10 @@ class BusinessController extends StateNotifier<BusinessState> {
     }
   }
 
-  Future<void> createPurchase({required CreatePurchaseModel model}) async {
+
+  Future<CreatePurchaseResponseModel> createPurchase({
+    required CreatePurchaseModel model,
+  }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
@@ -80,14 +85,14 @@ class BusinessController extends StateNotifier<BusinessState> {
 
       final token = prefs.getString("token") ?? "";
 
-      final message = await PurchaseService.createPurchase(
+      final createdBill = await PurchaseService.createPurchase(
         token: token,
         model: model,
       );
 
-      debugPrint(message);
+      state = state.copyWith(isLoading: false);
 
-      state = state.copyWith(isLoading: false, message: message);
+      return createdBill;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
 
@@ -458,6 +463,28 @@ final businessNameProvider = Provider<String>((ref) {
 
   return "Business";
 });
+
+final businessPhoneProvider = Provider<String>((ref) {
+  final state = ref.watch(businessControllerProvider);
+
+  if (state.businesses.isNotEmpty) {
+    return state.businesses.first.phone ?? "";
+  }
+
+  return "";
+});
+
+final businessAddressProvider = Provider<String>((ref) {
+  final state = ref.watch(businessControllerProvider);
+
+  if (state.businesses.isNotEmpty) {
+    return state.businesses.first.address ?? "";
+  }
+
+  return "";
+});
+
+
 final billDetailProvider = FutureProvider.family<PurchaseModel, int>((ref, billId) async {
   final token = ref.read(tokenProvider);
   return BillService().getBillDetail(token: token, billId: billId);
@@ -543,4 +570,25 @@ final customerDetailProvider =
 FutureProvider.family<CustomerResponseModel, int>((ref, customerId) async {
   final token = ref.read(tokenProvider);
   return BusinessService().getCustomerById(token: token, customerId: customerId);
+});
+
+final analysisMonthsProvider =
+StateProvider<int>((ref) => 6);
+final businessAnalysisProvider =
+FutureProvider<BusinessAnalysisModel>((ref) async {
+
+  final token =
+  ref.watch(authControllerProvider).token!;
+
+  final business =
+  ref.watch(businessIdProvider);
+
+  final months =
+  ref.watch(analysisMonthsProvider);
+
+  return BusinessService.getBusinessAnalysis(
+    token: token,
+    businessId: business,
+    months: months,
+  );
 });

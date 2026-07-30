@@ -32,11 +32,11 @@ class CustomBottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildItem(Icons.home, labels[0], 0, context),
-            _buildItem(Icons.history, labels[1], 1, context),
-            _buildItem(Icons.shopping_bag, labels[2], 2, context),
-            _buildItem(Icons.notifications, labels[3], 3, context),
-            _buildItem(Icons.person, labels[4], 4, context),
+            _buildItem(Icons.home_outlined, labels[0], 0, context),
+            _buildItem(Icons.history_outlined, labels[1], 1, context),
+            _buildItem(Icons.shopping_bag_outlined, labels[2], 2, context),
+            _buildItem(Icons.notifications_outlined, labels[3], 3, context),
+            _buildItem(Icons.person_outline, labels[4], 4, context),
           ],
         ),
       ),

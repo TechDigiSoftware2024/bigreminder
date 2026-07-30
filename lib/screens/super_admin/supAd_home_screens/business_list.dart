@@ -210,7 +210,7 @@ class _BusinessListPageState extends State<BusinessListPage>
             const Text(
               "Businesses",
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
                 letterSpacing: 0.3,
@@ -341,8 +341,8 @@ class _BusinessCard extends ConsumerWidget {
           );
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
@@ -358,8 +358,8 @@ class _BusinessCard extends ConsumerWidget {
           child: Row(
             children: [
               Container(
-                height: 50,
-                width: 50,
+                height: 40,
+                width: 40,
                 decoration: BoxDecoration(
                   color: isActive
                       ? AppColors.primaryDark.withOpacity(0.3) // active soft bg
@@ -381,12 +381,13 @@ class _BusinessCard extends ConsumerWidget {
                     Text(
                       business.name,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 15),
+                          fontWeight: FontWeight.w600, fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       business.category,
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: Colors.grey.shade600,
+                      fontSize: 12),
                     ),
                   ],
                 ),

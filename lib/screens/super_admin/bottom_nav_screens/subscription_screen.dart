@@ -41,7 +41,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         title: const Text(
           "Subscription Management",
           style: TextStyle(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
+            fontSize: 17,
             color: AppColors.appBarText,
           ),
         ),
@@ -178,7 +179,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
       );
     },
     child: Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -204,7 +205,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
                 child: Text(
                   plan.name,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -222,7 +223,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  plan.isActive ? "ACTIVE" : "INACTIVE",
+                  plan.isActive ? "Active" : "Inactive",
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -247,7 +248,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
                   child: const Icon(
                     Icons.delete_outline,
                     color: Colors.red,
-                    size: 20,
+                    size: 16,
                   ),
                 ),
               ),
@@ -259,7 +260,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
           Text(
             "₹${plan.price.toStringAsFixed(0)}",
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.green,
             ),
@@ -271,16 +272,13 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
           Text(
             "${plan.billingCycle.toUpperCase()} PLAN",
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Colors.grey.shade600,
             ),
           ),
 
-          const SizedBox(height: 12),
-
           /// 🔹 DIVIDER
           Divider(color: Colors.grey.shade200),
-          const SizedBox(height: 8),
 
           /// 🔹 DETAILS ROW
           Row(
@@ -445,7 +443,7 @@ FeatureModel f,
 BuildContext context,
 WidgetRef ref,) {
   return Container(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -471,14 +469,14 @@ WidgetRef ref,) {
               child: Text(
                 f.name,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
 
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: f.isActive
                     ? Colors.green.withOpacity(0.1)
@@ -564,11 +562,8 @@ WidgetRef ref,) {
           style: const TextStyle(fontSize: 13),
         ),
 
-        const SizedBox(height: 12),
-
         Divider(color: Colors.grey.shade200),
 
-        const SizedBox(height: 8),
 
         /// 🔹 BOTTOM INFO (same layout as plan)
         Row(
@@ -1720,7 +1715,7 @@ class _PlanFeatureMappingScreenState
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.appBarBg,
-        title: Text("${widget.plan.name} Features",style: TextStyle(color: AppColors.appBarText),),
+        title: Text("${widget.plan.name} Features",style: TextStyle(color: AppColors.appBarText,fontSize: 17,fontWeight: FontWeight.w500),),
       ),
       body: features.isEmpty
           ? const Center(child: Text("No Features"))

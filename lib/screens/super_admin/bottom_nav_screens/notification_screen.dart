@@ -67,7 +67,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         backgroundColor: AppColors.appBarBg,
         title: const Text(
           "Broadcast Notification",
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w500,fontSize: 17),
         ),
       ),
 
@@ -79,7 +79,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             /// 🔹 HEADER
             const Text(
               "Send notification to users",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
@@ -107,12 +107,12 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             /// 🔹 AUDIENCE SELECTOR
             const Text(
               "Audience",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
 
@@ -142,12 +142,12 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             /// 🔹 PREVIEW CARD
             const Text(
               "Preview",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
 
@@ -156,14 +156,15 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
+                      color: AppColors.primaryDark.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(4.0),
+                      padding: const EdgeInsets.all(6.0),
                       child: Icon(
                         Icons.notifications_on_outlined,
                         color: AppColors.iconColor,
+                        size: 22,
                       ),
                     ),
                   ),
@@ -178,7 +179,6 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                               : titleController.text,
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(height: 4),
                         Text(
                           bodyController.text.isEmpty
                               ? "Your message will appear here"
@@ -196,6 +196,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
             /// 🔹 SEND BUTTON
             SizedBox(
+              height: 45,
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: sendNotification,
@@ -242,7 +243,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   /// ================= CARD =================
   Widget _card({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -271,7 +272,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: AppColors.primary.withOpacity(0.5),
-            width: 1.5,
+            width: 0.5,
           ),
         ),
 

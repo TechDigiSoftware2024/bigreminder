@@ -36,11 +36,19 @@ class ProductService {
     required String token,
     required ProductModel product,
   }) async {
+    final body = jsonEncode(product.toJson());
+
+    print("CREATE PRODUCT REQUEST");
+    print(body);
+
     final response = await http.post(
       ApiConfig.url(ApiConfig.products),
       headers: ApiConfig.headers(token: token),
-      body: jsonEncode(product.toJson()),
+      body: body,
     );
+
+    print("STATUS: ${response.statusCode}");
+    print("RESPONSE: ${response.body}");
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return ProductModel.fromJson(jsonDecode(response.body));

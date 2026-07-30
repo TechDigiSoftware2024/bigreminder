@@ -26,7 +26,7 @@ class CustomListToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = value;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 5),
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isSelected
@@ -60,7 +60,8 @@ class CustomListToggle extends StatelessWidget {
         // Text
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: const TextStyle(fontWeight: FontWeight.w500,
+          fontSize: 14),
         ),
         subtitle: subtitle != null
             ? Text(

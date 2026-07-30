@@ -309,8 +309,8 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
     IconData? icon, // 🔥 optional icon
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -381,7 +381,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
 
   Widget _heroCard(Business b, bool isActive) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
@@ -418,7 +418,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -508,6 +508,7 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                   style: const TextStyle(
                     color: Colors.black54,
                     fontWeight: FontWeight.w600,
+                    fontSize: 12
                   ),
                 ),
               ],

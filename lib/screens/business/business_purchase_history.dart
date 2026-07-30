@@ -226,7 +226,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
           onExpansionChanged: (expanded) {
             if (expanded && !_hasExpandedOnce) {
               setState(() => _hasExpandedOnce = true);
@@ -248,7 +248,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
           ),
           title: Text(
             widget.purchase.customerName,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           subtitle: _buildSubtitle(context),
           trailing: _buildStatusBadge(context),
@@ -260,80 +260,48 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
   }
 
   Widget _buildSubtitle(BuildContext context) {
-    final customerAsync = ref.watch(customerDetailProvider(widget.purchase.customerId));
+    final phone = widget.purchase.customerPhone;
 
     return Row(
       children: [
-        Flexible(
-          child: customerAsync.when(
-            loading: () => Text(
-              widget.purchase.billDate,
+        if (phone.isNotEmpty) ...[
+          Icon(
+            Icons.phone_outlined,
+            size: 12,
+            color: Colors.grey.shade600,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              phone,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.grey.shade600,
                 fontSize: 13,
               ),
             ),
-            error: (_, __) => Text(
-              widget.purchase.billDate,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 13,
-              ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade400,
             ),
-            data: (customer) {
-              if (customer.phone?.isNotEmpty == true) {
-                return Row(
-                  children: [
-                    Icon(
-                      Icons.phone_outlined,
-                      size: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        customer.phone!,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.purchase.billDate,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                );
-              }
-              return Text(
-                widget.purchase.billDate,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
-              );
-            },
+          ),
+          const SizedBox(width: 8),
+        ],
+        Text(
+          widget.purchase.billDate,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
           ),
         ),
       ],
     );
   }
-
   Widget _buildStatusBadge(BuildContext context) {
     if (_isFullyPaid) {
       return Container(
@@ -422,17 +390,16 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
       ),
       error: (e, _) => _buildErrorWidget(context),
       data: (detail) {
-        final merged = widget.purchase.mergeWithDetail(detail);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildCustomerInfo(context, merged),
-            if (merged.notes.isNotEmpty) ...[
+            _buildCustomerInfo(context, detail),
+            if (detail.notes.isNotEmpty) ...[
               const SizedBox(height: 8),
-              _buildNotesSection(context, merged.notes),
+              _buildNotesSection(context, detail.notes),
             ],
-            const SizedBox(height: 16),
-            _buildProductsList(context, merged.items),
+            const SizedBox(height: 8),
+            _buildProductsList(context, detail.items),
           ],
         );
       },
@@ -462,9 +429,8 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
     );
   }
 
-  Widget _buildCustomerInfo(BuildContext context, PurchaseModel merged) {
+  Widget _buildCustomerInfo(BuildContext context, PurchaseModel purchase) {
     final primary = Theme.of(context).primaryColor;
-    final customerAsync = ref.watch(customerDetailProvider(merged.customerId));
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -480,47 +446,40 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
             children: [
               Icon(Icons.person_outline, size: 16, color: primary),
               const SizedBox(width: 6),
-              Text("Customer",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: primary,
-                  )),
+              Text(
+                "Customer",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          _InfoRow(label: "ID", value: merged.customerId.toString()),
-          customerAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
-              child: Text("Loading...", style: TextStyle(fontSize: 12, color: Colors.grey)),
-            ),
-            error: (_, __) => const SizedBox(height: 4),
-            data: (customer) {
-              return Column(
-                children: [
-                  if (customer.phone?.isNotEmpty == true) ...[
-                    const SizedBox(height: 4),
-                    _InfoRow(label: "Phone", value: customer.phone!),
-                  ],
-                  if (customer.gender?.isNotEmpty == true) ...[
-                    const SizedBox(height: 4),
-                    _InfoRow(label: "Gender", value: customer.gender!.capitalize),
-                  ],
-                ],
-              );
-            },
+          _InfoRow(
+            label: "Bill No",
+            value: widget.purchase.billNumber,
+          ),  const SizedBox(height: 8),
+          _InfoRow(
+            label: "Phone No",
+            value: widget.purchase.customerPhone,
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-          _InfoRow(label: "Bill No", value: merged.billNumber),
-          if (merged.paymentMode.isNotEmpty) ...[
+
+          if (widget.purchase.paymentMode.isNotEmpty) ...[
             const SizedBox(height: 4),
-            _InfoRow(label: "Payment Mode", value: merged.paymentMode.toUpperCase()),
+            _InfoRow(
+              label: "Payment Mode",
+              value: widget.purchase.paymentMode.toUpperCase(),
+            ),
           ],
+
           const SizedBox(height: 4),
-          _InfoRow(label: "Status", value: merged.status.toUpperCase()),
+
+          _InfoRow(
+            label: "Status",
+            value: widget.purchase.status.toUpperCase(),
+          ),
         ],
       ),
     );
@@ -576,7 +535,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
             Text("Products (${items.length})",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 12,
                   color: primary,
                 )),
           ],
@@ -594,8 +553,8 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
     final quantity = item.quantity?.toString() ?? "0";
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -606,7 +565,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
           Text(
             "${index + 1}",
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: Colors.black,
               fontWeight: FontWeight.w500,
               fontSize: 12,
             ),
@@ -622,15 +581,15 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
-                  "₹${price.formatPrice} × $quantity",
+                  "₹${price.formatPrice} + GST × $quantity",
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500
                   ),
                 ),
               ],
@@ -666,13 +625,13 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
 
     if (!_showPaymentField) {
       return SizedBox(
+        height: 45,
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: () => setState(() => _showPaymentField = true),
           style: ElevatedButton.styleFrom(
             backgroundColor: primary,
             foregroundColor: Colors.white,
-            elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -680,7 +639,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
           ),
           icon: const Icon(Icons.payments_outlined, size: 18),
           label: const Text("Receive Payment",
-              style: TextStyle(fontWeight: FontWeight.w600)),
+              style: TextStyle(fontWeight: FontWeight.w500,fontSize: 14)),
         ),
       );
     }
@@ -694,8 +653,8 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
       ),
       child: Column(
         children: [
-          _buildPendingAmountChip(context, pending),
-          const SizedBox(height: 12),
+          // _buildPendingAmountChip(context, pending),
+          // const SizedBox(height: 12),
           _buildPaymentInput(context, primary),
           const SizedBox(height: 12),
           _buildPaymentActions(context, primary, pending),
@@ -704,110 +663,140 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
     );
   }
 
-  Widget _buildPendingAmountChip(BuildContext context, double pending) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: Colors.orange.shade700, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            "Pending: ₹${pending.formatPrice}",
-            style: TextStyle(
-              color: Colors.orange.shade700,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildPendingAmountChip(BuildContext context, double pending) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(10),
+  //     decoration: BoxDecoration(
+  //       color: Colors.orange.shade50,
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Icon(Icons.info_outline, color: Colors.orange.shade700, size: 18),
+  //         const SizedBox(width: 8),
+  //         Text(
+  //           "Pending: ₹${pending.formatPrice}",
+  //           style: TextStyle(
+  //             color: Colors.orange.shade700,
+  //             fontWeight: FontWeight.w600,
+  //             fontSize: 14,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildPaymentInput(BuildContext context, Color primary) {
-    return TextField(
-      controller: _paymentController,
-      keyboardType: TextInputType.number,
-      autofocus: true,
-      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: "Enter received amount",
-        prefixIcon: Icon(Icons.currency_rupee, color: primary, size: 20),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary, width: 1.5),
+    return SizedBox(
+      height: 45,
+      child: TextField(
+        controller: _paymentController,
+        keyboardType: TextInputType.number,
+        autofocus: true,
+        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: "Enter received amount",
+          prefixIcon: Icon(Icons.currency_rupee, color: primary, size: 20),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: primary, width: 1.5),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPaymentActions(BuildContext context, Color primary, double pending) {
+  Widget _buildPaymentActions(
+      BuildContext context,
+      Color primary,
+      double pending,
+      ) {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              setState(() => _showPaymentField = false);
-              _paymentController.clear();
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 36,
+            child: OutlinedButton(
+              onPressed: () {
+                setState(() => _showPaymentField = false);
+                _paymentController.clear();
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            child: const Text("Cancel"),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           flex: 2,
-          child: ElevatedButton.icon(
-            onPressed: () => _submitPayment(context, pending),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 36,
+            child: ElevatedButton.icon(
+              onPressed: () => _submitPayment(context, pending),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
-            icon: _isLoading
-                ? const SizedBox(
-              height: 18,
-              width: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
+              icon: _isLoading
+                  ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Icon(
+                Icons.check_circle_outline,
+                size: 16,
               ),
-            )
-                : const Icon(Icons.check_circle_outline, size: 18),
-            label: Text(
-              _isLoading ? "Processing..." : "Submit",
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              label: Text(
+                _isLoading ? "Processing..." : "Submit",
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
       ],
     );
   }
-
   Future<void> _submitPayment(BuildContext context, double pending) async {
     final amount = double.tryParse(_paymentController.text) ?? 0;
 
@@ -863,7 +852,7 @@ class _AmountChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
@@ -875,7 +864,7 @@ class _AmountChip extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontSize: 14,
               ),
               overflow: TextOverflow.ellipsis,
             ),

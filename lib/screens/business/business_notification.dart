@@ -37,7 +37,7 @@ class _BusinessNotificationScreenState
   final Map<String, IconData> _typeIcons = {
     "info": Icons.info_outline_rounded,
 
-    "promo": Icons.local_offer_rounded,
+    "promo": Icons.local_offer_outlined,
 
     "alert": Icons.warning_amber_rounded,
   };
@@ -150,11 +150,10 @@ class _BusinessNotificationScreenState
 
       title: const Text(
         "Notifications",
-
         style: TextStyle(
           color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          fontSize: 17,
         ),
       ),
 
@@ -277,7 +276,7 @@ class _BusinessNotificationScreenState
                   decoration: BoxDecoration(
                     color: isSelected
                         ? color.withOpacity(0.14)
-                        : cs.onSurface.withOpacity(0.04),
+                        : cs.onSurface.withOpacity(0.01),
 
                     borderRadius: BorderRadius.circular(14),
 
@@ -343,7 +342,7 @@ class _BusinessNotificationScreenState
           padding: const EdgeInsets.all(14),
 
           decoration: BoxDecoration(
-            color: cs.onSurface.withOpacity(0.05),
+            color: cs.onSurface.withOpacity(0.01),
 
             borderRadius: BorderRadius.circular(18),
 
@@ -382,7 +381,7 @@ class _BusinessNotificationScreenState
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
 
         decoration: BoxDecoration(
-          color: cs.onSurface.withOpacity(0.06),
+          color: cs.onSurface.withOpacity(0.02),
 
           borderRadius: BorderRadius.circular(14),
 
@@ -407,7 +406,7 @@ class _BusinessNotificationScreenState
 
                 style: TextStyle(
                   color: selectedCustomerId == null
-                      ? cs.onSurface.withOpacity(0.4)
+                      ? cs.onSurface.withOpacity(0.6)
                       : cs.onSurface,
 
                   fontSize: 13,
@@ -593,11 +592,11 @@ class _BusinessNotificationScreenState
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
 
               decoration: BoxDecoration(
-                color: cs.onSurface.withOpacity(0.05),
+                color: cs.onSurface.withOpacity(0.01),
 
                 borderRadius: BorderRadius.circular(16),
 
-                border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+                border: Border.all(color: cs.onSurface.withOpacity(0.07)),
               ),
 
               child: Row(
@@ -633,10 +632,8 @@ class _BusinessNotificationScreenState
 
                           style: TextStyle(
                             color: cs.onSurface,
-
-                            fontWeight: FontWeight.w700,
-
-                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
                         Text(
@@ -716,14 +713,14 @@ class _BusinessNotificationScreenState
         alignLabelWithHint: true,
 
         labelStyle: TextStyle(
-          color: cs.onSurface.withOpacity(0.4),
+          color: cs.onSurface.withOpacity(0.6),
 
           fontSize: 12,
         ),
 
         filled: true,
 
-        fillColor: cs.onSurface.withOpacity(0.06),
+        fillColor: cs.onSurface.withOpacity(0.02),
 
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
@@ -764,7 +761,7 @@ class _BusinessNotificationScreenState
       text.toUpperCase(),
 
       style: TextStyle(
-        color: cs.onSurface.withOpacity(0.35),
+        color: cs.onSurface.withOpacity(0.40),
 
         fontSize: 9,
 

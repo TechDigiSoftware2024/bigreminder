@@ -39,7 +39,7 @@ class CustomKPICard extends StatelessWidget {
 
             /// Icon Box
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: AppColors.primaryLight.withOpacity(0.3),
@@ -50,27 +50,25 @@ class CustomKPICard extends StatelessWidget {
                 size: 20,
               ),
             ),
-
-            const SizedBox(height: 4),
+            Spacer(),
 
             /// Value
             Text(
               value,
               style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: AppColors.cardText,
               ),
             ),
 
-            const SizedBox(height: 4),
 
             /// Title
             Text(
               title,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 color: AppColors.cardText,
               ),
             ),

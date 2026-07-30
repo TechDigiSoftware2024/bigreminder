@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 
 import '../../api_config/api_config.dart';
 import '../../models/business_models/BusinessMonthlyGrowthModel.dart';
+import '../../models/business_models/business_analysis_model.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_customer_req_model.dart';
 import '../../models/business_models/business_income_req_model.dart';
@@ -130,6 +131,25 @@ class BusinessService {
       "Failed to fetch trends",
     );
   }
+  static Future<BusinessAnalysisModel> getBusinessAnalysis({
+    required String token,
+    required int businessId,
+    required int months,
+  }) async {
+    final response = await http.get(
+      Uri.parse(ApiConfig.businessTrends(businessId, months)),
+      headers: ApiConfig.headers(token: token),
+    );
+
+    if (response.statusCode == 200) {
+      return BusinessAnalysisModel.fromJson(
+        jsonDecode(response.body),
+      );
+    }
+
+    throw Exception("Failed to load Business Analysis");
+  }
+
   Future<ReceivePaymentResponse> receivePayment({
     required ReceivePaymentRequest request,
     required String token,

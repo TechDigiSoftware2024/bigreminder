@@ -1,3 +1,4 @@
+import 'package:bigreminder/screens/about_app_screen.dart';
 import 'package:bigreminder/screens/auth/login_screen.dart';
 import 'package:bigreminder/screens/business/business_query_screen.dart';
 import 'package:flutter/foundation.dart';
@@ -46,7 +47,7 @@ class BusinessProfile extends ConsumerWidget {
           SliverAppBar(
             pinned: true,
 
-            expandedHeight: 150,
+            expandedHeight: 130,
 
             elevation: 0,
 
@@ -84,14 +85,12 @@ class BusinessProfile extends ConsumerWidget {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 12),
                       Text(
                         businessName.toString(),
 
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -128,7 +127,7 @@ class BusinessProfile extends ConsumerWidget {
                     "Business Details",
 
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
 
@@ -187,7 +186,9 @@ class BusinessProfile extends ConsumerWidget {
                     context,
                     icon: Icons.info_outline,
                     title: "About App",
-                    onTap:  (){},
+                    onTap:  (){
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=> AboutAppScreen()));
+                    },
                   ),
 
                   const SizedBox(height: 26),
@@ -200,7 +201,7 @@ class BusinessProfile extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(
                         elevation: 0,
 
-                        backgroundColor: Colors.red.shade50,
+                        backgroundColor: Colors.red.withOpacity(0.1),
 
                         foregroundColor: Colors.red,
 
@@ -208,6 +209,7 @@ class BusinessProfile extends ConsumerWidget {
 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
+                          side: BorderSide(color: Colors.red.shade100)
                         ),
                       ),
 
@@ -232,7 +234,6 @@ class BusinessProfile extends ConsumerWidget {
 
                       label: const Text(
                         "Logout",
-
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -257,9 +258,8 @@ class BusinessProfile extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(12),
 
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -279,15 +279,15 @@ class BusinessProfile extends ConsumerWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(11),
+            padding: const EdgeInsets.all(6),
 
             decoration: BoxDecoration(
               color: theme.primaryColor.withOpacity(0.1),
 
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(99),
             ),
 
-            child: Icon(icon, color: theme.primaryColor),
+            child: Icon(icon, color: theme.primaryColor,size: 20,),
           ),
 
           const SizedBox(width: 14),
@@ -300,18 +300,16 @@ class BusinessProfile extends ConsumerWidget {
                 Text(
                   title,
 
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  style: TextStyle(color: Colors.black,fontWeight: FontWeight.w500, fontSize: 12),
                 ),
-
-                const SizedBox(height: 4),
 
                 Text(
                   subtitle,
 
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    color: Colors.grey.shade600
                   ),
                 ),
               ],
@@ -331,7 +329,7 @@ class BusinessProfile extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 6),
 
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -352,18 +350,18 @@ class BusinessProfile extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
 
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(6),
 
           decoration: BoxDecoration(
             color: theme.primaryColor.withOpacity(0.1),
 
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(99),
           ),
 
-          child: Icon(icon, color: theme.primaryColor),
+          child: Icon(icon, color: theme.primaryColor,size: 20,),
         ),
 
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500,fontSize: 12)),
 
         trailing: Icon(
           Icons.arrow_forward_ios_rounded,

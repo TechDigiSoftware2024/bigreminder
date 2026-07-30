@@ -16,7 +16,7 @@ class AddIncomeScreen extends ConsumerStatefulWidget {
 
 class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
   final amountCtrl = TextEditingController();
-  final categoryCtrl = TextEditingController();
+  final remarkCtrl = TextEditingController();
 
   bool loading = false;
   String? selectedSource;
@@ -32,36 +32,41 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
         elevation: 0,
         title: const Text(
           "Add Income",
-          style: TextStyle(fontWeight: FontWeight.w700,fontSize: 17),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+          ),
         ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-
-            /// 🔵 HEADER CARD
+            /// HEADER
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: cs.primary,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
+                children: const [
+                  Text(
                     "New Income",
-                    style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     "Track your earnings easily",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -69,26 +74,24 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            /// 💳 INPUT CARD
+            /// INPUT CARD
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+                    color: Colors.black.withOpacity(.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-
-                  /// 💰 AMOUNT
                   _inputField(
                     controller: amountCtrl,
                     label: "Amount",
@@ -97,8 +100,9 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                     keyboard: TextInputType.number,
                   ),
 
-                  const SizedBox(height: 14),
-                CustomDropdownTextField(
+                  const SizedBox(height: 6),
+
+                  CustomDropdownTextField(
                     label: "Source",
                     hint: "e.g. Cash / UPI",
                     icon: Icons.account_balance_wallet,
@@ -109,41 +113,42 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                       "Card",
                       "Other",
                     ],
-                    onChanged: (value){
+                    onChanged: (value) {
                       setState(() {
                         selectedSource = value;
                       });
                     },
-                ),
-                  const SizedBox(height: 14),
+                  ),
+
+                  const SizedBox(height: 6),
+
                   _inputField(
-                    controller: categoryCtrl,
-                    label: "Income remarks",
+                    controller: remarkCtrl,
+                    label: "Income Remarks",
                     hint: "e.g. Fees / Product sold",
-                    icon: Icons.currency_rupee,
-                    keyboard: TextInputType.number,
+                    icon: Icons.description_outlined,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            /// 🚀 BUTTON
+            const SizedBox(height: 18),
+
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 40,
               child: ElevatedButton(
                 onPressed: loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: loading
                     ? const SizedBox(
-                  height: 20,
-                  width: 20,
+                  height: 18,
+                  width: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
@@ -152,7 +157,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                     : const Text(
                   "Add Income",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -164,7 +169,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
     );
   }
 
-  /// 🔥 SUBMIT
+  /// SUBMIT
   Future<void> _submit() async {
     try {
       setState(() => loading = true);
@@ -172,7 +177,10 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
       final amount = double.tryParse(amountCtrl.text.trim());
 
       if (amount == null || amount <= 0) {
-        return _showSnack("Enter valid amount",isSuccess: false);
+        return _showSnack(
+          "Enter valid amount",
+          isSuccess: false,
+        );
       }
 
       final businessId = ref.read(businessIdProvider);
@@ -180,26 +188,52 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
       final req = BusinessIncomeRequest(
         amount: double.parse(amount.toStringAsFixed(2)),
         source: selectedSource.toString().toLowerCase(),
+        remark: remarkCtrl.toString().toLowerCase(),
         businessId: businessId,
       );
 
       await ref.read(incomeServiceProvider).addIncome(req);
 
-      _showSnack("Income added successfully",isSuccess: true);
+      _showSnack(
+        "Income added successfully",
+        isSuccess: true,
+      );
 
-      Future.delayed(const Duration(milliseconds: 300), () {
-        Navigator.pop(context, true); // 🔥 RETURN TRUE
-      });
+      Future.delayed(
+        const Duration(milliseconds: 300),
+            () {
+          Navigator.pop(context, true);
+        },
+      );
+
       amountCtrl.clear();
     } catch (e) {
-      _showSnack(e.toString(), isSuccess: false);
+      _showSnack(
+        parseApiError(e),
+        isSuccess: false,
+      );
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
+  String parseApiError(dynamic error) {
+    final cleaned = error.toString().replaceFirst('Exception: ', '');
 
-  /// 💬 SNACK
-  void _showSnack(String msg, {required bool isSuccess}) {
+    final match = RegExp(r'msg:\s*(.+?)\s*,\s*input:').firstMatch(cleaned);
+
+    if (match != null) {
+      return match.group(1)!.replaceAll("'", "").trim();
+    }
+
+    return cleaned.replaceAll("'", "").trim();
+  }
+  /// SNACK
+  void _showSnack(
+      String msg, {
+        required bool isSuccess,
+      }) {
     if (isSuccess) {
       CustomDialog.showSuccessSnack(context, msg);
     } else {
@@ -207,7 +241,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
     }
   }
 
-  /// 🎨 INPUT FIELD
+  /// INPUT FIELD
   Widget _inputField({
     required TextEditingController controller,
     required String label,
@@ -225,22 +259,43 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           style: TextStyle(
             color: cs.onSurface,
             fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
         ),
-        const SizedBox(height: 6),
+
+        const SizedBox(height: 4),
+
         TextField(
           controller: controller,
           keyboardType: keyboard,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: cs.primary),
+            prefixIcon: Icon(
+              icon,
+              color: cs.primary,
+              size: 20,
+            ),
             filled: true,
-            fillColor: cs.onSurface.withOpacity(0.05),
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            fillColor: cs.onSurface.withOpacity(0.01),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: cs.onSurface.withOpacity(.2),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: cs.primary.withOpacity(.35),
+              ),
             ),
           ),
         ),

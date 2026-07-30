@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:bigreminder/api_config/api_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import '../../models/business_models/add_product_model.dart';
 
@@ -26,7 +27,7 @@ class ProductImportService {
     int uploaded = 0;
     int failed = 0;
 
-    List<String> errors = [];
+    final List<String> errors = [];
 
     for (int i = 0; i < products.length; i++) {
       final product = products[i];
@@ -34,13 +35,20 @@ class ProductImportService {
       try {
         final payload = {
           "business_id": product.businessId,
-          "barcode": product.barcode,
+          "barcode": product.barcode?.trim().isNotEmpty == true
+              ? product.barcode!.trim()
+              : "",
           "name": product.name,
           "price": product.price,
+          "gst_percent": product.gst_percent.toString() ?? 0,
           "stock": product.stock,
         };
+        debugPrint(product.gst_percent.toString()+"GST");
 
-        debugPrint("Uploading product ${i + 1}/${products.length}: $payload");
+        debugPrint(
+          "Uploading ${i + 1}/${products.length}\n"
+              "Payload: ${jsonEncode(payload)}",
+        );
 
         final response = await http.post(
           Uri.parse("${ApiConfig.baseUrl}${ApiConfig.products}"),
@@ -52,30 +60,37 @@ class ProductImportService {
         );
 
         debugPrint(
-          "Product '${product.name}' -> status ${response.statusCode}, "
-              "body: ${response.body}",
+          "Status: ${response.statusCode}\n"
+              "Response: ${response.body}",
         );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.statusCode == 200 ||
+            response.statusCode == 201) {
           uploaded++;
         } else {
           failed++;
+
           errors.add(
-            "${product.name} (${response.statusCode}): ${response.body}",
+            "${product.name} (${response.statusCode})\n${response.body}",
           );
         }
-      } catch (e, stack) {
+      } catch (e, stackTrace) {
         failed++;
-        errors.add("${product.name}: ${e.toString()}");
-        debugPrint("Exception uploading '${product.name}': $e");
-        debugPrint("$stack");
+
+        errors.add("${product.name}: $e");
+
+        debugPrint("Exception while uploading ${product.name}");
+        debugPrint(e.toString());
+        debugPrint(stackTrace.toString());
       }
 
       onProgress(i + 1, products.length);
     }
 
     debugPrint(
-      "Upload finished: uploaded=$uploaded, failed=$failed, errors=$errors",
+      "Finished Upload\n"
+          "Uploaded : $uploaded\n"
+          "Failed   : $failed",
     );
 
     return ImportResult(

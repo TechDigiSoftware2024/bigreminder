@@ -1,3 +1,4 @@
+import 'package:bigreminder/screens/business/business_dash_screens/business_analysis_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_calculator_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_reminder_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/customer_list_screen.dart';
@@ -86,8 +87,8 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       top: 6,
                       child: Container(
                         padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade700,
                           shape: BoxShape.circle,
                         ),
                         child: Text(
@@ -153,58 +154,66 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
           child: Column(
             children: [
               /// ================= REVENUE CARD =================
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: primary,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primary.withOpacity(.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _metricItem(
-                        title: "Revenue",
-                        amount: data.totalIncomeValue,
-                        growth: data.revenueGrowthPercentValue,
+              GestureDetector(
+                onTap: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> BusinessAnalysisScreen()));
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: primary,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primary.withOpacity(.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-
-                    Container(
-                      height: 55,
-                      width: 1,
-                      color: Colors.white.withOpacity(.25),
-                    ),
-
-                    Expanded(
-                      child: _metricItem(
-                        title: "Expenses",
-                        amount: data.totalExpensesValue,
-                        growth: data.expenseGrowthPercentValue,
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _metricItem(
+                          context: context,
+                          title: "Revenue",
+                          amount: data.totalIncomeValue,
+                          growth: data.revenueGrowthPercentValue,
+                        ),
                       ),
-                    ),
 
-                    Container(
-                      height: 55,
-                      width: 1,
-                      color: Colors.white.withOpacity(.25),
-                    ),
-
-                    Expanded(
-                      child: _metricItem(
-                        title: data.netValue >= 0 ? "Profit" : "Loss",
-                        amount: data.netValue.abs(),
-                        growth: data.profitGrowthPercentValue,
+                      Container(
+                        height: 55,
+                        width: 1,
+                        color: Colors.white.withOpacity(.25),
                       ),
-                    ),
-                  ],
+
+                      Expanded(
+                        child: _metricItem(
+                          context: context,
+                          title: "Expenses",
+                          amount: data.totalExpensesValue,
+                          growth: data.expenseGrowthPercentValue,
+                        ),
+                      ),
+
+                      Container(
+                        height: 55,
+                        width: 1,
+                        color: Colors.white.withOpacity(.25),
+                      ),
+
+                      Expanded(
+                        child: _metricItem(
+                          context: context,
+                          title: data.netValue >= 0 ? "Profit" : "Loss",
+                          amount: data.netValue.abs(),
+                          growth: data.profitGrowthPercentValue,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -226,7 +235,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       loading: () => "0",
                       error: (_, __) => "0",
                     ),
-                    icon: Icons.people_alt_rounded,
+                    icon: Icons.people_outline,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -239,7 +248,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     title: "Pending Amount",
                     value:
                         "₹${data.grandTotalPendingAmountValue.toStringAsFixed(0)}",
-                    icon: Icons.account_balance_wallet_rounded,
+                    icon: Icons.account_balance_wallet_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -276,7 +285,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     const Text(
                       "Quick Actions",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -289,7 +298,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
                             title: actions[0],
-                            icon: Icons.person_add_alt_1_rounded,
+                            icon: Icons.person_add_alt_1_outlined,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -305,7 +314,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
                             title: actions[1],
-                            icon: Icons.payments_rounded,
+                            icon: Icons.payments_outlined,
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
@@ -331,7 +340,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
                             title: actions[2],
-                            icon: Icons.receipt_long_rounded,
+                            icon: Icons.receipt_long_outlined,
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
@@ -351,7 +360,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
                             title: actions[3],
-                            icon: Icons.calculate_rounded,
+                            icon: Icons.calculate_outlined,
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
@@ -377,7 +386,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
                             title: "Products",
-                            icon: Icons.inventory_2_rounded,
+                            icon: Icons.inventory_2_outlined,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -434,6 +443,7 @@ Widget _metricItem({
   required String title,
   required double amount,
   required double growth,
+  required BuildContext context,
 }) {
   final isPositive = growth >= 0;
 
@@ -451,18 +461,17 @@ Widget _metricItem({
           ),
         ),
 
-        const SizedBox(height: 8),
-
+        const SizedBox(height: 4),
         Text(
-          "₹${amount.toStringAsFixed(0)}",
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            "₹${amount.toStringAsFixed(0)}",
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
 
         const SizedBox(height: 6),
 
@@ -531,23 +540,29 @@ class _MetricCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(99),
                 color: primary.withOpacity(0.1),
               ),
-              child: Icon(icon, color: primary),
+              child: Icon(icon, color: primary,size: 20,),
             ),
             const Spacer(),
-            Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey.shade600),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              ],
             ),
           ],
         ),
@@ -575,7 +590,6 @@ class _ActionBtn extends StatelessWidget {
     final primary = Theme.of(context).colorScheme.primary;
 
     return Material(
-      color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(99),
         onTap: onTap,
@@ -585,7 +599,7 @@ class _ActionBtn extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(99),
             border: Border.all(color: primary.withOpacity(0.12), width: 1.2),
             boxShadow: [
               BoxShadow(
@@ -613,7 +627,7 @@ class _ActionBtn extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),

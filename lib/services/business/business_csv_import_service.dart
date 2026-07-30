@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
 import '../../models/business_models/add_product_model.dart';
 
 class CsvImportResult {
@@ -13,18 +15,46 @@ class CsvImportResult {
 }
 
 class CsvImportService {
-  // Maps our internal field -> list of acceptable header names (all lowercase).
+  /// Maps our internal field -> acceptable CSV headers (lowercase)
   static const Map<String, List<String>> _headerAliases = {
-    "barcode": ["barcode", "code", "sku"],
-    "name": ["name", "productname", "product_name", "product name", "title"],
-    "price": ["price", "sellingprice", "selling_price", "selling price", "mrp", "amount"],
-    "stock": ["stock", "quantity", "qty"],
+    "barcode": [
+      "barcode",
+      "code",
+      "sku",
+    ],
+    "name": [
+      "name",
+      "productname",
+      "product_name",
+      "product name",
+      "title",
+    ],
+    "price": [
+      "price",
+      "sellingprice",
+      "selling_price",
+      "selling price",
+      "mrp",
+      "amount",
+    ],
+    "stock": [
+      "stock",
+      "quantity",
+      "qty",
+    ],
+    "gst_percent": [
+      "gst",
+      "gst_percent",
+      "productgst",
+      "product_gst",
+      "product gst",
+      "tax",
+      "taxrate",
+      "tax_rate",
+      "tax rate",
+    ],
   };
 
-  /// Splits a single CSV line into fields, stripping surrounding quotes
-  /// and unescaping doubled quotes ("" -> "). Does NOT support fields
-  /// containing embedded commas or newlines inside quotes — this is a
-  /// deliberate tradeoff so one stray quote can't swallow the whole file.
   List<String> _splitLine(String line) {
     final fields = <String>[];
     final buffer = StringBuffer();
@@ -34,7 +64,9 @@ class CsvImportService {
       final char = line[i];
 
       if (char == '"') {
-        if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+        if (inQuotes &&
+            i + 1 < line.length &&
+            line[i + 1] == '"') {
           buffer.write('"');
           i++;
         } else {
@@ -47,7 +79,9 @@ class CsvImportService {
         buffer.write(char);
       }
     }
+
     fields.add(buffer.toString().trim());
+
     return fields;
   }
 
@@ -57,15 +91,14 @@ class CsvImportService {
   }) async {
     final csvString = await file.readAsString();
 
-    // Normalize line endings, split into lines, drop blank lines.
     final lines = csvString
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n')
         .split('\n')
-        .where((l) => l.trim().isNotEmpty)
+        .where((e) => e.trim().isNotEmpty)
         .toList();
 
-    debugPrint("CSV: total lines read = ${lines.length}");
+    debugPrint("CSV Lines : ${lines.length}");
 
     if (lines.isEmpty) {
       return CsvImportResult(
@@ -78,60 +111,77 @@ class CsvImportService {
         .map((e) => e.trim().toLowerCase())
         .toList();
 
-    debugPrint("CSV: headers found = $headers");
+    debugPrint("Headers : $headers");
 
-    // Resolve each required field to whichever column index matches an alias.
     final Map<String, int> resolvedIndex = {};
     final List<String> missing = [];
 
     _headerAliases.forEach((field, aliases) {
-      final idx = headers.indexWhere((h) => aliases.contains(h));
-      if (idx == -1) {
+      final index = headers.indexWhere(
+            (header) => aliases.contains(header),
+      );
+
+      if (index == -1) {
         missing.add(field);
       } else {
-        resolvedIndex[field] = idx;
+        resolvedIndex[field] = index;
       }
     });
 
-    debugPrint("CSV: resolvedIndex = $resolvedIndex, missing = $missing");
+    const requiredColumns = [
+      "name",
+      "price",
+      "stock",
+    ];
 
-    // Only name, price, and stock are truly required. Barcode is optional.
-    const hardRequired = ["name", "price", "stock"];
-    final missingHard = missing.where((m) => hardRequired.contains(m)).toList();
+    final missingRequired = missing
+        .where((e) => requiredColumns.contains(e))
+        .toList();
 
-    if (missingHard.isNotEmpty) {
-      debugPrint("CSV: aborting, missing hard-required columns = $missingHard");
+    if (missingRequired.isNotEmpty) {
       return CsvImportResult(
         products: [],
         errors: [
-          "Missing required column(s): ${missingHard.join(', ')}. "
-              "Found headers: ${headers.join(', ')}",
+          "Missing required column(s): ${missingRequired.join(", ")}"
         ],
       );
     }
 
-    final barcodeIndex = resolvedIndex["barcode"]; // may be null, that's fine
+    final barcodeIndex = resolvedIndex["barcode"];
     final nameIndex = resolvedIndex["name"]!;
     final priceIndex = resolvedIndex["price"]!;
     final stockIndex = resolvedIndex["stock"]!;
+    final gstIndex = resolvedIndex["productGST"];
 
-    List<ProductModel> products = [];
-    List<String> errors = [];
+    final List<ProductModel> products = [];
+    final List<String> errors = [];
 
     for (int i = 1; i < lines.length; i++) {
-      final row = _splitLine(lines[i]);
-
       try {
-        final barcode = barcodeIndex != null && barcodeIndex < row.length
+        final row = _splitLine(lines[i]);
+
+        final barcode =
+        barcodeIndex != null && barcodeIndex < row.length
             ? row[barcodeIndex].trim()
             : "";
-        final name = nameIndex < row.length ? row[nameIndex].trim() : "";
-        final price = priceIndex < row.length
+
+        final name =
+        nameIndex < row.length ? row[nameIndex].trim() : "";
+
+        final price =
+        priceIndex < row.length
             ? double.tryParse(row[priceIndex].trim()) ?? -1
             : -1;
-        final stock = stockIndex < row.length
+
+        final stock =
+        stockIndex < row.length
             ? int.tryParse(row[stockIndex].trim()) ?? -1
             : -1;
+
+        final gst_percent =
+        gstIndex != null && gstIndex < row.length
+            ? int.tryParse(row[gstIndex].trim()) ?? 0
+            : 0;
 
         if (name.isEmpty) {
           errors.add("Row ${i + 1}: Product name is empty.");
@@ -151,22 +201,21 @@ class CsvImportService {
         products.add(
           ProductModel(
             businessId: businessId,
-            barcode: barcode,
+            barcode: barcode.isEmpty ? null : barcode,
             name: name,
             price: price.toDouble(),
             stock: stock,
+            gst_percent: gst_percent.toString().isEmpty ? null : gst_percent,
           ),
         );
       } catch (e) {
-        errors.add("Row ${i + 1}: ${e.toString()}");
-        debugPrint("CSV: row ${i + 1} threw exception: $e");
+        errors.add("Row ${i + 1}: $e");
+        debugPrint("Error parsing row ${i + 1}: $e");
       }
     }
-
-    debugPrint("CSV: parsed products = ${products.length}, errors = ${errors.length}");
-    if (errors.isNotEmpty) {
-      debugPrint("CSV: error details = $errors");
-    }
+    debugPrint(
+      "Imported Products : ${products.length}, Errors : ${errors.length}",
+    );
 
     return CsvImportResult(
       products: products,
