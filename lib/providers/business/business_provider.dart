@@ -4,13 +4,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/business_models/add_product_model.dart';
 import '../../models/business_models/business_analysis_model.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_dashboard_model.dart';
-import '../../models/business_models/business_model.dart';
 import '../../models/business_models/business_purchase_list_model.dart';
+import '../../models/business_models/businesss_edit_profile_model.dart';
 import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/create_purchase_response_model.dart';
 import '../../models/business_models/query_model.dart';
@@ -31,6 +30,8 @@ import '../../services/business/query_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/super_admin/business_reminder_service.dart';
 import '../auth/auth_provider.dart';
+import 'business_profile_notifier.dart';
+import 'business_profile_state.dart';
 
 // ================= CONTROLLER =================
 class BusinessController extends StateNotifier<BusinessState> {
@@ -73,7 +74,6 @@ class BusinessController extends StateNotifier<BusinessState> {
       rethrow;
     }
   }
-
 
   Future<CreatePurchaseResponseModel> createPurchase({
     required CreatePurchaseModel model,
@@ -223,7 +223,46 @@ final dashboardProvider = FutureProvider.family<BusinessDashboardModel, int>((
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService(baseUrl: ApiConfig.baseUrl, ref: ref);
 });
+final businessEditProvider =
+StateNotifierProvider<BusinessEditNotifier, AsyncValue<void>>(
+      (ref) {
+    return BusinessEditNotifier(
+      ref.read(businessRepositoryProvider),
+    );
+  },
+);
+class BusinessEditNotifier
+    extends StateNotifier<AsyncValue<void>> {
+  final BusinessRepository repository;
 
+  BusinessEditNotifier(this.repository)
+      : super(const AsyncData(null));
+
+  Future<bool> updateBusiness({
+    required int businessId,
+    required BusinessProfileEditModel model,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      await repository.updateBusiness(
+        businessId: businessId,
+        model: model,
+      );
+
+      state = const AsyncData(null);
+
+      return true;
+    } catch (e, stackTrace) {
+      state = AsyncError(
+        e,
+        stackTrace,
+      );
+
+      return false;
+    }
+  }
+}
 final purchaseServiceProvider = Provider<PurchaseService>(
   (ref) => PurchaseService(),
 );
@@ -245,7 +284,9 @@ final purchasesProvider = FutureProvider.family<List<PurchaseModel>, int?>((
         customerId: customerId,
       );
 });
-
+final businessProfileProvider = StateNotifierProvider<BusinessProfileNotifier,BusinessProfileState>((ref){
+  return BusinessProfileNotifier();
+});
 final incomeServiceProvider = Provider<IncomeService>((ref) {
   return IncomeService(ref);
 });
@@ -484,8 +525,10 @@ final businessAddressProvider = Provider<String>((ref) {
   return "";
 });
 
-
-final billDetailProvider = FutureProvider.family<PurchaseModel, int>((ref, billId) async {
+final billDetailProvider = FutureProvider.family<PurchaseModel, int>((
+  ref,
+  billId,
+) async {
   final token = ref.read(tokenProvider);
   return BillService().getBillDetail(token: token, billId: billId);
 });
@@ -519,11 +562,12 @@ class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
   Future<List<ProductModel>> build() async {
     return [];
   }
+
   Future<void> updateProduct(
-      String token,
-      int productId,
-      ProductModel product,
-      ) async {
+    String token,
+    int productId,
+    ProductModel product,
+  ) async {
     await _service.updateProduct(
       token: token,
       productId: productId,
@@ -534,18 +578,13 @@ class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
     await loadProducts(token, businessId.toString());
   }
 
-  Future<void> deleteProduct(
-      String token,
-      int productId,
-      ) async {
-    await _service.deleteProduct(
-      token: token,
-      productId: productId,
-    );
+  Future<void> deleteProduct(String token, int productId) async {
+    await _service.deleteProduct(token: token, productId: productId);
 
     final businessId = ref.read(businessIdProvider);
     await loadProducts(token, businessId.toString());
   }
+
   Future<void> loadProducts(String token, String businessId) async {
     state = const AsyncLoading();
 
@@ -567,24 +606,23 @@ final productProvider =
       ProductNotifier.new,
     );
 final customerDetailProvider =
-FutureProvider.family<CustomerResponseModel, int>((ref, customerId) async {
-  final token = ref.read(tokenProvider);
-  return BusinessService().getCustomerById(token: token, customerId: customerId);
-});
+    FutureProvider.family<CustomerResponseModel, int>((ref, customerId) async {
+      final token = ref.read(tokenProvider);
+      return BusinessService().getCustomerById(
+        token: token,
+        customerId: customerId,
+      );
+    });
 
-final analysisMonthsProvider =
-StateProvider<int>((ref) => 6);
-final businessAnalysisProvider =
-FutureProvider<BusinessAnalysisModel>((ref) async {
+final analysisMonthsProvider = StateProvider<int>((ref) => 6);
+final businessAnalysisProvider = FutureProvider<BusinessAnalysisModel>((
+  ref,
+) async {
+  final token = ref.watch(authControllerProvider).token!;
 
-  final token =
-  ref.watch(authControllerProvider).token!;
+  final business = ref.watch(businessIdProvider);
 
-  final business =
-  ref.watch(businessIdProvider);
-
-  final months =
-  ref.watch(analysisMonthsProvider);
+  final months = ref.watch(analysisMonthsProvider);
 
   return BusinessService.getBusinessAnalysis(
     token: token,

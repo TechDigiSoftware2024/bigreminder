@@ -25,9 +25,9 @@ List<Widget> getBottomBarScreens(AppType type) {
 List<String> getBottomBarLabels(AppType type) {
   return const [
     "Home",
-    "History",
-    "Purchase",
-    "Notify",
+    "Invoices",
+    "Billing",
+    "Reminders",
     "Profile",
   ];
 

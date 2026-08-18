@@ -1,4 +1,5 @@
 import '../models/business_models/business_customer_req_model.dart';
+import '../models/business_models/businesss_edit_profile_model.dart';
 import '../models/business_models/receive_payment_request_model.dart';
 import '../models/business_models/receive_payment_response_model.dart';
 import '../services/business/business_service.dart';
@@ -19,6 +20,17 @@ class BusinessRepository {
       token: token ?? "",
     );
   }
+
+  Future<void> updateBusiness({
+  required int businessId,
+  required BusinessProfileEditModel model,
+  }) async {
+  await updateBusiness(
+  businessId: businessId,
+  model: model,
+  );
+  }
+
   Future<String> updateCustomer({
     required int customerId,
     required UpdateCustomerRequestModel request,

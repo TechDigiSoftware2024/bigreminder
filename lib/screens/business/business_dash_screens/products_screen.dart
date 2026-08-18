@@ -1,16 +1,13 @@
 import 'dart:io';
-
-import 'package:bigreminder/theme/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-
 import '../../../models/business_models/add_product_model.dart';
 import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_csv_import_service.dart';
 import '../../../services/business/product_import_service.dart';
 import '../../../widgets/add_product.dart';
+import '../../../widgets/empty_screen.dart';
 import '../preview_product_screen.dart';
 
 class ProductScreen extends ConsumerStatefulWidget {
@@ -304,7 +301,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
               _buildSearchBar(primary),
               Expanded(
                 child: items.isEmpty
-                    ? _buildEmptyState(primary)
+                    ? CustomEmptyState(title: "No Products Yet", message: "Tap the button below to add your first product.", icon: Icons.inventory_2_outlined)
                     : RefreshIndicator(
                         color: primary,
                         onRefresh: () async {
@@ -400,42 +397,6 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
               vertical: 14,
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(Color primary) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.inventory_2_outlined, size: 64, color: primary),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "No Products Yet",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Tap the button below to add\nyour first product.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
         ),
       ),
     );
@@ -556,7 +517,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                               fontSize: 14,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
                           TextFormField(
                             controller: barcodeController,
                             style: const TextStyle(color: Colors.black),
@@ -566,7 +527,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                               primary,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           TextFormField(
                             controller: nameController,
                             validator: (v) {
@@ -584,7 +545,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                             textCapitalization: TextCapitalization.words,
                             autofocus: true,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           TextFormField(
                             controller: productGSTController,
                             style: const TextStyle(color: Colors.black),
@@ -594,7 +555,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                               primary,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -697,31 +658,59 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       },
     );
   }
-
-  InputDecoration _inputDecoration(String label, IconData icon, Color primary) {
+  InputDecoration _inputDecoration(
+      String label,
+      IconData icon,
+      Color primary,
+      ) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: Colors.grey),
       prefixIcon: Icon(icon, size: 20, color: Colors.grey),
-      filled: true,
-      fillColor: const Color(0xFFF3F4F6),
+
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(
+          color: Colors.grey.shade200, // Light grey border
+          width: 1,
+        ),
       ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
+      ),
+
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: primary, width: 2),
+        borderSide: BorderSide(
+          color: primary,
+          width: 2,
+        ),
       ),
+
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.red),
+        borderSide: const BorderSide(
+          color: Colors.red,
+        ),
       ),
+
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.red, width: 2),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 2,
+        ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
     );
   }
 }
@@ -1074,313 +1063,315 @@ class _ImportCsvDialogState extends State<ImportCsvDialog> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header icon in a soft circular container instead of a bare icon
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(14),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header icon in a soft circular container instead of a bare icon
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.upload_file_rounded,
+                  size: 36,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+        
+            const SizedBox(height: 10),
+        
+            Text(
+              "Import Products",
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+                fontSize: 18
+              ),
+            ),
+        
+            const SizedBox(height: 6),
+        
+            Text(
+              "Upload a CSV file containing your products.",
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+        
+            const SizedBox(height: 24),
+        
+            // Required columns + sample, using a bordered surface (no shadow)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                shape: BoxShape.circle,
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
-              child: Icon(
-                Icons.upload_file_rounded,
-                size: 36,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            "Import Products",
-            textAlign: TextAlign.center,
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-              fontSize: 18
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            "Upload a CSV file containing your products.",
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Required columns + sample, using a bordered surface (no shadow)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Required Columns",
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ['name', 'price', 'stock']
-                      .map(
-                        (col) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            col,
-                            style: textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSecondaryContainer,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-
-                const SizedBox(height: 16),
-
-                Divider(color: colorScheme.outlineVariant, height: 1),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  "Sample CSV",
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Container(
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Table(
-                    border: TableBorder(
-                      horizontalInside: BorderSide(
-                        color: colorScheme.outlineVariant,
-                        width: 1,
-                      ),
-                      verticalInside: BorderSide(
-                        color: colorScheme.outlineVariant,
-                        width: 1,
-                      ),
-                    ),
-                    columnWidths: const {
-                      0: FlexColumnWidth(1.3),
-                      1: FlexColumnWidth(1.2),
-                      2: FlexColumnWidth(0.9),
-                      3: FlexColumnWidth(0.9),
-                      4: FlexColumnWidth(0.8),
-                    },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      // Header row
-                      TableRow(
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondaryContainer,
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Required Columns",
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
-                        children: ['barcode', 'name', 'price', 'stock', 'gst%']
-                            .map(
-                              (col) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 2,
-                                  vertical: 8,
-                                ),
-                                child: Text(
-                                  col,
-                                  style: textTheme.labelMedium?.copyWith(
-                                    fontFamily: 'monospace',
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSecondaryContainer,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      // Data row 1
-                      TableRow(
-                        children: ['890123', 'Coke', '20', '50', '18']
-                            .map(
-                              (val) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                child: Text(
-                                  val,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    fontFamily: 'monospace',
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      // Data row 2
-                      TableRow(
-                        children: ['890124', 'Pepsi', '40', '25', '18']
-                            .map(
-                              (val) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                child: Text(
-                                  val,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    fontFamily: 'monospace',
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // File picker button
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: colorScheme.outline),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              foregroundColor: colorScheme.primary,
-            ),
-            onPressed: pickCsv,
-            icon: const Icon(Icons.folder_open_rounded),
-            label: const Text("Choose CSV File"),
-          ),
-
-          if (selectedFile != null) ...[
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: colorScheme.onPrimaryContainer,
+        
+                  const SizedBox(height: 10),
+        
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['name', 'price', 'stock']
+                        .map(
+                          (col) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              col,
+                              style: textTheme.labelMedium?.copyWith(
+                                color: colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      selectedFile!.path.split('/').last,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
+        
+                  const SizedBox(height: 16),
+        
+                  Divider(color: colorScheme.outlineVariant, height: 1),
+        
+                  const SizedBox(height: 16),
+        
+                  Text(
+                    "Sample CSV",
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+        
+                  const SizedBox(height: 10),
+        
+                  Container(
+                    width: double.infinity,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Table(
+                      border: TableBorder(
+                        horizontalInside: BorderSide(
+                          color: colorScheme.outlineVariant,
+                          width: 1,
+                        ),
+                        verticalInside: BorderSide(
+                          color: colorScheme.outlineVariant,
+                          width: 1,
+                        ),
                       ),
+                      columnWidths: const {
+                        0: FlexColumnWidth(1.3),
+                        1: FlexColumnWidth(1.2),
+                        2: FlexColumnWidth(0.9),
+                        3: FlexColumnWidth(0.9),
+                        4: FlexColumnWidth(0.8),
+                      },
+                      children: [
+                        // Header row
+                        TableRow(
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                          ),
+                          children: ['barcode', 'name', 'price', 'stock', 'gst%']
+                              .map(
+                                (col) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                    vertical: 8,
+                                  ),
+                                  child: Text(
+                                    col,
+                                    style: textTheme.labelMedium?.copyWith(
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        // Data row 1
+                        TableRow(
+                          children: ['890123', 'Coke', '20', '50', '18']
+                              .map(
+                                (val) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  child: Text(
+                                    val,
+                                    style: textTheme.bodySmall?.copyWith(
+                                      fontFamily: 'monospace',
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        // Data row 2
+                        TableRow(
+                          children: ['890124', 'Pepsi', '40', '25', '18']
+                              .map(
+                                (val) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  child: Text(
+                                    val,
+                                    style: textTheme.bodySmall?.copyWith(
+                                      fontFamily: 'monospace',
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    onPressed: () => setState(() => selectedFile = null),
-                    tooltip: 'Remove file',
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
                   ),
                 ],
               ),
             ),
-          ],
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                disabledBackgroundColor: colorScheme.onSurface.withOpacity(0.03,),
-                disabledForegroundColor: colorScheme.onSurface.withOpacity(0.03,),
+        
+            const SizedBox(height: 20),
+        
+            // File picker button
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: colorScheme.outline),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2))
+                ),
+                foregroundColor: colorScheme.primary,
+              ),
+              onPressed: pickCsv,
+              icon: const Icon(Icons.folder_open_rounded),
+              label: const Text("Choose CSV File"),
+            ),
+        
+            if (selectedFile != null) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        selectedFile!.path.split('/').last,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                      onPressed: () => setState(() => selectedFile = null),
+                      tooltip: 'Remove file',
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
                 ),
               ),
-              onPressed: selectedFile == null
-                  ? null
-                  : () {
-                      Navigator.pop(context);
-                      widget.onFileSelected(selectedFile!);
-                    },
-              icon: Icon(Icons.upload_rounded, color: colorScheme.primaryContainer,),
-              label: Text(
-                "Continue",
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primaryContainer,
+            ],
+        
+            const SizedBox(height: 20),
+        
+            SizedBox(
+              height: 52,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  disabledBackgroundColor: colorScheme.onSurface.withOpacity(0.03,),
+                  disabledForegroundColor: colorScheme.onSurface.withOpacity(0.03,),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2))
+                  ),
+                ),
+                onPressed: selectedFile == null
+                    ? null
+                    : () {
+                        Navigator.pop(context);
+                        widget.onFileSelected(selectedFile!);
+                      },
+                icon: Icon(Icons.upload_rounded,  color: selectedFile != null ? Colors.white : colorScheme.primaryContainer,),
+                label: Text(
+                  "Continue",
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: selectedFile != null ? Colors.white : colorScheme.primaryContainer,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

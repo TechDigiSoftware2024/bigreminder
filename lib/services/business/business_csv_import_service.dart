@@ -23,6 +23,7 @@ class CsvImportService {
       "sku",
     ],
     "name": [
+      "item name",
       "name",
       "productname",
       "product_name",
@@ -44,6 +45,7 @@ class CsvImportService {
     ],
     "gst_percent": [
       "gst",
+      "GST",
       "gst_percent",
       "productgst",
       "product_gst",
@@ -108,7 +110,7 @@ class CsvImportService {
     }
 
     final headers = _splitLine(lines.first)
-        .map((e) => e.trim().toLowerCase())
+        .map((e) => e.replaceAll('\uFEFF', '').trim().toLowerCase())
         .toList();
 
     debugPrint("Headers : $headers");
@@ -151,7 +153,7 @@ class CsvImportService {
     final nameIndex = resolvedIndex["name"]!;
     final priceIndex = resolvedIndex["price"]!;
     final stockIndex = resolvedIndex["stock"]!;
-    final gstIndex = resolvedIndex["productGST"];
+    final gstIndex = resolvedIndex["gst_percent"];
 
     final List<ProductModel> products = [];
     final List<String> errors = [];
@@ -178,10 +180,16 @@ class CsvImportService {
             ? int.tryParse(row[stockIndex].trim()) ?? -1
             : -1;
 
-        final gst_percent =
-        gstIndex != null && gstIndex < row.length
-            ? int.tryParse(row[gstIndex].trim()) ?? 0
-            : 0;
+        final gst_percent = () {
+          if (gstIndex == null || gstIndex >= row.length) return 0;
+
+          final gstText = row[gstIndex]
+              .trim()
+              .replaceAll('%', '')
+              .replaceAll(' ', '');
+
+          return int.tryParse(gstText) ?? 0;
+        }();
 
         if (name.isEmpty) {
           errors.add("Row ${i + 1}: Product name is empty.");

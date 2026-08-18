@@ -1,6 +1,7 @@
 import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/services/business/business_service.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
+import 'package:bigreminder/widgets/empty_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +28,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     super.initState();
     _fetchCustomers();
   }
-
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController searchController = TextEditingController();
   String searchQuery = "";
   Future<void> _fetchCustomers() async {
@@ -73,7 +74,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       appBar: AppBar(
         backgroundColor: primary,
         title: Text(
-          customerLabel,
+          "Add ${DashboardText.customer(type)}",
           style: const TextStyle(
             color: AppColors.appBarText,
             fontWeight: FontWeight.w700,
@@ -153,11 +154,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                       }).toList();
 
                       if (filteredCustomers.isEmpty) {
-                        return _emptyState(context, customerLabel);
+                        return CustomEmptyState(title: "No ${DashboardText.customer(type)} Yet", message:  "You haven't added any ${DashboardText.customer(type)} yet.\nCreate your first ${DashboardText.customer(type)}to get started.",icon: Icons.people_outline_rounded);
                       }
 
                       return ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         itemCount: filteredCustomers.length,
                         itemBuilder: (_, i) {
                           final c = filteredCustomers[i];
@@ -451,7 +452,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                                             c.gender.toUpperCase(),
                                             style: TextStyle(
                                               color: primary,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w500,
                                               fontSize: 12,
                                             ),
                                           ),
@@ -484,6 +485,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     final phoneCtrl = TextEditingController(text: customer.phone);
     final emailCtrl = TextEditingController(text: customer.email);
 
+    final _formKey = GlobalKey<FormState>();
+
     String selectedGender = customer.gender;
     bool isLoading = false;
 
@@ -504,198 +507,379 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(.1),
-                        child: Text(
-                          customer.name.isNotEmpty
-                              ? customer.name[0].toUpperCase()
-                              : "?",
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(.1),
+                          child: Text(
+                            customer.name.isNotEmpty
+                                ? customer.name[0].toUpperCase()
+                                : "?",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Text(
+                          "Edit ${DashboardText.customer(type)}",
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 10),
+                        const SizedBox(height: 14),
 
-                      const Text(
-                        "Edit Customer",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      TextField(
-                        controller: nameCtrl,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: DashboardText.customerName(type),
-                          prefixIcon: const Icon(Icons.person_outline),
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      TextField(
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: "Phone Number",
-                          prefixIcon: const Icon(Icons.phone_outlined),
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      TextField(
-                        controller: emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: "Email",
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ChoiceChip(
-                              label: const Text("Male"),
-                              selected: selectedGender == "male",
-                              onSelected: (_) {
-                                setDialogState(() {
-                                  selectedGender = "male";
-                                });
-                              },
+                        TextField(
+                          controller: nameCtrl,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            labelText: DashboardText.customerName(type),
+                            labelStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: const Icon(Icons.person_outline),
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ChoiceChip(
-                              label: const Text("Female"),
-                              selected: selectedGender == "female",
-                              onSelected: (_) {
-                                setDialogState(() {
-                                  selectedGender = "female";
-                                });
-                              },
+                        ),
+
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Phone number is required";
+                            }
+                            final cleaned = value.replaceAll(' ', '');
+                            final phoneRegex = RegExp(r'^[6-9]\d{9}$');
+                            if (cleaned.length != 10) {
+                              return "Must be 10 digits";
+                            }
+                            if (!phoneRegex.hasMatch(cleaned)) {
+                              return "Invalid Indian number";
+                            }
+                            return null;
+                          },
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            counterText: "",
+                            labelText: "Phone Number",
+                            labelStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: 14,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.phone_outlined,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              size: 20,
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 10),
 
-                      SizedBox(
-                        height: 42,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
+                        TextField(
+                          controller: emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            labelText: "Email",
+                            labelStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        Container(
+                          height: 48,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setDialogState(() {
+                                      selectedGender = "male";
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    decoration: BoxDecoration(
+                                      color: selectedGender == "male"
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Male",
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: selectedGender == "male"
+                                              ? Theme.of(context).colorScheme.onPrimary
+                                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setDialogState(() {
+                                      selectedGender = "female";
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOut,
+                                    decoration: BoxDecoration(
+                                      color: selectedGender == "female"
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Female",
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: selectedGender == "female"
+                                              ? Theme.of(context).colorScheme.onPrimary
+                                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        SizedBox(
+                          height: 42,
+                          child: Row(
+                            children: [
+                              OutlinedButton(
                                 onPressed: () => Navigator.pop(dialogContext),
                                 child: const Text("Cancel"),
                               ),
-                            ),
 
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: isLoading ? null : () async {
-                                try {
-                                  if (nameCtrl.text.trim().isEmpty) {
-                                    CustomDialog.showErrorSnack(
-                                      context,
-                                      "Customer name required",
-                                    );
-                                    return;
-                                  }
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: isLoading ? null : () async {
+                                    try {
+                                      if (nameCtrl.text.trim().isEmpty) {
+                                        CustomDialog.showErrorSnack(
+                                          context,
+                                          "Customer name required",
+                                        );
+                                        return;
+                                      }
 
-                                  setDialogState(() {
-                                    isLoading = true;
-                                  });
+                                      setDialogState(() {
+                                        isLoading = true;
+                                      });
 
-                                  final request = UpdateCustomerRequestModel(
-                                    name: nameCtrl.text.trim(),
-                                    phone: phoneCtrl.text.trim(),
-                                    gender: selectedGender,
-                                    email: emailCtrl.text.trim(),
-                                    fcmToken: "",
-                                    pendingAmount:
-                                    double.tryParse(
-                                      customer.pendingAmount,
-                                    ) ??
-                                        0,
-                                  );
+                                      final request = UpdateCustomerRequestModel(
+                                        name: nameCtrl.text.trim(),
+                                        phone: phoneCtrl.text.trim(),
+                                        gender: selectedGender,
+                                        email: emailCtrl.text.trim(),
+                                        fcmToken: "",
+                                        pendingAmount:
+                                        double.tryParse(
+                                          customer.pendingAmount,
+                                        ) ??
+                                            0,
+                                      );
 
-                                  await ref
-                                      .read(businessRepositoryProvider)
-                                      .updateCustomer(
-                                    customerId: customer.id,
-                                    request: request,
-                                  );
+                                      await ref
+                                          .read(businessRepositoryProvider)
+                                          .updateCustomer(
+                                        customerId: customer.id,
+                                        request: request,
+                                      );
 
-                                  await _fetchCustomers();
+                                      await _fetchCustomers();
 
-                                  if (!context.mounted) return;
+                                      if (!context.mounted) return;
 
-                                  Navigator.pop(dialogContext);
+                                      Navigator.pop(dialogContext);
 
-                                  CustomDialog.showSuccessSnack(
-                                    this.context,
-                                    "Customer updated successfully",
-                                  );
-                                } catch (e) {
-                                  setDialogState(() {
-                                    isLoading = false;
-                                  });
+                                      CustomDialog.showSuccessSnack(
+                                        this.context,
+                                        "Customer updated successfully",
+                                      );
+                                    } catch (e) {
+                                      setDialogState(() {
+                                        isLoading = false;
+                                      });
 
-                                  CustomDialog.showErrorSnack(
-                                    context,
-                                    e.toString(),
-                                  );
-                                }
-                              },
-                              child: isLoading
-                                  ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                      CustomDialog.showErrorSnack(
+                                        context,
+                                        e.toString(),
+                                      );
+                                    }
+                                  },
+                                  child: isLoading
+                                      ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                      : const Text("Update"),
                                 ),
-                              )
-                                  : const Text("Update"),
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -703,29 +887,6 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _emptyState(BuildContext context, String label) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.people_outline, size: 40, color: primary),
-          const SizedBox(height: 12),
-          Text(
-            "No $label Yet",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "Add your first $label",
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
-        ],
-      ),
     );
   }
 
@@ -739,251 +900,381 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     String selectedGender = "male";
     String pendingAmount = "0";
 
+    final type = ref.watch(appTypeProvider);
     showDialog(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text(
-                "Add Customer",
-                style: TextStyle(fontWeight: FontWeight.w700,fontSize: 16),
-              ),
+            return Form(
+              key: _formKey,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title:  Text(
+                  "Add ${DashboardText.customer(type)}",
+                  style: TextStyle(fontWeight: FontWeight.w700,fontSize: 16),
+                ),
 
-              content: SizedBox(
-                width: 400,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      /// Name (Required)
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: "Customer Name *",
-                          prefixIcon: const Icon(Icons.person_outline),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      TextField(
-                        controller: phoneController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 10,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: "Phone Number *",
-                          prefixIcon: const Icon(Icons.phone_outlined),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      /// Email (Optional)
-                      TextField(
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: "Email (Optional)",
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      /// Gender Toggle
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            /// Male 
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedGender = "male";
-                                  });
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: selectedGender == "male"
-                                        ? primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      "Male",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: selectedGender == "male"
-                                            ? Colors.white
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                content: SizedBox(
+                  width: 400,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        /// Name (Required)
+                        TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            hintText: DashboardText.customerName(type),
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: const Icon(Icons.person_outline),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
                               ),
                             ),
-
-                            /// Female
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedGender = "female";
-                                  });
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: selectedGender == "female"
-                                        ? primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      "Female",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: selectedGender == "female"
-                                            ? Colors.white
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
                               ),
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        TextFormField(
+                          controller: phoneController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 10,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
                           ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Phone number is required";
+                            }
+                            final phoneRegex = RegExp(r'^[6-9]\d{9}$');
+                            if (value.length != 10) {
+                              return "Must be 10 digits";
+                            }
+                            if (!phoneRegex.hasMatch(value)) {
+                              return "Invalid Indian number";
+                            }
+                            return null;
+                          },
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            counterText: "",
+                            hintText: "Phone Number *",
+                            hintStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.phone_outlined, size: 20,
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        /// Email (Optional)
+                        TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            hintText: "Email (Optional)",
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        /// Gender Toggle
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              /// Male
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedGender = "male";
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selectedGender == "male"
+                                          ? primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Male",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: selectedGender == "male"
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              /// Female
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedGender = "female";
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selectedGender == "female"
+                                          ? primary
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Female",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: selectedGender == "female"
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                actions: [
+                  /// Cancel
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                      const SizedBox(width: 10,),
+
+                      /// Add
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 22,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () async {
+                            final name = nameController.text.trim();
+                            final phone = phoneController.text.trim();
+                            final email = emailController.text.trim();
+
+                            if (name.isEmpty || phone.isEmpty) {
+                              CustomDialog.showErrorSnack(
+                                dialogContext,
+                                "Please enter required fields",
+                              );
+                              return;
+                            }
+
+                            // ✅ Capture navigator BEFORE any async call
+                            final rootNav = Navigator.of(context, rootNavigator: true);
+
+                            Navigator.pop(dialogContext);
+
+                            showLoadingDialog(context);
+
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              final businessId = prefs.getInt("businessId") ?? 0;
+                              final token = prefs.getString("token") ?? "";
+
+                              await BusinessService().addCustomer(
+                                name: name,
+                                phone: phone,
+                                token: token,
+                                businessId: businessId,
+                                email: email,
+                                gender: selectedGender,
+                                fcmToken: '',
+                                pendingAmount: pendingAmount.toString(),
+                              );
+
+                              await _fetchCustomers();
+
+                              // ✅ Use pre-captured navigator — no mounted check needed
+                              rootNav.pop(); // close loader
+
+                              if (context.mounted) {
+                                CustomDialog.showSuccessSnack(
+                                  context,
+                                  "Customer added successfully",
+                                );
+                              }
+                            } catch (e) {
+                              rootNav.pop(); // close loader
+
+                              if (context.mounted) {
+                                CustomDialog.showErrorSnack(
+                                  context,
+                                  e.toString().replaceFirst("Exception: ", ""),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text("Add"),
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-
-              actions: [
-                /// Cancel
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text("Cancel"),
-                ),
-
-                /// Add
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    final phone = phoneController.text.trim();
-                    final email = emailController.text.trim();
-
-                    if (name.isEmpty || phone.isEmpty) {
-                      CustomDialog.showErrorSnack(
-                        dialogContext,
-                        "Please enter required fields",
-                      );
-                      return;
-                    }
-
-                    // ✅ Capture navigator BEFORE any async call
-                    final rootNav = Navigator.of(context, rootNavigator: true);
-
-                    Navigator.pop(dialogContext);
-
-                    showLoadingDialog(context);
-
-                    try {
-                      final prefs = await SharedPreferences.getInstance();
-                      final businessId = prefs.getInt("businessId") ?? 0;
-                      final token = prefs.getString("token") ?? "";
-
-                      await BusinessService().addCustomer(
-                        name: name,
-                        phone: phone,
-                        token: token,
-                        businessId: businessId,
-                        email: email,
-                        gender: selectedGender,
-                        fcmToken: '',
-                        pendingAmount: pendingAmount.toString(),
-                      );
-
-                      await _fetchCustomers();
-
-                      // ✅ Use pre-captured navigator — no mounted check needed
-                      rootNav.pop(); // close loader
-
-                      if (context.mounted) {
-                        CustomDialog.showSuccessSnack(
-                          context,
-                          "Customer added successfully",
-                        );
-                      }
-                    } catch (e) {
-                      rootNav.pop(); // close loader
-
-                      if (context.mounted) {
-                        CustomDialog.showErrorSnack(
-                          context,
-                          e.toString().replaceFirst("Exception: ", ""),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text("Add"),
-                ),
-              ],
             );
           },
         );

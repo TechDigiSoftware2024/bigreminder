@@ -270,6 +270,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           keyboardType: keyboard,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade500),
             prefixIcon: Icon(
               icon,
               color: cs.primary,
@@ -294,7 +295,8 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: cs.primary.withOpacity(.35),
+                color: cs.primary.withOpacity(0.90,),
+                width: 1.7
               ),
             ),
           ),

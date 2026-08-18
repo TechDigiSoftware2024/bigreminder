@@ -145,7 +145,6 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
           }
 
           final product = products[index - 1];
-
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
@@ -232,6 +231,7 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
                                 "GST ${product.gst_percent}%",
                                 Colors.green,
                               ),
+
                           ],
                         ),
                       ],

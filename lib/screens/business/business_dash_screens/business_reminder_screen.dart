@@ -1,3 +1,4 @@
+import 'package:bigreminder/widgets/empty_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -227,7 +228,17 @@ class _BusinessRemindersScreenState
                         : null,
                     decoration: InputDecoration(
                       labelText: 'Message',
+                      labelStyle: TextStyle(
+                        color: cs.onSurface.withOpacity(0.5),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14,
+                      ),
                       hintText: 'What should customers be reminded about?',
+                      hintStyle: TextStyle(
+                        color: cs.onSurface.withOpacity(0.5),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14,
+                      ),
                       alignLabelWithHint: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -573,7 +584,7 @@ class _BusinessRemindersScreenState
         ),
         data: (reminders) {
           if (reminders.isEmpty) {
-            return _EmptyView(primary: primary, cs: cs, tt: tt);
+            return CustomEmptyState(title: 'No reminders yet', message: 'Tap "New reminder" to schedule your first customer notification.', icon: Icons.notifications_none_rounded,);
           }
 
           return RefreshIndicator(
@@ -960,56 +971,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// EMPTY + ERROR VIEWS
-// ---------------------------------------------------------------------------
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView(
-      {required this.primary, required this.cs, required this.tt});
-  final Color primary;
-  final ColorScheme cs;
-  final TextTheme tt;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.notifications_none_rounded,
-                  size: 40, color: primary.withOpacity(0.5)),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'No reminders yet',
-              style: tt.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap "New reminder" to schedule\nyour first customer notification.',
-              textAlign: TextAlign.center,
-              style: tt.bodyMedium
-                  ?.copyWith(color: cs.onSurface.withOpacity(0.5)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({

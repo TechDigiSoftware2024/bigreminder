@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:bigreminder/providers/theme_provider.dart';
+import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,7 +81,7 @@ class _BusinessNotificationScreenState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
+    final type = ref.watch(appTypeProvider);
     return Scaffold(
       backgroundColor: cs.surface,
 
@@ -105,7 +107,7 @@ class _BusinessNotificationScreenState
 
                   children: [
                     /// 🔥 HEADER
-                    _buildHeader(cs),
+                    _buildHeader(cs,type),
 
                     const SizedBox(height: 8),
 
@@ -217,13 +219,14 @@ class _BusinessNotificationScreenState
   /// HEADER
   /// =====================================================
 
-  Widget _buildHeader(ColorScheme cs) {
+  Widget _buildHeader(ColorScheme cs, type) {
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
       children: [
         Text(
-          "Reach your customers instantly",
+          "Reach your ${DashboardText.customer(type)} instantly",
 
           style: TextStyle(
             color: cs.onSurface,
@@ -374,6 +377,7 @@ class _BusinessNotificationScreenState
   }
 
   Widget _customerField(ColorScheme cs) {
+    final type = ref.watch(appTypeProvider);
     return GestureDetector(
       onTap: _openCustomerDialog,
 
@@ -397,7 +401,7 @@ class _BusinessNotificationScreenState
             Expanded(
               child: Text(
                 selectedCustomerId == null
-                    ? "Search customer"
+                    ? DashboardText.searchBarTitle(type)
                     : selectedCustomerName ?? "Selected",
 
                 maxLines: 1,
@@ -416,9 +420,7 @@ class _BusinessNotificationScreenState
 
             Icon(
               Icons.arrow_forward_ios_rounded,
-
               size: 13,
-
               color: cs.onSurface.withOpacity(0.3),
             ),
           ],

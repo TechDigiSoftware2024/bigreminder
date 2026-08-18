@@ -1,3 +1,4 @@
+import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_analysis_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_calculator_screen.dart';
 import 'package:bigreminder/screens/business/business_dash_screens/business_reminder_screen.dart';
@@ -129,7 +130,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
   ) {
     final primary = Theme.of(context).colorScheme.primary;
     final customerCountAsync = ref.watch(customerCountProvider);
-
+    final type = ref.read(appTypeProvider);
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
@@ -229,7 +230,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 childAspectRatio: 1.22,
                 children: [
                   _MetricCard(
-                    title: metrics[0],
+                    title: DashboardText.customer(type),
                     value: customerCountAsync.when(
                       data: (count) => count.toString(),
                       loading: () => "0",
@@ -297,7 +298,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                         Expanded(
                           child: _ActionBtn(
                             bgColor: Colors.grey.shade50,
-                            title: actions[0],
+                            title: DashboardText.customer(type),
                             icon: Icons.person_add_alt_1_outlined,
                             onTap: () {
                               Navigator.push(
@@ -411,7 +412,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                       ),
                       child: _ActionBtn(
                         bgColor: Colors.transparent,
-                        title: "Send Reminder to Customer",
+                        title: "Send Reminder to ${DashboardText.customer(type)}",
                         icon: Icons.notifications_active_outlined,
                         onTap: () async {
                           final result = await Navigator.push(

@@ -10,6 +10,7 @@ import '../../providers/auth/auth_state.dart';
 import '../../providers/business/business_provider.dart';
 import '../../services/auth/auth_controller.dart';
 import '../../widgets/custom_dialog.dart';
+import 'business_edit_profile.dart';
 
 class BusinessProfile extends ConsumerWidget {
   const BusinessProfile({super.key});
@@ -37,7 +38,6 @@ class BusinessProfile extends ConsumerWidget {
     });
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
 
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -123,12 +123,37 @@ class BusinessProfile extends ConsumerWidget {
 
                 children: [
                   /// 🔥 BUSINESS DETAILS
-                  Text(
-                    "Business Details",
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Business Details",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
 
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditBusinessProfileScreen(
+                                businessName: businessName.toString(),
+                                category: business?.category ?? "",
+                                doc: business?.doc ?? "",
+                                address: business?.address ?? "",
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          size: 18,
+                        ),
+                        label: const Text("Edit Profile"),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 14),
@@ -144,6 +169,12 @@ class BusinessProfile extends ConsumerWidget {
                     icon: Icons.numbers,
                     title: "Business ID",
                     subtitle:business?.id.toString() ?? "N/A",
+                  ),
+                  _infoTile(
+                    context,
+                    icon: Icons.document_scanner_outlined,
+                    title: "Business Docs",
+                    subtitle:business?.doc.toString() ?? "N/A",
                   ),
 
                   // _infoTile(
@@ -321,55 +352,60 @@ class BusinessProfile extends ConsumerWidget {
   }
 
   Widget _settingTile(
-    BuildContext context, {
-    required IconData icon,
+      BuildContext context, {
+        required IconData icon,
         required VoidCallback onTap,
-    required String title,
-  }) {
+        required String title,
+      }) {
     final theme = Theme.of(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-
       decoration: BoxDecoration(
-        color: theme.cardColor,
-
         borderRadius: BorderRadius.circular(20),
-
         boxShadow: [
           BoxShadow(
             blurRadius: 10,
             offset: const Offset(0, 4),
-
             color: Colors.black.withOpacity(0.08),
           ),
         ],
       ),
-
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-
-        leading: Container(
-          padding: const EdgeInsets.all(6),
-
-          decoration: BoxDecoration(
-            color: theme.primaryColor.withOpacity(0.1),
-
-            borderRadius: BorderRadius.circular(99),
+      child: Material(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 2,
           ),
-
-          child: Icon(icon, color: theme.primaryColor,size: 20,),
+          leading: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Icon(
+              icon,
+              color: theme.primaryColor,
+              size: 20,
+            ),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: Colors.grey.shade500,
+          ),
+          onTap: onTap,
         ),
-
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500,fontSize: 12)),
-
-        trailing: Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 16,
-          color: Colors.grey.shade500,
-        ),
-
-        onTap:onTap,
       ),
     );
   }

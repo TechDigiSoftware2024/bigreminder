@@ -76,7 +76,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Widget _buildSummary() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
 
@@ -163,15 +163,11 @@ class _UserListScreenState extends State<UserListScreen> {
           "$value",
 
           style: TextStyle(
-            fontSize: 22,
-
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-
             color: color,
           ),
         ),
-
-        const SizedBox(height: 6),
 
         /// 🔥 LABEL
         Text(
@@ -207,7 +203,7 @@ class _UserListScreenState extends State<UserListScreen> {
         final isAdmin = user.role == "super_admin";
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 14),
+          margin: const EdgeInsets.only(bottom: 6),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,

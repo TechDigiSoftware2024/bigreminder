@@ -72,6 +72,7 @@ class _ProductSaveButtonState extends State<ProductSaveButton> {
           widget.product == null
               ? "Save Product"
               : "Update Product",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );

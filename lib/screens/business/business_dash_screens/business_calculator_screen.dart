@@ -53,6 +53,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
     setState(() {});
     await _saveHistory(); // clean expired from storage
   }
+
   @override
   void initState() {
     super.initState();
@@ -230,6 +231,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
 
     return "$intPart.$decimalPart";
   }
+
   String _addCommas(String number) {
     final isNeg = number.startsWith('-');
     final digits = isNeg ? number.substring(1) : number;
@@ -254,11 +256,12 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final mq = MediaQuery.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -281,20 +284,20 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         children: [
-          // ✅ Android-style back button (not iOS chevron)
+          // ✅ Android-style back button
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_rounded,
-              color: Colors.white,
+              color: cs.onSurface,
               size: 26,
             ),
           ),
           const SizedBox(width: 14),
-          const Text(
+          Text(
             "Calculator",
             style: TextStyle(
-              color: Colors.white,
+              color: cs.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
@@ -312,12 +315,16 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
                 padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: cs.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   "Clear History",
-                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                  style: TextStyle(
+                    color: cs.primary.withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -334,9 +341,9 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -352,7 +359,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
                   child: Text(
                     _input.isEmpty ? "0" : _input,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
+                      color: cs.onSurface.withOpacity(0.5),
                       fontSize: 22,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
@@ -361,7 +368,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
                 ),
               ),
               const SizedBox(width: 10),
-              // ✅ Inline delete (X) button — deletes one digit
+              // ✅ Inline delete (X) button
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -378,12 +385,12 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
                   width: 40,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
+                    color: cs.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.backspace_outlined,
-                    color: Colors.white54,
+                    color: cs.primary.withOpacity(0.6),
                     size: 17,
                   ),
                 ),
@@ -391,7 +398,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
             ],
           ),
           const SizedBox(height: 10),
-          // ✅ Result in distinct amber/gold — never same as primary
+          // ✅ Result with theme primary color
           ScaleTransition(
             scale: _resultScaleAnim,
             child: SingleChildScrollView(
@@ -401,9 +408,9 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
                 _result,
                 style: TextStyle(
                   color: _result == "Error"
-                      ? const Color(0xFFFF5B5B)
-                      : const Color(0xFFF5C518),
-                  fontSize: _result.length > 12 ? 28 : 42,
+                      ? cs.error
+                      : cs.primary,
+                  fontSize: _result.length > 12 ? 16 : 20,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
                 ),
@@ -418,63 +425,124 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
   // ─── HISTORY ──────────────────────────────────────────────────────────────
 
   Widget _buildHistory(ColorScheme cs) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    // Dynamically calculate max height: ~25% of screen height, with min/max limits
+    final historyHeight = (screenHeight * 0.25).clamp(150.0, 300.0);
+
     return Container(
-      height: 150, // ✅ Fixed height 150
+      height: historyHeight,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: Text(
-              "HISTORY",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.5,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "HISTORY",
+                  style: TextStyle(
+                    color: cs.primary.withOpacity(0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                // Show count for better UX
+                Text(
+                  "${_history.length} items",
+                  style: TextStyle(
+                    color: cs.onSurface.withOpacity(0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: _history.length,
-              itemBuilder: (_, i) {
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _input = _history[i]['exp'];
-                      _result = _history[i]['res'];
-                      _justEvaluated = false;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Text(
-                        "${_history[i]['exp']} = ${_history[i]['res']}",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 24,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(16),
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                itemCount: _history.length,
+                itemBuilder: (_, i) {
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _input = _history[i]['exp'];
+                        _result = _history[i]['res'];
+                        _justEvaluated = false;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
                       ),
-                      textAlign: TextAlign.right,
+                      decoration: BoxDecoration(
+                        border: i < _history.length - 1
+                            ? Border(
+                          bottom: BorderSide(
+                            color: cs.outlineVariant.withOpacity(0.1),
+                            width: 0.5,
+                          ),
+                        )
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // Expression
+                                Text(
+                                  _history[i]['exp'],
+                                  style: TextStyle(
+                                    color: cs.onSurface.withOpacity(0.5),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                // Result
+                                Text(
+                                  _history[i]['res'],
+                                  style: TextStyle(
+                                    color: cs.primary,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
   // ─── KEYPAD ───────────────────────────────────────────────────────────────
 
   Widget _buildKeypad(ColorScheme cs, MediaQueryData mq) {
@@ -521,7 +589,7 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
     if (btn == "=") return _ButtonType.equals;
     if (["÷", "×", "-", "+"].contains(btn)) return _ButtonType.operator;
     if (["C", "+/-", "%"].contains(btn)) return _ButtonType.function;
-    return _ButtonType.digit; // 0-9, 00, .
+    return _ButtonType.digit;
   }
 }
 
@@ -572,34 +640,32 @@ class _CalcButtonState extends State<_CalcButton>
     super.dispose();
   }
 
-  Color get _bgColor {
+  Color _getBgColor(ColorScheme cs) {
     switch (widget.type) {
       case _ButtonType.equals:
-        return const Color(0xFFF5C518);
+        return cs.primary;
       case _ButtonType.operator:
-        return const Color(0xFF2A2A2A);
+        return cs.primaryContainer;
       case _ButtonType.function:
-        return const Color(0xFF2D2D2D);
+        return cs.surfaceContainerHighest;
       case _ButtonType.digit:
-        return const Color(0xFF1E1E1E);
+        return cs.surfaceContainerLow;
     }
   }
 
-  Color get _textColor {
+  Color _getTextColor(ColorScheme cs) {
     switch (widget.type) {
       case _ButtonType.equals:
-        return const Color(0xFF0F0F0F);
+        return cs.onPrimary;
       case _ButtonType.operator:
-        return const Color(0xFFF5C518);
+        return cs.onPrimaryContainer;
       case _ButtonType.function:
-        return const Color(0xFFCCCCCC);
+        return cs.primary;
       case _ButtonType.digit:
-        return Colors.white;
+        return cs.onSurface;
     }
   }
 
-  // ✅ digits + function buttons (0-9, +/-, %, C) → w600
-  // ✅ operators (÷ × - +) + equals → w700
   FontWeight get _fontWeight {
     switch (widget.type) {
       case _ButtonType.digit:
@@ -615,6 +681,10 @@ class _CalcButtonState extends State<_CalcButton>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bgColor = _getBgColor(cs);
+    final textColor = _getTextColor(cs);
+
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) {
@@ -628,24 +698,18 @@ class _CalcButtonState extends State<_CalcButton>
         child: Container(
           height: 68,
           decoration: BoxDecoration(
-            color: _bgColor,
+            color: bgColor,
             borderRadius: BorderRadius.circular(18),
             border: widget.type == _ButtonType.digit
-                ? Border.all(color: Colors.white.withOpacity(0.04))
+                ? Border.all(color: cs.outlineVariant.withOpacity(0.2))
                 : null,
-            boxShadow: widget.type == _ButtonType.equals
-                ? [
+            boxShadow: [
               BoxShadow(
-                color: const Color(0xFFF5C518).withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              )
-            ]
-                : [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: widget.type == _ButtonType.equals
+                    ? cs.primary.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.15),
+                blurRadius: widget.type == _ButtonType.equals ? 16 : 8,
+                offset: Offset(0, widget.type == _ButtonType.equals ? 4 : 3),
               )
             ],
           ),
@@ -653,7 +717,7 @@ class _CalcButtonState extends State<_CalcButton>
             child: Text(
               widget.label,
               style: TextStyle(
-                color: _textColor,
+                color: textColor,
                 fontSize: widget.label.length > 2 ? 16 : 22,
                 fontWeight: _fontWeight,
                 letterSpacing: widget.type == _ButtonType.operator ? 0.5 : 0,

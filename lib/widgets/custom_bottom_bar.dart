@@ -72,13 +72,12 @@ class CustomBottomBar extends StatelessWidget {
                   : Colors.grey,
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             label,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               color: isSelected
                   ? Theme.of(context).colorScheme.primary
                   : Colors.grey,

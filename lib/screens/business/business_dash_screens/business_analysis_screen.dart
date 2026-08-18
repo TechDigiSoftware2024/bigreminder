@@ -605,7 +605,7 @@ class _MetricRow extends StatelessWidget {
           style: TextStyle(
             color: emphasized ? color : theme.colorScheme.onSurface,
             fontSize: emphasized ? 17 : 14,
-            fontWeight: emphasized ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ],

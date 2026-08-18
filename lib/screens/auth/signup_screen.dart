@@ -578,6 +578,7 @@ import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
@@ -951,13 +952,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                                 hint: "Phone number",
                                 icon: Icons.phone_outlined,
                                 keyboardType: TextInputType.phone,
+                                digitsOnly: true,
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(10)
+                                ],
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return "Phone number is required";
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Phone is required";
                                   }
 
-                                  if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(value)) {
-                                    return "Enter a valid phone number (8–15 digits)";
+                                  final regex = RegExp(r'^[6-9]\d{9}$');
+
+                                  if (!regex.hasMatch(value.trim())) {
+                                    return "Enter a valid 10-digit phone number";
                                   }
 
                                   return null;

@@ -1,3 +1,5 @@
+import 'package:bigreminder/theme/app_colors.dart';
+import 'package:bigreminder/widgets/empty_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,7 +66,7 @@ class _BusinessPurchaseHistoryScreenState
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: const Text(
-          'Purchase History',
+          'Bill History',
           style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white,fontSize: 17,),
         ),
         backgroundColor: primary,
@@ -80,10 +82,7 @@ class _BusinessPurchaseHistoryScreenState
           error: (e, _) => Center(child: Text(e.toString())),
           data: (purchases) {
             if (purchases.isEmpty) {
-              return const Center(
-                child: Text('No Purchases Found',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-              );
+              return CustomEmptyState(title: "No Bills Yet", icon: Icons.receipt_long_rounded, message: "Your generated bills will appear here.\nCreate your first bill to get started.",);
             }
 
             // Watch all customer details for search functionality
@@ -123,7 +122,7 @@ class _BusinessPurchaseHistoryScreenState
 
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Material(
         elevation: 0.5,
         shadowColor: Colors.black26,
@@ -217,7 +216,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
     final purchasesAsync = ref.watch(purchasesProvider(null));
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -697,6 +696,7 @@ class _PurchaseCardState extends ConsumerState<_PurchaseCard> {
         style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         decoration: InputDecoration(
           hintText: "Enter received amount",
+          hintStyle: TextStyle(color: Colors.grey.shade500),
           prefixIcon: Icon(Icons.currency_rupee, color: primary, size: 20),
           filled: true,
           fillColor: Colors.white,
@@ -908,7 +908,7 @@ class _InfoRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontWeight: FontWeight.w500,
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
         ),

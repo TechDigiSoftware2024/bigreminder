@@ -260,6 +260,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           keyboardType: keyboard,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade500),
             prefixIcon: Icon(
               icon,
               color: cs.primary,
@@ -285,7 +286,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: cs.primary.withOpacity(.9),
+                color: cs.primary.withOpacity(.90),
+                width: 1.7
               ),
             ),
           ),

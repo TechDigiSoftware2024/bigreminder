@@ -124,8 +124,14 @@ class _BusinessDetailPageState extends State<BusinessDetailPage>
                                 ),
                               ),
 
-                              _tile("Business ID", b.id.toString(), Icons.tag),
+                              _tile("Business ID", b.id.toString(), Icons.tag,copy: true),
                               _divider(),
+                              _tile(
+                                "Phone No.",
+                                b.phone.toString(),
+                                Icons.phone,
+                                copy: true,
+                              ), _divider(),
                               _tile(
                                 "Gov ID",
                                 b.doc ?? "Not Provided",

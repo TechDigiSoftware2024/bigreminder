@@ -13,17 +13,13 @@ class ReceivePaymentResponse {
     required this.receivedAmount,
   });
 
-  factory ReceivePaymentResponse.fromJson(
-      Map<String, dynamic> json,
-      ) {
+  factory ReceivePaymentResponse.fromJson(Map<String, dynamic> json) {
     return ReceivePaymentResponse(
       purchaseId: json['purchase_id'],
       paid: json['paid'].toString(),
       pending: json['pending'].toString(),
-      customerPendingAmount:
-      json['customer_pending_amount'].toString(),
-      receivedAmount:
-      json['received_amount'].toString(),
+      customerPendingAmount: json['customer_pending_amount'].toString(),
+      receivedAmount: json['received_amount'].toString(),
     );
   }
 }

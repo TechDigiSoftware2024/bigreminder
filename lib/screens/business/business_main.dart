@@ -6,8 +6,8 @@ import '../../providers/auth/auth_provider.dart';
 import '../../providers/business/business_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/enum_classes.dart';
-import 'create_purchase_screen.dart';
-import '../../widgets/custom_bottom_bar.dart';
+import 'layouts/business_desktop_layout.dart';
+import 'layouts/business_mobile_layout.dart';
 
 
 class BusinessMain extends ConsumerStatefulWidget {
@@ -60,7 +60,6 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
       currentIndex = index;
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final appType = ref.watch(appTypeProvider);
@@ -68,38 +67,42 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
 
     final screens = getBottomBarScreens(appType);
 
-    // 🔥 LOADING STATE
     if (businessState.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
-    // 🔥 EMPTY STATE (login case)
     if (businessState.businesses.isEmpty) {
       return const Scaffold(
-        body: Center(child: Text("No business data found",)),
+        body: Center(
+          child: Text("No business data found"),
+        ),
       );
     }
 
-    // 🔥 SAFE INDEX
     if (currentIndex >= screens.length) {
       currentIndex = 0;
     }
 
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: KeyedSubtree(
-          key: ValueKey(currentIndex),
-          child: screens[currentIndex],
-        ),
-      ),
-      bottomNavigationBar: CustomBottomBar(
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+
+    if (isDesktop) {
+      return DesktopLayout(
+        screens: screens,
         currentIndex: currentIndex,
-        onTap: onTabTapped,
+        onTabTapped: onTabTapped,
         labels: getBottomBarLabels(appType),
-      ),
+      );
+    }
+
+    return MobileLayout(
+      screens: screens,
+      currentIndex: currentIndex,
+      onTabTapped: onTabTapped,
+      labels: getBottomBarLabels(appType),
     );
   }
 }

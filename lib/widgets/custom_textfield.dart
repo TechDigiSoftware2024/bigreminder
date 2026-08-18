@@ -8,6 +8,9 @@ class CustomTextField extends StatelessWidget {
   final bool obscure;
   final Widget? trailing;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool digitsOnly;
+  final int? maxLength;
 
   // ✅ NEW
   final String? Function(String?)? validator;
@@ -16,21 +19,28 @@ class CustomTextField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.hint,
+    this.inputFormatters,
     this.icon,
     this.obscure = false,
     this.trailing,
     this.keyboardType,
-    this.validator, // ✅ NEW
+    this.validator,
+    this.digitsOnly = false,
+    this.maxLength,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField( // ✅ changed
-
+    return TextFormField(
+      inputFormatters: [
+        if (digitsOnly) FilteringTextInputFormatter.digitsOnly,
+        if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+        ...?inputFormatters,
+      ],
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      validator: validator, // ✅ attach validator
+      validator: validator,
       style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w500,

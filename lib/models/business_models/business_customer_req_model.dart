@@ -1,3 +1,5 @@
+import 'businesss_edit_profile_model.dart';
+
 class UpdateCustomerRequestModel {
   final String name;
   final String phone;

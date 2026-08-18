@@ -47,6 +47,7 @@ class CustomDropdownTextField extends StatelessWidget {
 
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade500),
             prefixIcon: Container(
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(

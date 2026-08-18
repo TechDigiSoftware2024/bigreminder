@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
@@ -14,6 +15,7 @@ import '../../models/business_models/business_analysis_model.dart';
 import '../../models/business_models/business_create_expense_model.dart';
 import '../../models/business_models/business_customer_req_model.dart';
 import '../../models/business_models/business_income_req_model.dart';
+import '../../models/business_models/businesss_edit_profile_model.dart';
 import '../../models/business_models/notification_req_model.dart';
 import '../../models/business_models/receive_payment_request_model.dart';
 import '../../models/business_models/receive_payment_response_model.dart';
@@ -24,6 +26,101 @@ import '../local_storage/local_storage.dart';
 import '../notification_service.dart';
 
 class BusinessService {
+  Future<void> updateBusiness({
+    required int businessId,
+    required BusinessProfileEditModel model,
+  }) async {
+    final uri = Uri.parse(
+      "${ApiConfig.baseUrl}/api/v1/businesses/$businessId",
+    );
+
+    try {
+      final response = await http.patch(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer ${await TokenStorage.getToken()}"
+        },
+        body: jsonEncode(model.toJson()),
+      ).timeout(const Duration(seconds: 15));
+
+      final responseBody = response.body.isNotEmpty
+          ? jsonDecode(response.body)
+          : null;
+
+      switch (response.statusCode) {
+        case 200:
+        case 201:
+          return;
+
+        case 400:
+          throw ApiException(
+            responseBody?['message']?.toString() ??
+                "Invalid business information.",
+            statusCode: response.statusCode,
+          );
+
+        case 401:
+          throw ApiException(
+            "Your session has expired. Please login again.",
+            statusCode: response.statusCode,
+          );
+
+        case 403:
+          throw ApiException(
+            "You don't have permission to update this business.",
+            statusCode: response.statusCode,
+          );
+
+        case 404:
+          throw ApiException(
+            "Business not found.",
+            statusCode: response.statusCode,
+          );
+
+        case 422:
+          throw ApiException(
+            responseBody?['message']?.toString() ??
+                "Please check the entered information.",
+            statusCode: response.statusCode,
+          );
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          throw ApiException(
+            "Server is temporarily unavailable. Please try again later.",
+            statusCode: response.statusCode,
+          );
+
+        default:
+          throw ApiException(
+            "Something went wrong. Please try again.",
+            statusCode: response.statusCode,
+          );
+      }
+    } on TimeoutException {
+      throw const ApiException(
+        "Request timed out. Please check your internet connection and try again.",
+      );
+    } on http.ClientException {
+      throw const ApiException(
+        "Unable to connect to the server. Please check your internet connection.",
+      );
+    } on FormatException {
+      throw const ApiException(
+        "Invalid response received from the server.",
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw const ApiException(
+        "Something went wrong. Please try again.",
+      );
+    }
+  }
   // =========================================================
   // 🔥 BUSINESS SIDE - FETCH OWN BUSINESSES
   // =========================================================
@@ -165,8 +262,7 @@ class BusinessService {
           token: token,
         ),
         body: jsonEncode({
-          "received_amount":
-          request.receivedAmount,
+          "received_amount": request.receivedAmount,
         }),
       );
 
@@ -399,13 +495,11 @@ class BusinessService {
         if (fcmToken != null && fcmToken.isNotEmpty) "fcm_token": fcmToken,
       };
 
-      final response = await http
-          .post(
+      final response = await http.post(
         ApiConfig.url(ApiConfig.addCustomer),
         headers: ApiConfig.headers(token: token),
         body: jsonEncode(body),
-      )
-          .timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
@@ -527,4 +621,17 @@ class IncomeService {
         throw AppError("Something went wrong.");
     }
   }
+}
+
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  const ApiException(
+      this.message, {
+        this.statusCode,
+      });
+
+  @override
+  String toString() => message;
 }

@@ -387,6 +387,7 @@ import 'package:bigreminder/screens/super_admin/bottom_nav_screens/super_admin_m
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth/auth_state.dart';
@@ -561,16 +562,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           CustomTextField(
                             controller: phoneController,
                             hint: "Phone number",
+                           digitsOnly: true,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(10)
+                            ],
                             icon: Icons.phone_outlined,
                             keyboardType: TextInputType.number,
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
+                              if (value == null || value.trim().isEmpty) {
                                 return "Phone is required";
                               }
-                              final regex = RegExp(r'^[6-9][0-9]{9}$');
-                              if (!regex.hasMatch(value)) {
+
+                              final regex = RegExp(r'^[6-9]\d{9}$');
+
+                              if (!regex.hasMatch(value.trim())) {
                                 return "Enter a valid 10-digit phone number";
                               }
+
                               return null;
                             },
                           ),
