@@ -9,21 +9,21 @@ class CustomDropdown extends FormField<String> {
     String hint = "Select Role",
     String? Function(String?)? validator,
   }) : super(
-    initialValue: selectedRole,
-    validator: validator,
-    builder: (FormFieldState<String> state) {
-      return _DropdownBody(
-        roles: roles,
-        selectedRole: state.value,
-        hint: hint,
-        errorText: state.errorText,
-        onChanged: (value) {
-          state.didChange(value);
-          onChanged(value);
-        },
-      );
-    },
-  );
+          initialValue: selectedRole,
+          validator: validator,
+          builder: (FormFieldState<String> state) {
+            return _DropdownBody(
+              roles: roles,
+              selectedRole: state.value,
+              hint: hint,
+              errorText: state.errorText,
+              onChanged: (value) {
+                state.didChange(value);
+                onChanged(value);
+              },
+            );
+          },
+        );
 }
 
 class _DropdownBody extends StatefulWidget {
@@ -50,32 +50,35 @@ class _DropdownBodyState extends State<_DropdownBody> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final hasError = widget.errorText != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Main Field
         GestureDetector(
-          onTap: () {
-            setState(() => isOpen = !isOpen);
-          },
+          onTap: () => setState(() => isOpen = !isOpen),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
+              color: scheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: hasError
-                  ? Border.all(color: Colors.red, width: 1.2)
+                  ? Border.all(color: scheme.error, width: 1.2)
                   : isOpen
-                  ? Border.all(color: Colors.blueGrey, width: 1.2)
-                  : null,
+                      ? Border.all(color: scheme.primary, width: 1.2)
+                      : Border.all(color: scheme.outline, width: 1.2),
             ),
             child: Row(
               children: [
-                const Icon(Icons.business, size: 20, color: Color(0xFF6B7280)),
+                Icon(
+                  widget.selectedRole != null
+                      ? _roleIcon(widget.selectedRole!)
+                      : Icons.category_outlined,
+                  size: 20,
+                  color: scheme.primary,
+                ),
                 const SizedBox(width: 10),
-
                 Expanded(
                   child: Text(
                     widget.selectedRole ?? widget.hint,
@@ -83,46 +86,44 @@ class _DropdownBodyState extends State<_DropdownBody> {
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: widget.selectedRole == null
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF1F2937),
+                          ? scheme.onSurfaceVariant
+                          : scheme.onSurface,
                     ),
                   ),
                 ),
-
                 AnimatedRotation(
                   turns: isOpen ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down,
-                      color: Color(0xFF6B7280)),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
         ),
-
-        /// Error Text
         if (hasError)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 12),
             child: Text(
               widget.errorText!,
-              style: const TextStyle(
-                color: Colors.red,
+              style: TextStyle(
+                color: scheme.error,
                 fontSize: 12,
               ),
             ),
           ),
-
-        /// Dropdown List
         if (isOpen)
           Container(
             margin: const EdgeInsets.only(top: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: scheme.surface,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: scheme.outline),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -130,6 +131,7 @@ class _DropdownBodyState extends State<_DropdownBody> {
             ),
             child: Column(
               children: widget.roles.map((role) {
+                final selected = widget.selectedRole == role;
                 return InkWell(
                   onTap: () {
                     widget.onChanged(role);
@@ -137,17 +139,30 @@ class _DropdownBodyState extends State<_DropdownBody> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    color: selected
+                        ? scheme.primary.withValues(alpha: 0.08)
+                        : null,
                     child: Row(
                       children: [
-                        _getRoleIcon(role),
+                        Icon(
+                          _roleIcon(role),
+                          size: 18,
+                          color: selected
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           role,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1F2937),
+                            color: selected
+                                ? scheme.primary
+                                : scheme.onSurface,
                           ),
                         ),
                       ],
@@ -160,38 +175,29 @@ class _DropdownBodyState extends State<_DropdownBody> {
       ],
     );
   }
-  Widget _getRoleIcon(String role) {
+
+  IconData _roleIcon(String role) {
     switch (role.toLowerCase()) {
-
       case 'general store':
-        return const Icon(Icons.storefront, size: 18);
-
+        return Icons.storefront;
       case 'gym':
-        return const Icon(Icons.fitness_center, size: 18);
-
+        return Icons.fitness_center;
       case 'medical':
-        return const Icon(Icons.local_hospital, size: 18);
-
+        return Icons.local_hospital;
       case 'salon':
-        return const Icon(Icons.content_cut, size: 18);
-
+        return Icons.content_cut;
       case 'restaurant':
-        return const Icon(Icons.restaurant, size: 18);
-
+        return Icons.restaurant;
       case 'repair shop':
-        return const Icon(Icons.build, size: 18);
-
+        return Icons.build;
       case 'clothing':
-        return const Icon(Icons.checkroom, size: 18);
-
+        return Icons.checkroom;
       case 'electronics':
-        return const Icon(Icons.devices, size: 18);
-
+        return Icons.devices;
       case 'other':
-        return const Icon(Icons.more_horiz, size: 18);
-
+        return Icons.more_horiz;
       default:
-        return const Icon(Icons.work_outline, size: 18);
+        return Icons.work_outline;
     }
   }
 }

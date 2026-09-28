@@ -5,9 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api_config/api_config.dart';
+import '../models/business_models/notification_history_model.dart';
 import '../models/business_models/notification_req_model.dart';
 import '../providers/business/business_provider.dart';
-import '../providers/auth/auth_provider.dart';
 
 class NotificationService {
   final String baseUrl;
@@ -39,6 +39,78 @@ class NotificationService {
     throw AppError("Your business is not ready yet. Please login again.");
   }
 
+  Future<List<NotificationHistoryItem>> fetchHistory({
+    required int businessId,
+    String? type,
+    String? status,
+    String? fromDate,
+    String? toDate,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final query = <String, String>{
+        'business_id': businessId.toString(),
+        'limit': limit.clamp(1, 200).toString(),
+        'offset': offset < 0 ? '0' : offset.toString(),
+      };
+
+      if (type != null && type.trim().isNotEmpty) {
+        query['type'] = type.trim();
+      }
+      if (status != null && status.trim().isNotEmpty) {
+        query['status'] = status.trim();
+      }
+      if (fromDate != null && fromDate.trim().isNotEmpty) {
+        query['from_date'] = fromDate.trim();
+      }
+      if (toDate != null && toDate.trim().isNotEmpty) {
+        query['to_date'] = toDate.trim();
+      }
+
+      final uri = ApiConfig.url('/api/v1/notifications/history')
+          .replace(queryParameters: query);
+
+      final response = await http.get(uri, headers: _headers());
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = response.body.isNotEmpty ? jsonDecode(response.body) : [];
+
+        if (data is List) {
+          return data
+              .whereType<Map>()
+              .map((e) => NotificationHistoryItem.fromJson(
+                    Map<String, dynamic>.from(e),
+                  ))
+              .toList();
+        }
+
+        if (data is Map) {
+          final list = data['items'] ??
+              data['data'] ??
+              data['notifications'] ??
+              data['results'];
+          if (list is List) {
+            return list
+                .whereType<Map>()
+                .map((e) => NotificationHistoryItem.fromJson(
+                      Map<String, dynamic>.from(e),
+                    ))
+                .toList();
+          }
+        }
+
+        return [];
+      }
+
+      _handleResponse(response);
+      return [];
+    } catch (e) {
+      if (e is AppError) rethrow;
+      throw AppError('Unable to load notification history.');
+    }
+  }
+
   Future<void> sendNow(NotificationRequest request) async {
     final businessId = await _getBusinessId(request);
 
@@ -53,7 +125,7 @@ class NotificationService {
 
       _handleResponse(response);
     } catch (e) {
-      if (e is AppError) rethrow; // 🔥 preserve backend message
+      if (e is AppError) rethrow;
       throw AppError("No internet connection. Please try again.");
     }
   }
@@ -108,15 +180,12 @@ class NotificationService {
       final data = jsonDecode(response.body);
 
       if (data is Map) {
-        apiMessage =
-            data["message"] ??
-                data["error"] ??
-                data["detail"]; // 🔥 THIS LINE FIXES YOUR ISSUE
+        apiMessage = data["message"] ?? data["error"] ?? data["detail"];
       }
     } catch (_) {}
 
     if (apiMessage != null && apiMessage.isNotEmpty) {
-      throw AppError(apiMessage); // ✅ now this will show
+      throw AppError(apiMessage);
     }
 
     switch (response.statusCode) {

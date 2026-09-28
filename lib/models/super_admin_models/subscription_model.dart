@@ -28,22 +28,42 @@ class SubscriptionModel {
   });
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
+    int asInt(dynamic v) => int.tryParse(v?.toString() ?? '') ?? 0;
+
+    final rawFeatures = json['features'];
+    List<String> features = [];
+    if (rawFeatures is List) {
+      features = rawFeatures.map((e) {
+        if (e is Map) {
+          return (e['key'] ?? e['name'] ?? e['id'] ?? '').toString();
+        }
+        return e.toString();
+      }).where((e) => e.isNotEmpty).toList();
+    }
+
     return SubscriptionModel(
-      id: json['id'] ?? 0,
-      businessId: json['business_id'] ?? 0,
-      planId: json['plan_id'] ?? 0,
-      status: json['status'] ?? '',
-      paymentStatus: json['payment_status'] ?? '',
+      id: asInt(json['id']),
+      businessId: asInt(json['business_id']),
+      planId: asInt(json['plan_id']),
+      status: json['status']?.toString() ?? '',
+      paymentStatus: json['payment_status']?.toString() ?? '',
       startDate:
-      DateTime.tryParse(json['start_date'] ?? '') ?? DateTime.now(),
-      endDate: DateTime.tryParse(json['end_date'] ?? '') ?? DateTime.now(),
-      autoRenew: json['auto_renew'] ?? false,
-      metadata: json['metadata'] ?? {},
-      features: List<String>.from(json['features'] ?? []),
+          DateTime.tryParse(json['start_date']?.toString() ?? '') ??
+              DateTime.now(),
+      endDate: DateTime.tryParse(json['end_date']?.toString() ?? '') ??
+          DateTime.now(),
+      autoRenew: json['auto_renew'] == true ||
+          json['auto_renew']?.toString() == 'true',
+      metadata: json['metadata'] is Map
+          ? Map<String, dynamic>.from(json['metadata'])
+          : {},
+      features: features,
       createdAt:
-      DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+              DateTime.now(),
       updatedAt:
-      DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+              DateTime.now(),
     );
   }
 

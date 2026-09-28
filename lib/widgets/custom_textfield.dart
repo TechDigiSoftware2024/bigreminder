@@ -11,8 +11,6 @@ class CustomTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool digitsOnly;
   final int? maxLength;
-
-  // ✅ NEW
   final String? Function(String?)? validator;
 
   const CustomTextField({
@@ -31,6 +29,8 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return TextFormField(
       inputFormatters: [
         if (digitsOnly) FilteringTextInputFormatter.digitsOnly,
@@ -41,66 +41,40 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscure,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
+      cursorColor: scheme.primary,
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF1F2937),
+        color: scheme.onSurface,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF9CA3AF),
+        hintStyle: TextStyle(
+          color: scheme.onSurfaceVariant,
           fontSize: 14,
         ),
-
         filled: true,
-        fillColor: const Color(0xFFF3F4F6),
-
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-
+        fillColor: scheme.surface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: scheme.outline, width: 1.2),
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.blueGrey,
-            width: 1.2,
-          ),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
-
-        // ✅ ERROR BORDER (important)
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.red,
-            width: 1,
-          ),
+          borderSide: BorderSide(color: scheme.error, width: 1),
         ),
-
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.red,
-            width: 1.2,
-          ),
+          borderSide: BorderSide(color: scheme.error, width: 1.2),
         ),
-
-        prefixIcon: icon != null
-            ? Icon(
-          icon,
-          size: 20,
-          color: const Color(0xFF6B7280),
-        )
-            : null,
-
+        prefixIcon: icon == null
+            ? null
+            : Icon(icon, size: 20, color: scheme.primary),
         suffixIcon: trailing,
-
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,

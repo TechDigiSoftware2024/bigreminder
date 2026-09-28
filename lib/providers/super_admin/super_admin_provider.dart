@@ -6,7 +6,34 @@ import 'package:http/http.dart' as http;
 
 import '../../api_config/api_config.dart';
 import '../../models/business_models/query_model.dart';
+import '../../models/super_admin_models/platform_dashboard_model.dart';
 import '../business/business_provider.dart';
+
+/// ================= PLATFORM DASHBOARD =================
+
+final platformDashboardProvider =
+    FutureProvider<PlatformDashboardModel>((ref) async {
+  final token = ref.read(tokenProvider);
+
+  final response = await http.get(
+    ApiConfig.url('/api/v1/dashboard/platform'),
+    headers: ApiConfig.headers(token: token),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data is Map<String, dynamic>) {
+      return PlatformDashboardModel.fromJson(data);
+    }
+    if (data is Map) {
+      return PlatformDashboardModel.fromJson(
+        Map<String, dynamic>.from(data),
+      );
+    }
+  }
+
+  throw Exception('Failed to load platform dashboard');
+});
 
 /// ================= USERS =================
 

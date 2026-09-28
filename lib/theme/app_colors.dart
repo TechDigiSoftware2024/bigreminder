@@ -9,10 +9,10 @@ class AppColors {
   static const Color primaryLight = Color(0xFFCCFBF1); // soft teal tint for backgrounds
   // ⚫ NEUTRAL BASE
   static const Color black = Color(0xFF111827);
+  static const Color white = Colors.white;
   static const Color darkGrey = Color(0xFF374151);
-
   // ⚪ BACKGROUND SYSTEM
-  static const Color background = Colors.white;
+  static const Color background =  Color(0xffF5F7FB);
   static const Color surface = Color(0xFFF3F4F6);
   static const Color card = primaryDark;
   static const Color cardText = Colors.white;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/business/business_provider.dart';
 import '../../providers/business/query_provider.dart';
+import '../../theme/app_colors.dart';
 
 class BusinessQueryScreen extends ConsumerStatefulWidget {
   const BusinessQueryScreen({super.key});
@@ -24,6 +25,19 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
         setState(() {});
       }
     });
+
+    // Opening Support Center marks current queries as seen → home badge clears.
+    Future.microtask(_markCurrentQueriesSeen);
+  }
+
+  Future<void> _markCurrentQueriesSeen() async {
+    try {
+      final queries = await ref.read(queryListProvider.future);
+      if (!mounted) return;
+      await ref
+          .read(seenQueryFingerprintsProvider.notifier)
+          .markQueriesSeen(queries);
+    } catch (_) {}
   }
 
   @override
@@ -68,13 +82,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-          content: Text(e.toString()),
-        ),
-      );
+      CustomDialog.showErrorSnack(context, e.toString());
     }
   }
 
@@ -132,18 +140,10 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
 
-    late final queryState = ref.watch(queryProvider);
-
-    late final queryList = ref.watch(queryListProvider);
-
     ref.listen(queryProvider, (previous, next) {
       next.whenOrNull(
         data: (query) {
           if (query != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Query sent successfully')),
-            );
-
             _messageController.clear();
           }
         },
@@ -155,641 +155,1707 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
       );
     });
 
+    ref.listen(queryListProvider, (previous, next) {
+      next.whenData((queries) {
+        ref
+            .read(seenQueryFingerprintsProvider.notifier)
+            .markQueriesSeen(queries);
+      });
+    });
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          "Support Center",
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: 17,
-            color: Theme.of(context).colorScheme.onPrimary,
+      backgroundColor: AppColors.background,
+
+      appBar: _buildAppBar(),
+
+      floatingActionButton: isDesktop
+          ? null
+          : _buildMobileFab(),
+
+      body: isDesktop
+          ? _buildDesktopLayout(
+      )
+          : _buildMobileLayout(),
+    );
+    // return Scaffold(
+    //   backgroundColor: AppColors.background,
+    //   appBar: AppBar(
+    //     title: Text(
+    //       "Support Center",
+    //       style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    //         fontWeight: FontWeight.w600,
+    //         fontSize: 17,
+    //         color: Theme.of(context).colorScheme.onPrimary,
+    //       ),
+    //     ),
+    //     centerTitle: false,
+    //     elevation: 0,
+    //     backgroundColor: Theme.of(context).colorScheme.primary,
+    //     foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    //   ),
+    //   floatingActionButton: FloatingActionButton.extended(
+    //     onPressed: () {
+    //       showModalBottomSheet(
+    //         context: context,
+    //         isScrollControlled: true,
+    //         backgroundColor: Theme.of(context).colorScheme.surface,
+    //         shape: const RoundedRectangleBorder(
+    //           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    //         ),
+    //         builder: (context) {
+    //           return Padding(
+    //             padding: EdgeInsets.only(
+    //               left: 24,
+    //               right: 24,
+    //               top: 20,
+    //               bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+    //             ),
+    //             child: Column(
+    //               mainAxisSize: MainAxisSize.min,
+    //               crossAxisAlignment: CrossAxisAlignment.start,
+    //               children: [
+    //                 Center(
+    //                   child: Container(
+    //                     width: 32,
+    //                     height: 4,
+    //                     decoration: BoxDecoration(
+    //                       color: Theme.of(
+    //                         context,
+    //                       ).colorScheme.onSurface.withOpacity(0.15),
+    //                       borderRadius: BorderRadius.circular(2),
+    //                     ),
+    //                   ),
+    //                 ),
+    //
+    //                 const SizedBox(height: 24),
+    //
+    //                 Row(
+    //                   children: [
+    //                     Container(
+    //                       padding: const EdgeInsets.all(6),
+    //                       decoration: BoxDecoration(
+    //                         color: Theme.of(
+    //                           context,
+    //                         ).colorScheme.primary.withOpacity(0.1),
+    //                         borderRadius: BorderRadius.circular(12),
+    //                         border: Border.all(
+    //                           color: Theme.of(
+    //                             context,
+    //                           ).colorScheme.primary.withOpacity(0.2),
+    //                         ),
+    //                       ),
+    //                       child: Icon(
+    //                         Icons.help_outline_rounded,
+    //                         color: Theme.of(context).colorScheme.primary,
+    //                         size: 24,
+    //                       ),
+    //                     ),
+    //                     const SizedBox(width: 14),
+    //                     Expanded(
+    //                       child: Column(
+    //                         crossAxisAlignment: CrossAxisAlignment.start,
+    //                         children: [
+    //                           Text(
+    //                             "New Support Query",
+    //                             style: Theme.of(context).textTheme.titleLarge
+    //                                 ?.copyWith(
+    //                                   fontWeight: FontWeight.w600,
+    //                                   fontSize: 14,
+    //                                   color: Theme.of(
+    //                                     context,
+    //                                   ).colorScheme.onSurface,
+    //                                 ),
+    //                           ),
+    //                           Text(
+    //                             "Describe your issue in detail",
+    //                             style: Theme.of(context).textTheme.bodySmall
+    //                                 ?.copyWith(
+    //                                   color: Theme.of(
+    //                                     context,
+    //                                   ).colorScheme.onSurface.withOpacity(0.6),
+    //                                 ),
+    //                           ),
+    //                         ],
+    //                       ),
+    //                     ),
+    //                   ],
+    //                 ),
+    //
+    //                 const SizedBox(height: 24),
+    //
+    //                 TextField(
+    //                   controller: _messageController,
+    //                   minLines: 5,
+    //                   maxLines: 8,
+    //                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+    //                     color: Theme.of(context).colorScheme.onSurface,
+    //                   ),
+    //                   decoration: InputDecoration(
+    //                     hintText: "Type or Paste your message here...",
+    //                     hintStyle: Theme.of(context).textTheme.bodyLarge
+    //                         ?.copyWith(
+    //                           color: Theme.of(
+    //                             context,
+    //                           ).colorScheme.onSurface.withOpacity(0.4),
+    //                         ),
+    //                     filled: true,
+    //                     fillColor: Theme.of(context).colorScheme.surface,
+    //                     border: OutlineInputBorder(
+    //                       borderRadius: BorderRadius.circular(14),
+    //                       borderSide: BorderSide(
+    //                         color: Theme.of(
+    //                           context,
+    //                         ).colorScheme.outline.withOpacity(0.5),
+    //                       ),
+    //                     ),
+    //                     enabledBorder: OutlineInputBorder(
+    //                       borderRadius: BorderRadius.circular(14),
+    //                       borderSide: BorderSide(
+    //                         color: Theme.of(
+    //                           context,
+    //                         ).colorScheme.outline.withOpacity(0.5),
+    //                       ),
+    //                     ),
+    //                     focusedBorder: OutlineInputBorder(
+    //                       borderRadius: BorderRadius.circular(14),
+    //                       borderSide: BorderSide(
+    //                         color: Theme.of(context).colorScheme.primary,
+    //                         width: 2,
+    //                       ),
+    //                     ),
+    //                     contentPadding: const EdgeInsets.all(18),
+    //                   ),
+    //                 ),
+    //
+    //                 const SizedBox(height: 28),
+    //
+    //                 SizedBox(
+    //                   width: double.infinity,
+    //                   height: 45,
+    //                   child: ElevatedButton(
+    //                     onPressed: queryState.isLoading
+    //                         ? null
+    //                         : () async {
+    //                             await _submitQuery();
+    //                             if (mounted) {
+    //                               Navigator.pop(context);
+    //                             }
+    //                           },
+    //                     style: ElevatedButton.styleFrom(
+    //                       backgroundColor: Theme.of(
+    //                         context,
+    //                       ).colorScheme.primary,
+    //                       foregroundColor: Theme.of(
+    //                         context,
+    //                       ).colorScheme.onPrimary,
+    //                       disabledBackgroundColor: Theme.of(
+    //                         context,
+    //                       ).colorScheme.onSurface.withOpacity(0.12),
+    //                       disabledForegroundColor: Theme.of(
+    //                         context,
+    //                       ).colorScheme.onSurface.withOpacity(0.38),
+    //                       shape: RoundedRectangleBorder(
+    //                         borderRadius: BorderRadius.circular(14),
+    //                       ),
+    //                       elevation: 0,
+    //                     ),
+    //                     child: queryState.isLoading
+    //                         ? SizedBox(
+    //                             height: 22,
+    //                             width: 22,
+    //                             child: CircularProgressIndicator(
+    //                               strokeWidth: 2.5,
+    //                               color: Theme.of(
+    //                                 context,
+    //                               ).colorScheme.onPrimary,
+    //                             ),
+    //                           )
+    //                         : Text(
+    //                             "Submit Query",
+    //                             style: Theme.of(context).textTheme.titleSmall
+    //                                 ?.copyWith(
+    //                                   fontWeight: FontWeight.w600,
+    //                                   color: Colors.white,
+    //                                 ),
+    //                           ),
+    //                   ),
+    //                 ),
+    //
+    //                 const SizedBox(height: 4),
+    //               ],
+    //             ),
+    //           );
+    //         },
+    //       );
+    //     },
+    //     icon: const Icon(Icons.add_rounded, size: 25),
+    //     label: const Text(
+    //       "New Query",
+    //       style: TextStyle(fontWeight: FontWeight.w600),
+    //     ),
+    //     backgroundColor: Theme.of(context).colorScheme.primary,
+    //     foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    //     elevation: 4,
+    //     shape: RoundedRectangleBorder(
+    //       borderRadius: BorderRadius.circular(16),
+    //       side: BorderSide(
+    //         color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+    //         width: 1,
+    //       ),
+    //     ),
+    //   ),
+    //   body: SafeArea(
+    //     child: Column(
+    //       crossAxisAlignment: CrossAxisAlignment.start,
+    //       children: [
+    //         Padding(
+    //           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    //           child: Column(
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: [
+    //               // Header Row
+    //               Row(
+    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //                 crossAxisAlignment: CrossAxisAlignment.center,
+    //                 children: [
+    //                   Text(
+    //                     "My Queries",
+    //                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    //                       fontWeight: FontWeight.w700,
+    //                       color: Theme.of(context).colorScheme.onSurface,
+    //                       fontSize: 18,
+    //                     ),
+    //                   ),
+    //                   queryList.when(
+    //                     data: (queries) => Container(
+    //                       padding: const EdgeInsets.symmetric(
+    //                         horizontal: 12,
+    //                         vertical: 6,
+    //                       ),
+    //                       decoration: BoxDecoration(
+    //                         color: Theme.of(
+    //                           context,
+    //                         ).colorScheme.secondaryContainer,
+    //                         borderRadius: BorderRadius.circular(20),
+    //                       ),
+    //                       child: Row(
+    //                         mainAxisSize: MainAxisSize.min,
+    //                         children: [
+    //                           Icon(
+    //                             Icons.question_answer_outlined,
+    //                             size: 14,
+    //                             color: Theme.of(
+    //                               context,
+    //                             ).colorScheme.onSecondaryContainer,
+    //                           ),
+    //                           const SizedBox(width: 6),
+    //                           Text(
+    //                             "${queries.length}",
+    //                             style: Theme.of(context).textTheme.labelMedium
+    //                                 ?.copyWith(
+    //                                   color: Theme.of(
+    //                                     context,
+    //                                   ).colorScheme.onSecondaryContainer,
+    //                                   fontWeight: FontWeight.w700,
+    //                                 ),
+    //                           ),
+    //                         ],
+    //                       ),
+    //                     ),
+    //                     loading: () => const SizedBox.shrink(),
+    //                     error: (_, __) => const SizedBox.shrink(),
+    //                   ),
+    //                 ],
+    //               ),
+    //
+    //               const SizedBox(height: 16),
+    //             ],
+    //           ),
+    //         ),
+    //
+    //         Expanded(
+    //           child: queryList.when(
+    //             data: (queries) {
+    //               if (queries.isEmpty) {
+    //                 return Center(
+    //                   child: Padding(
+    //                     padding: const EdgeInsets.symmetric(horizontal: 40),
+    //                     child: Column(
+    //                       mainAxisAlignment: MainAxisAlignment.center,
+    //                       children: [
+    //                         Container(
+    //                           padding: const EdgeInsets.all(22),
+    //                           decoration: BoxDecoration(
+    //                             color: Theme.of(
+    //                               context,
+    //                             ).colorScheme.primary.withOpacity(0.1),
+    //                             shape: BoxShape.circle,
+    //                           ),
+    //                           child: Icon(
+    //                             Icons.question_answer_outlined,
+    //                             size: 48,
+    //                             color: Theme.of(
+    //                               context,
+    //                             ).colorScheme.primary.withOpacity(0.6),
+    //                           ),
+    //                         ),
+    //                         const SizedBox(height: 24),
+    //                         Text(
+    //                           "No Queries Yet",
+    //                           style: Theme.of(context).textTheme.titleMedium
+    //                               ?.copyWith(
+    //                                 fontWeight: FontWeight.w600,
+    //                                 color: Theme.of(
+    //                                   context,
+    //                                 ).colorScheme.onSurface,
+    //                               ),
+    //                         ),
+    //                         const SizedBox(height: 6),
+    //                         Text(
+    //                           "Tap the button below to create your first support query",
+    //                           textAlign: TextAlign.center,
+    //                           style: Theme.of(context).textTheme.bodyMedium
+    //                               ?.copyWith(
+    //                                 color: Theme.of(
+    //                                   context,
+    //                                 ).colorScheme.onSurface.withOpacity(0.6),
+    //                                 height: 1.4,
+    //                               ),
+    //                         ),
+    //                       ],
+    //                     ),
+    //                   ),
+    //                 );
+    //               }
+    //
+    //               return RefreshIndicator(
+    //                 onRefresh: () async {
+    //                   await ref.refresh(queryListProvider.future);
+    //                 },
+    //                 color: Theme.of(context).colorScheme.primary,
+    //                 backgroundColor: Theme.of(context).colorScheme.surface,
+    //                 child: ListView.builder(
+    //                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+    //                   itemCount: queries.length,
+    //                   itemBuilder: (context, index) {
+    //                     final query = queries[index];
+    //                     final statusColor = _getStatusColor(
+    //                       query.status,
+    //                       context,
+    //                     );
+    //                     final isLastItem = index == queries.length - 1;
+    //
+    //                     return Padding(
+    //                       padding: EdgeInsets.only(bottom: isLastItem ? 0 : 6),
+    //                       child: Material(
+    //                         color: Theme.of(context).colorScheme.surface,
+    //                         borderRadius: BorderRadius.circular(16),
+    //                         elevation: 0,
+    //                         child: InkWell(
+    //                           onTap: () {
+    //                             // Handle tap - navigate to details
+    //                           },
+    //                           borderRadius: BorderRadius.circular(16),
+    //                           child: Container(
+    //                             padding: const EdgeInsets.all(16),
+    //                             decoration: BoxDecoration(
+    //                               border: Border.all(
+    //                                 color: Theme.of(
+    //                                   context,
+    //                                 ).colorScheme.outline.withOpacity(0.12),
+    //                               ),
+    //                               borderRadius: BorderRadius.circular(16),
+    //                             ),
+    //                             child: Column(
+    //                               crossAxisAlignment: CrossAxisAlignment.start,
+    //                               children: [
+    //                                 // Header Row
+    //                                 Row(
+    //                                   crossAxisAlignment:
+    //                                       CrossAxisAlignment.start,
+    //                                   children: [
+    //                                     Expanded(
+    //                                       child: Column(
+    //                                         crossAxisAlignment:
+    //                                             CrossAxisAlignment.start,
+    //                                         children: [
+    //                                           Text(
+    //                                             query.message,
+    //                                             style: Theme.of(context)
+    //                                                 .textTheme
+    //                                                 .bodyLarge
+    //                                                 ?.copyWith(
+    //                                                   fontWeight:
+    //                                                       FontWeight.w600,
+    //                                                   color: Theme.of(
+    //                                                     context,
+    //                                                   ).colorScheme.onSurface,
+    //                                                   height: 1.4,
+    //                                                 ),
+    //                                           ),
+    //                                         ],
+    //                                       ),
+    //                                     ),
+    //                                     Container(
+    //                                       padding: const EdgeInsets.symmetric(
+    //                                         horizontal: 10,
+    //                                         vertical: 5,
+    //                                       ),
+    //                                       decoration: BoxDecoration(
+    //                                         color: statusColor.withOpacity(0.1),
+    //                                         borderRadius: BorderRadius.circular(
+    //                                           20,
+    //                                         ),
+    //                                         border: Border.all(
+    //                                           color: statusColor.withOpacity(
+    //                                             0.3,
+    //                                           ),
+    //                                         ),
+    //                                       ),
+    //                                       child: Row(
+    //                                         mainAxisSize: MainAxisSize.min,
+    //                                         children: [
+    //                                           Container(
+    //                                             width: 7,
+    //                                             height: 7,
+    //                                             decoration: BoxDecoration(
+    //                                               color: statusColor,
+    //                                               shape: BoxShape.circle,
+    //                                             ),
+    //                                           ),
+    //                                           const SizedBox(width: 6),
+    //                                           Text(
+    //                                             query.status,
+    //                                             style: Theme.of(context)
+    //                                                 .textTheme
+    //                                                 .labelSmall
+    //                                                 ?.copyWith(
+    //                                                   color: statusColor,
+    //                                                   fontWeight:
+    //                                                       FontWeight.w600,
+    //                                                   letterSpacing: 0.3,
+    //                                                 ),
+    //                                           ),
+    //                                         ],
+    //                                       ),
+    //                                     ),
+    //                                   ],
+    //                                 ),
+    //
+    //                                 // Admin Response
+    //                                 if (query.adminResponse.isNotEmpty) ...[
+    //                                   const SizedBox(height: 14),
+    //                                   Container(
+    //                                     width: double.infinity,
+    //                                     padding: const EdgeInsets.all(14),
+    //                                     decoration: BoxDecoration(
+    //                                       color: Theme.of(context)
+    //                                           .colorScheme
+    //                                           .primary
+    //                                           .withOpacity(0.04),
+    //                                       borderRadius: BorderRadius.circular(
+    //                                         12,
+    //                                       ),
+    //                                       border: Border(
+    //                                         left: BorderSide(
+    //                                           color: Theme.of(
+    //                                             context,
+    //                                           ).colorScheme.primary,
+    //                                           width: 3,
+    //                                         ),
+    //                                       ),
+    //                                     ),
+    //                                     child: Column(
+    //                                       crossAxisAlignment:
+    //                                           CrossAxisAlignment.start,
+    //                                       children: [
+    //                                         Row(
+    //                                           children: [
+    //                                             Container(
+    //                                               padding: const EdgeInsets.all(
+    //                                                 4,
+    //                                               ),
+    //                                               decoration: BoxDecoration(
+    //                                                 color: Theme.of(context)
+    //                                                     .colorScheme
+    //                                                     .primary
+    //                                                     .withOpacity(0.1),
+    //                                                 borderRadius:
+    //                                                     BorderRadius.circular(
+    //                                                       6,
+    //                                                     ),
+    //                                               ),
+    //                                               child: Icon(
+    //                                                 Icons.reply_rounded,
+    //                                                 size: 12,
+    //                                                 color: Theme.of(
+    //                                                   context,
+    //                                                 ).colorScheme.primary,
+    //                                               ),
+    //                                             ),
+    //                                             const SizedBox(width: 8),
+    //                                             Text(
+    //                                               "Admin Response",
+    //                                               style: Theme.of(context)
+    //                                                   .textTheme
+    //                                                   .labelSmall
+    //                                                   ?.copyWith(
+    //                                                     color: Theme.of(
+    //                                                       context,
+    //                                                     ).colorScheme.primary,
+    //                                                     fontWeight:
+    //                                                         FontWeight.w700,
+    //                                                     letterSpacing: 0.5,
+    //                                                   ),
+    //                                             ),
+    //                                           ],
+    //                                         ),
+    //                                         const SizedBox(height: 10),
+    //                                         Text(
+    //                                           query.adminResponse,
+    //                                           style: Theme.of(context)
+    //                                               .textTheme
+    //                                               .bodySmall
+    //                                               ?.copyWith(
+    //                                                 color: Theme.of(context)
+    //                                                     .colorScheme
+    //                                                     .onSurface
+    //                                                     .withOpacity(0.7),
+    //                                                 height: 1.5,
+    //                                               ),
+    //                                         ),
+    //                                       ],
+    //                                     ),
+    //                                   ),
+    //                                 ],
+    //                               ],
+    //                             ),
+    //                           ),
+    //                         ),
+    //                       ),
+    //                     );
+    //                   },
+    //                 ),
+    //               );
+    //             },
+    //             loading: () => Center(
+    //               child: CircularProgressIndicator(
+    //                 color: Theme.of(context).colorScheme.primary,
+    //               ),
+    //             ),
+    //             error: (e, st) => Center(
+    //               child: Padding(
+    //                 padding: const EdgeInsets.all(40),
+    //                 child: Column(
+    //                   mainAxisAlignment: MainAxisAlignment.center,
+    //                   children: [
+    //                     Container(
+    //                       padding: const EdgeInsets.all(16),
+    //                       decoration: BoxDecoration(
+    //                         color: Theme.of(
+    //                           context,
+    //                         ).colorScheme.error.withOpacity(0.1),
+    //                         shape: BoxShape.circle,
+    //                       ),
+    //                       child: Icon(
+    //                         Icons.error_outline_rounded,
+    //                         size: 48,
+    //                         color: Theme.of(context).colorScheme.error,
+    //                       ),
+    //                     ),
+    //                     const SizedBox(height: 20),
+    //                     Text(
+    //                       "Failed to load queries",
+    //                       style: Theme.of(context).textTheme.titleMedium
+    //                           ?.copyWith(fontWeight: FontWeight.w600),
+    //                     ),
+    //                     const SizedBox(height: 8),
+    //                     Text(
+    //                       "Please check your connection and try again",
+    //                       textAlign: TextAlign.center,
+    //                       style: Theme.of(context).textTheme.bodyMedium
+    //                           ?.copyWith(
+    //                             color: Theme.of(
+    //                               context,
+    //                             ).colorScheme.onSurface.withOpacity(0.6),
+    //                           ),
+    //                     ),
+    //                     const SizedBox(height: 24),
+    //                     FilledButton.icon(
+    //                       onPressed: () => ref.refresh(queryListProvider),
+    //                       icon: const Icon(Icons.refresh_rounded, size: 18),
+    //                       label: const Text("Retry"),
+    //                       style: FilledButton.styleFrom(
+    //                         padding: const EdgeInsets.symmetric(
+    //                           horizontal: 24,
+    //                           vertical: 12,
+    //                         ),
+    //                       ),
+    //                     ),
+    //                   ],
+    //                 ),
+    //               ),
+    //             ),
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
+  }
+
+  Widget _buildDesktopLayout() {
+    return SafeArea(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 7,
+            child: _buildQueriesPanel(),
           ),
-        ),
-        centerTitle: false,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            builder: (context) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 20,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 32,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
 
-                    const SizedBox(height: 24),
+          const SizedBox(width: 1),
 
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.help_outline_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "New Support Query",
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    )
-                              ),
-                              Text(
-                                "Describe your issue in detail",
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.6),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    TextField(
-                      controller: _messageController,
-                      minLines: 5,
-                      maxLines: 8,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Type or Paste your message here...",
-                        hintStyle: Theme.of(context).textTheme.bodyLarge
-                            ?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
-                            ),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outline.withOpacity(0.5),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outline.withOpacity(0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(18),
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        onPressed: queryState.isLoading
-                            ? null
-                            : () async {
-                                await _submitQuery();
-                                if (mounted) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                          disabledBackgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.12),
-                          disabledForegroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.38),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: queryState.isLoading
-                            ? SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimary,
-                                ),
-                              )
-                            : Text(
-                                "Submit Query",
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                              ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-        icon: const Icon(Icons.add_rounded, size: 25),
-        label: const Text(
-          "New Query",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-            width: 1,
+          SizedBox(
+            width: 380,
+            child: _buildDesktopQueryPanel(),
           ),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "My Queries",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 18
-                        ),
-                      ),
-                      queryList.when(
-                        data: (queries) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.question_answer_outlined,
-                                size: 14,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSecondaryContainer,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "${queries.length}",
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: queryList.when(
-                data: (queries) {
-                  if (queries.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(22),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.question_answer_outlined,
-                                size: 48,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.6),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              "No Queries Yet",
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              "Tap the button below to create your first support query",
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.6),
-                                    height: 1.4,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      await ref.refresh(queryListProvider.future);
-                    },
-                    color: Theme.of(context).colorScheme.primary,
-                    backgroundColor: Theme.of(context).colorScheme.surface,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                      itemCount: queries.length,
-                      itemBuilder: (context, index) {
-                        final query = queries[index];
-                        final statusColor = _getStatusColor(
-                          query.status,
-                          context,
-                        );
-                        final isLastItem = index == queries.length - 1;
-
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: isLastItem ? 0 : 12),
-                          child: Material(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            elevation: 0,
-                            child: InkWell(
-                              onTap: () {
-                                // Handle tap - navigate to details
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline.withOpacity(0.12),
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Spacer(),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                            border: Border.all(
-                                              color: statusColor.withOpacity(
-                                                0.3,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Container(
-                                                width: 7,
-                                                height: 7,
-                                                decoration: BoxDecoration(
-                                                  color: statusColor,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                query.status,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .labelSmall
-                                                    ?.copyWith(
-                                                      color: statusColor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      letterSpacing: 0.3,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    // Header Row
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                query.message,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyLarge
-                                                    ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).colorScheme.onSurface,
-                                                      height: 1.4,
-                                                    ),
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 12),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    // Admin Response
-                                    if (query.adminResponse.isNotEmpty) ...[
-                                      const SizedBox(height: 14),
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.04),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border(
-                                            left: BorderSide(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                              width: 3,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(
-                                                    4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .primary
-                                                        .withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.reply_rounded,
-                                                    size: 12,
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  "Admin Response",
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .labelSmall
-                                                      ?.copyWith(
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                        letterSpacing: 0.5,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Text(
-                                              query.adminResponse,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.7),
-                                                    height: 1.5,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-                loading: () => Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                error: (e, st) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.error.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.error_outline_rounded,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          "Failed to load queries",
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Please check your connection and try again",
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.6),
-                              ),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                          onPressed: () => ref.refresh(queryListProvider),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text("Retry"),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
+  Widget _buildQueriesPanel() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        28,
+        24,
+        20,
+        24,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildQueriesHeader(),
+
+          const SizedBox(height: 20),
+
+          Expanded(
+            child: _buildQueryList(),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildQueryList() {
+    final queryList = ref.watch(queryListProvider);
+    return queryList.when(
+      data: (queries) {
+        if (queries.isEmpty) {
+          return _buildEmptyQueryState();
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            await ref.refresh(queryListProvider.future);
+          },
+          color: Theme.of(context).colorScheme.primary,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              0,
+              20,
+              100,
+            ),
+            itemCount: queries.length,
+            itemBuilder: (context, index) {
+              final query = queries[index];
+
+              return _buildQueryCard(query);
+            },
+          ),
+        );
+      },
+
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+
+      error: (e, st) => _buildQueryError(e),
+    );
+  }
+  Widget _buildQueriesHeader() {
+    final theme = Theme.of(context);
+    final queryList = ref.watch(queryListProvider);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          "My Queries",
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+
+        queryList.when(
+          data: (queries) => Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.question_answer_outlined,
+                  size: 15,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "${queries.length}",
+                  style: TextStyle(
+                    color: theme.colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopQueryPanel() {
+    final theme = Theme.of(context);
+    final queryState = ref.watch(queryProvider);
+
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          left: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(.12),
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.help_outline_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "New Support Query",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      "Describe your issue in detail",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 28),
+
+          Text(
+            "Your Message",
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Flexible(
+            child: TextField(
+              controller: _messageController,
+              minLines: null,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: theme.textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: "Type or paste your message here...",
+                hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(.4),
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                contentPadding: const EdgeInsets.all(16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline.withOpacity(.4),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline.withOpacity(.4),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: queryState.isLoading
+                  ? null
+                  : _submitQuery,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: queryState.isLoading
+                  ? SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              )
+                  : const Text(
+                "Submit Query",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+
+    final theme = Theme.of(context);
+
+
+
+    return AppBar(
+
+      title: Text(
+
+        "Support Center",
+
+        style: theme.textTheme.titleLarge?.copyWith(
+
+          fontWeight: FontWeight.w600,
+
+          fontSize: 17,
+
+          color: theme.colorScheme.onPrimary,
+
+        ),
+
+      ),
+
+      centerTitle: false,
+
+      elevation: 0,
+
+      backgroundColor: theme.colorScheme.primary,
+
+      foregroundColor: theme.colorScheme.onPrimary,
+
+    );
+
+  }
+
+  Widget _buildMobileFab() {
+
+    final theme = Theme.of(context);
+
+
+
+    return FloatingActionButton.extended(
+
+      onPressed: () {
+
+        showModalBottomSheet(
+
+          context: context,
+
+          isScrollControlled: true,
+
+          backgroundColor: theme.colorScheme.surface,
+
+          shape: const RoundedRectangleBorder(
+
+            borderRadius: BorderRadius.vertical(
+
+              top: Radius.circular(28),
+
+            ),
+
+          ),
+
+          builder: (context) {
+
+            return Padding(
+
+              padding: EdgeInsets.only(
+
+                left: 24,
+
+                right: 24,
+
+                top: 20,
+
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+
+              ),
+
+              child: _buildMobileQueryForm(),
+
+            );
+
+          },
+
+        );
+
+      },
+
+      icon: const Icon(
+
+        Icons.add_rounded,
+
+        size: 25,
+
+      ),
+
+      label: const Text(
+
+        "New Query",
+
+        style: TextStyle(
+
+          fontWeight: FontWeight.w600,
+
+        ),
+
+      ),
+
+      backgroundColor: theme.colorScheme.primary,
+
+      foregroundColor: theme.colorScheme.onPrimary,
+
+      elevation: 4,
+
+      shape: RoundedRectangleBorder(
+
+        borderRadius: BorderRadius.circular(16),
+
+        side: BorderSide(
+
+          color: theme.colorScheme.onPrimary.withOpacity(0.2),
+
+          width: 1,
+
+        ),
+
+      ),
+
+    );
+
+  }
+
+  Widget _buildMobileQueryForm() {
+    final theme = Theme.of(context);
+    final queryState = ref.watch(queryProvider);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 32,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurface.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                ),
+              ),
+              child: Icon(
+                Icons.help_outline_rounded,
+                color: theme.colorScheme.primary,
+                size: 24,
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "New Support Query",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "Describe your issue in detail",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        TextField(
+          controller: _messageController,
+          minLines: 5,
+          maxLines: 8,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+          decoration: InputDecoration(
+            hintText: "Type or Paste your message here...",
+            hintStyle: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
+            ),
+            filled: true,
+            fillColor: theme.colorScheme.surface,
+            contentPadding: const EdgeInsets.all(18),
+
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.5),
+              ),
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.5),
+              ),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: theme.colorScheme.primary,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 28),
+
+        SizedBox(
+          width: double.infinity,
+          height: 45,
+          child: ElevatedButton(
+            onPressed: queryState.isLoading
+                ? null
+                : () async {
+              await _submitQuery();
+
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              disabledBackgroundColor:
+              theme.colorScheme.onSurface.withOpacity(0.12),
+              disabledForegroundColor:
+              theme.colorScheme.onSurface.withOpacity(0.38),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+            child: queryState.isLoading
+                ? SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: theme.colorScheme.onPrimary,
+              ),
+            )
+                : const Text(
+              "Submit Query",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 4),
+      ],
+    );
+  }
+  Widget _buildQueryCard(dynamic query) {
+    final theme = Theme.of(context);
+    final statusColor = _getStatusColor(
+      query.status,
+      context,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.12),
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      query.message,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  _buildStatusBadge(
+                    query.status,
+                    statusColor,
+                  ),
+                ],
+              ),
+
+              if (query.adminResponse.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _buildAdminResponse(
+                  query.adminResponse,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _buildEmptyQueryState() {
+
+    final theme = Theme.of(context);
+
+
+
+    return Center(
+
+      child: Padding(
+
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+
+        child: Column(
+
+          mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+
+            Container(
+
+              padding: const EdgeInsets.all(22),
+
+              decoration: BoxDecoration(
+
+                color: theme.colorScheme.primary.withOpacity(0.1),
+
+                shape: BoxShape.circle,
+
+              ),
+
+              child: Icon(
+
+                Icons.question_answer_outlined,
+
+                size: 48,
+
+                color: theme.colorScheme.primary.withOpacity(0.6),
+
+              ),
+
+            ),
+
+            const SizedBox(height: 24),
+
+            Text(
+
+              "No Queries Yet",
+
+              style: theme.textTheme.titleMedium?.copyWith(
+
+                fontWeight: FontWeight.w600,
+
+                color: theme.colorScheme.onSurface,
+
+              ),
+
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+
+              "Create your first support query to get help from our team.",
+
+              textAlign: TextAlign.center,
+
+              style: theme.textTheme.bodyMedium?.copyWith(
+
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+
+                height: 1.4,
+
+              ),
+
+            ),
+
+          ],
+
+        ),
+
+      ),
+
+    );
+
+  }
+
+  Widget _buildQueryError(Object error) {
+
+    final theme = Theme.of(context);
+
+
+
+    return Center(
+
+      child: Padding(
+
+        padding: const EdgeInsets.all(40),
+
+        child: Column(
+
+          mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+
+            Container(
+
+              padding: const EdgeInsets.all(16),
+
+              decoration: BoxDecoration(
+
+                color: theme.colorScheme.error.withOpacity(0.1),
+
+                shape: BoxShape.circle,
+
+              ),
+
+              child: Icon(
+
+                Icons.error_outline_rounded,
+
+                size: 48,
+
+                color: theme.colorScheme.error,
+
+              ),
+
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+
+              "Failed to load queries",
+
+              style: theme.textTheme.titleMedium?.copyWith(
+
+                fontWeight: FontWeight.w600,
+
+              ),
+
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+
+              "Please check your connection and try again.",
+
+              textAlign: TextAlign.center,
+
+              style: theme.textTheme.bodyMedium?.copyWith(
+
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+
+              ),
+
+            ),
+
+            const SizedBox(height: 24),
+
+            FilledButton.icon(
+
+              onPressed: () {
+
+                ref.invalidate(queryListProvider);
+
+              },
+
+              icon: const Icon(
+
+                Icons.refresh_rounded,
+
+                size: 18,
+
+              ),
+
+              label: const Text("Retry"),
+
+              style: FilledButton.styleFrom(
+
+                padding: const EdgeInsets.symmetric(
+
+                  horizontal: 24,
+
+                  vertical: 12,
+
+                ),
+
+              ),
+
+            ),
+
+          ],
+
+        ),
+
+      ),
+
+    );
+
+  }
+
+  Widget _buildStatusBadge(
+
+      String status,
+
+      Color statusColor,
+
+      ) {
+
+    final theme = Theme.of(context);
+
+
+
+    return Container(
+
+      padding: const EdgeInsets.symmetric(
+
+        horizontal: 10,
+
+        vertical: 5,
+
+      ),
+
+      decoration: BoxDecoration(
+
+        color: statusColor.withOpacity(0.1),
+
+        borderRadius: BorderRadius.circular(20),
+
+        border: Border.all(
+
+          color: statusColor.withOpacity(0.3),
+
+        ),
+
+      ),
+
+      child: Row(
+
+        mainAxisSize: MainAxisSize.min,
+
+        children: [
+
+          Container(
+
+            width: 7,
+
+            height: 7,
+
+            decoration: BoxDecoration(
+
+              color: statusColor,
+
+              shape: BoxShape.circle,
+
+            ),
+
+          ),
+
+          const SizedBox(width: 6),
+
+          Text(
+
+            status,
+
+            style: theme.textTheme.labelSmall?.copyWith(
+
+              color: statusColor,
+
+              fontWeight: FontWeight.w600,
+
+              letterSpacing: 0.3,
+
+            ),
+
+          ),
+
+        ],
+
+      ),
+
+    );
+
+  }
+
+  Widget _buildAdminResponse(String response) {
+
+    final theme = Theme.of(context);
+
+
+
+    return Container(
+
+      width: double.infinity,
+
+      padding: const EdgeInsets.all(14),
+
+      decoration: BoxDecoration(
+
+        color: theme.colorScheme.primary.withOpacity(0.04),
+
+        borderRadius: BorderRadius.circular(12),
+
+        border: Border(
+
+          left: BorderSide(
+
+            color: theme.colorScheme.primary,
+
+            width: 3,
+
+          ),
+
+        ),
+
+      ),
+
+      child: Column(
+
+        crossAxisAlignment: CrossAxisAlignment.start,
+
+        children: [
+
+          Row(
+
+            children: [
+
+              Container(
+
+                padding: const EdgeInsets.all(4),
+
+                decoration: BoxDecoration(
+
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+
+                  borderRadius: BorderRadius.circular(6),
+
+                ),
+
+                child: Icon(
+
+                  Icons.reply_rounded,
+
+                  size: 12,
+
+                  color: theme.colorScheme.primary,
+
+                ),
+
+              ),
+
+              const SizedBox(width: 8),
+
+              Text(
+
+                "Admin Response",
+
+                style: theme.textTheme.labelSmall?.copyWith(
+
+                  color: theme.colorScheme.primary,
+
+                  fontWeight: FontWeight.w700,
+
+                  letterSpacing: 0.5,
+
+                ),
+
+              ),
+
+            ],
+
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+
+            response,
+
+            style: theme.textTheme.bodySmall?.copyWith(
+
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+
+              height: 1.5,
+
+            ),
+
+          ),
+
+        ],
+
+      ),
+
+    );
+
+  }
+  Widget _buildMobileLayout() {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              0,
+            ),
+            child: Column(
+              children: [
+                _buildQueriesHeader(),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: _buildQueryList(),
+          ),
+        ],
+      ),
+    );
+  }
   Color _getStatusColor(String status, BuildContext context) {
     switch (status.toLowerCase().trim()) {
       case 'pending':

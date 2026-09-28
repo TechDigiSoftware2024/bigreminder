@@ -4,12 +4,12 @@
 // import 'package:bigreminder/widgets/custom_button.dart';
 // import 'package:bigreminder/widgets/custom_textfield.dart';
 // import 'package:flutter/material.dart';
+import 'package:bigreminder/theme/super_admin_colors.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 // import 'dart:ui';
 // import '../../providers/auth/auth_state.dart';
-// import '../../theme/app_colors.dart';
-// import '../../widgets/custom_dialog.dart';
+// // import '../../widgets/custom_dialog.dart';
 // import '../business/business_main.dart';
 //
 // class LoginScreen extends ConsumerStatefulWidget {
@@ -121,13 +121,13 @@
 //     );
 //
 //     return Scaffold(
-//       backgroundColor: AppColors.background,
+//       backgroundColor: context.brand.background,
 //       body: Form(
 //         key: _formKey,
 //         child: Container(
 //           width: double.infinity,
 //           height: double.infinity,
-//           decoration: BoxDecoration(color: AppColors.background),
+//           decoration: BoxDecoration(color: context.brand.background),
 //           child: SafeArea(
 //             child: SingleChildScrollView(
 //               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -142,7 +142,7 @@
 //                     style: TextStyle(
 //                       fontSize: 36,
 //                       fontWeight: FontWeight.w800,
-//                       color: AppColors.primaryDark,
+//                       color: context.brand.primaryDark,
 //                       height: 1.15,
 //                       letterSpacing: -0.5,
 //                     ),
@@ -151,7 +151,7 @@
 //                   Text(
 //                     "Sign in to pick up where you left off",
 //                     style: TextStyle(
-//                       color: AppColors.textSecondary,
+//                       color: context.brand.textSecondary,
 //                       fontSize: 14.5,
 //                     ),
 //                   ),
@@ -161,12 +161,12 @@
 //                   // Login Form Card with blue border
 //                   Container(
 //                     decoration: BoxDecoration(
-//                       color: AppColors.background,
+//                       color: context.brand.background,
 //                       borderRadius: BorderRadius.circular(16),
-//                       border: Border.all(color: AppColors.border, width: 1.5),
+//                       border: Border.all(color: context.brand.border, width: 1.5),
 //                       boxShadow: [
 //                         BoxShadow(
-//                           color: AppColors.primary.withOpacity(0.08),
+//                           color: context.colors.primary.withOpacity(0.08),
 //                           blurRadius: 20,
 //                           offset: const Offset(0, 4),
 //                         ),
@@ -215,7 +215,7 @@
 //                                 _obscurePassword
 //                                     ? Icons.visibility_off_outlined
 //                                     : Icons.visibility_outlined,
-//                                 color: AppColors.primary,
+//                                 color: context.colors.primary,
 //                                 size: 20,
 //                               ),
 //                             ),
@@ -233,7 +233,7 @@
 //                     child: Text(
 //                       "Forgot Password?",
 //                       style: TextStyle(
-//                         color: AppColors.primary,
+//                         color: context.colors.primary,
 //                         fontSize: 13,
 //                         fontWeight: FontWeight.w600,
 //                       ),
@@ -244,7 +244,7 @@
 //
 //                   // Sign In Button with primary color
 //                   CustomButton(
-//                     backgroundColor: AppColors.primary,
+//                     backgroundColor: context.colors.primary,
 //                     label: "Sign In",
 //                     isLoading: isLoading,
 //                     onTap: () {
@@ -285,14 +285,14 @@
 //                         text: TextSpan(
 //                           text: "Don't have an account? ",
 //                           style: TextStyle(
-//                             color: AppColors.textSecondary,
+//                             color: context.brand.textSecondary,
 //                             fontSize: 14,
 //                           ),
 //                           children: const [
 //                             TextSpan(
 //                               text: "Sign Up",
 //                               style: TextStyle(
-//                                 color: AppColors.primary,
+//                                 color: context.colors.primary,
 //                                 fontWeight: FontWeight.bold,
 //                               ),
 //                             ),
@@ -320,7 +320,7 @@
 //       children: [
 //         Expanded(
 //           child: Divider(
-//             color: AppColors.primary.withOpacity(0.15),
+//             color: context.colors.primary.withOpacity(0.15),
 //             thickness: 1,
 //           ),
 //         ),
@@ -328,12 +328,12 @@
 //           padding: const EdgeInsets.symmetric(horizontal: 12),
 //           child: Text(
 //             "or continue with",
-//             style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+//             style: TextStyle(color: context.brand.textSecondary, fontSize: 12.5),
 //           ),
 //         ),
 //         Expanded(
 //           child: Divider(
-//             color: AppColors.primary.withOpacity(0.15),
+//             color: context.colors.primary.withOpacity(0.15),
 //             thickness: 1,
 //           ),
 //         ),
@@ -357,19 +357,19 @@
 //         child: Container(
 //           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
 //           decoration: BoxDecoration(
-//             color: AppColors.primary.withOpacity(0.05),
+//             color: context.colors.primary.withOpacity(0.05),
 //             borderRadius: BorderRadius.circular(14),
-//             border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+//             border: Border.all(color: context.colors.primary.withOpacity(0.15)),
 //           ),
 //           child: Row(
 //             mainAxisAlignment: MainAxisAlignment.center,
 //             children: [
-//               Icon(icon, color: AppColors.primary, size: 22),
+//               Icon(icon, color: context.colors.primary, size: 22),
 //               const SizedBox(width: 8),
 //               Text(
 //                 label,
 //                 style: const TextStyle(
-//                   color: AppColors.primary,
+//                   color: context.colors.primary,
 //                   fontSize: 13.5,
 //                   fontWeight: FontWeight.w600,
 //                 ),
@@ -383,17 +383,15 @@
 // }
 import 'package:bigreminder/providers/auth/auth_provider.dart';
 import 'package:bigreminder/screens/auth/signup_screen.dart';
-import 'package:bigreminder/screens/super_admin/bottom_nav_screens/super_admin_main.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
+import 'package:bigreminder/theme/super_admin_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth/auth_state.dart';
-import '../../theme/app_colors.dart';
 import '../../widgets/custom_dialog.dart';
-import '../business/business_main.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -416,14 +414,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     super.initState();
 
     ref.listenManual<AuthState>(authControllerProvider, (prev, next) async {
-      // Ignore the transient in-flight state — only react once the
-      // request has actually settled.
       if (next.isLoading) return;
 
-      final errorJustArrived =
-          next.error != null &&
-              next.error!.isNotEmpty &&
-              prev?.error != next.error;
+      final errorJustArrived = next.error != null &&
+          next.error!.isNotEmpty &&
+          prev?.error != next.error;
 
       if (errorJustArrived) {
         if (!mounted) return;
@@ -431,41 +426,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         return;
       }
 
-      final isSuccess =
-          prev?.isLoading == true &&
-              next.isLoading == false &&
-              next.user != null &&
-              next.error == null;
+      // Navigation is handled by AuthGate when user is set.
+      // Persist a few UI prefs only — auth token is already saved by AuthController.
+      final isSuccess = prev?.isLoading == true &&
+          next.isLoading == false &&
+          next.user != null &&
+          next.error == null;
 
       if (!isSuccess) return;
-      if (_isNavigating) return;
 
-      _isNavigating = true;
-
+      final user = next.user!;
       try {
-        final user = next.user!;
-        final token = next.token;
-
         final prefs = await SharedPreferences.getInstance();
-
         await prefs.setBool('is_logged_in', true);
         await prefs.setString('user_id', user.userId);
         await prefs.setString('user_role', user.role);
-        await prefs.setString('access_token', token ?? '');
-
-        if (!mounted) return;
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => user.role == "super_admin"
-                ? const SuperAdminMain()
-                : const BusinessMain(),
-          ),
-              (route) => false,
-        );
-      } finally {
-        _isNavigating = false;
+      } catch (e) {
+        debugPrint('Login prefs write failed: $e');
       }
     });
   }
@@ -504,172 +481,525 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(
-      authControllerProvider.select((s) => s.isLoading),
-    );
+    final isLoading = ref.watch(authControllerProvider.select((s) => s.isLoading),);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Form(
-        key: _formKey,
+    return SuperAdminTheme.wrap(
+      Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: context.brand.white,
+            body: isDesktop
+                ? _buildDesktopLayout(context, isLoading)
+                : _buildMobileLayout(context, isLoading),
+          );
+        },
+      ),
+    );
+  }
+  Widget _buildDesktopLayout(BuildContext context, bool isLoading) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 1100,
+          maxHeight: 650,
+        ),
         child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(color: AppColors.background),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 70),
-                  const Text(
-                    "Welcome to \nBiz Reminder",
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDark,
-                      height: 1.15,
-                      letterSpacing: -0.5,
-                    ),
+          margin: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: context.brand.background,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: context.brand.border,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: context.colors.primary.withOpacity(0.08),
+                blurRadius: 40,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              // ─────────────────────────────
+              // LEFT SIDE
+              // ─────────────────────────────
+              Expanded(
+                flex: 5,
+                child: Container(
+                  padding: const EdgeInsets.all(55),
+                  decoration: BoxDecoration(
+                    color: context.colors.primary.withOpacity(0.05),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Sign in to pick up where you left off",
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14.5,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 64,
+                        width: 64,
+                        decoration: BoxDecoration(
+                          color: context.colors.primary,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Icon(
+                          Icons.business_center_rounded,
+                          color: context.brand.white,
+                          size: 32,
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      Text(
+                        "Biz Reminder",
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w800,
+                          color: context.brand.primaryDark,
+                          letterSpacing: -1,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Text(
+                        "Manage your business,\ncustomers and reminders smarter.",
+                        style: TextStyle(
+                          fontSize: 20,
+                          height: 1.45,
+                          color: context.brand.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      const SizedBox(height: 35),
+
+                      _desktopFeature(
+                        context,
+                        Icons.notifications_active_outlined,
+                        "Automate customer reminders",
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _desktopFeature(
+                        context,
+                        Icons.campaign_outlined,
+                        "Promote offers & upcoming events",
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _desktopFeature(
+                        context,
+                        Icons.payments_outlined,
+                        "Recover pending payments faster",
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 36),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                ),
+              ),
+
+              // ─────────────────────────────
+              // RIGHT SIDE
+              // ─────────────────────────────
+              Expanded(
+                flex: 4,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 55,
+                    vertical: 45,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Welcome back",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: context.brand.primaryDark,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          "Sign in to pick up where you left off",
+                          style: TextStyle(
+                            color: context.brand.textSecondary,
+                            fontSize: 15,
+                          ),
+                        ),
+
+                        const SizedBox(height: 35),
+
+                        CustomTextField(
+                          controller: phoneController,
+                          hint: "Phone number",
+                          digitsOnly: true,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "Phone is required";
+                            }
+
+                            final regex = RegExp(r'^[6-9]\d{9}$');
+
+                            if (!regex.hasMatch(value.trim())) {
+                              return "Enter a valid 10-digit phone number";
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        CustomTextField(
+                          controller: passwordController,
+                          hint: "Password",
+                          icon: Icons.lock_outline_rounded,
+                          obscure: _obscurePassword,
+                          validator: (value) {
+                            debugPrint(
+                              "PASSWORD VALUE: [$value] | LENGTH: ${value?.length}",
+                            );
+                            if (value == null || value.isEmpty) {
+                              return "Password is required";
+                            }
+
+                            if (value.length < 6) {
+                              return "Minimum 6 characters required";
+                            }
+
+                            return null;
+                          },
+                          trailing: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            child: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: context.colors.primary,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              color: context.colors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: CustomButton(
+                            backgroundColor: context.colors.primary,
+                            label: "Sign In",
+                            isLoading: isLoading,
+                            onTap: () {
+                              if (!_formKey.currentState!.validate()) {
+                                return;
+                              }
+
+                              ref
+                                  .read(authControllerProvider.notifier)
+                                  .login(
+                                phoneController.text.trim(),
+                                passwordController.text.trim(),
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                SuperAdminTheme.route(const SignupScreen()),
+                              );
+                            },
+                            child: RichText(
+                              text: TextSpan(
+                                text: "Don't have an account? ",
+                                style: TextStyle(
+                                  color: context.brand.textSecondary,
+                                  fontSize: 14,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: "Sign Up",
+                                    style: TextStyle(
+                                      color: context.colors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          CustomTextField(
-                            controller: phoneController,
-                            hint: "Phone number",
-                           digitsOnly: true,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(10)
-                            ],
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return "Phone is required";
-                              }
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                              final regex = RegExp(r'^[6-9]\d{9}$');
+  Widget _desktopFeature(
+      BuildContext context,
+      IconData icon,
+      String text,
+      ) {
+    return Row(
+      children: [
+        Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: context.colors.primary.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: context.colors.primary,
+            size: 21,
+          ),
+        ),
 
-                              if (!regex.hasMatch(value.trim())) {
-                                return "Enter a valid 10-digit phone number";
-                              }
+        const SizedBox(width: 14),
 
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          CustomTextField(
-                            controller: passwordController,
-                            hint: "Password",
-                            icon: Icons.lock_outline_rounded,
-                            obscure: _obscurePassword,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return "Password is required";
-                              }
-                              if (value.length < 6) {
-                                return "Minimum 6 characters required";
-                              }
-                              return null;
-                            },
-                            trailing: GestureDetector(
-                              onTap: () => setState(
-                                    () => _obscurePassword = !_obscurePassword,
-                              ),
-                              child: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                            ),
-                          ),
+        Text(
+          text,
+          style: TextStyle(
+            color: context.brand.textSecondary,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildMobileLayout(BuildContext context, bool isLoading) {
+    return Form(
+      key: _formKey,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 70),
+
+              Text(
+                "Welcome to \nBiz Reminder",
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  color: context.brand.primaryDark,
+                  height: 1.15,
+                  letterSpacing: -0.5,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                "Sign in to pick up where you left off",
+                style: TextStyle(
+                  color: context.brand.textSecondary,
+                  fontSize: 14.5,
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: context.brand.background,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: context.brand.border,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: context.colors.primary.withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      CustomTextField(
+                        controller: phoneController,
+                        hint: "Phone number",
+                        digitsOnly: true,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(10),
                         ],
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "Phone is required";
+                          }
+
+                          final regex = RegExp(r'^[6-9]\d{9}$');
+
+                          if (!regex.hasMatch(value.trim())) {
+                            return "Enter a valid 10-digit phone number";
+                          }
+
+                          return null;
+                        },
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  CustomButton(
-                    backgroundColor: AppColors.primary,
-                    label: "Sign In",
-                    isLoading: isLoading,
-                    onTap: () {
-                      if (!_formKey.currentState!.validate()) return;
-                      ref.read(authControllerProvider.notifier).login(
-                        phoneController.text.trim(),
-                        passwordController.text.trim(),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignupScreen()),
-                      ),
-                      child: RichText(
-                        text: TextSpan(
-                          text: "Don't have an account? ",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
+
+                      const SizedBox(height: 14),
+
+                      CustomTextField(
+                        controller: passwordController,
+                        hint: "Password",
+                        icon: Icons.lock_outline_rounded,
+                        obscure: _obscurePassword,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Password is required";
+                          }
+
+                          if (value.length < 6) {
+                            return "Minimum 6 characters required";
+                          }
+
+                          return null;
+                        },
+                        trailing: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                          child: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: context.colors.primary,
+                            size: 20,
                           ),
-                          children: const [
-                            TextSpan(
-                              text: "Sign Up",
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  "Forgot Password?",
+                  style: TextStyle(
+                    color: context.colors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: CustomButton(
+                  backgroundColor: context.colors.primary,
+                  label: "Sign In",
+                  isLoading: isLoading,
+                  onTap: () {
+                    if (!_formKey.currentState!.validate()) {
+                      return;
+                    }
+
+                    ref
+                        .read(authControllerProvider.notifier)
+                        .login(
+                      phoneController.text.trim(),
+                      passwordController.text.trim(),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              Center(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      SuperAdminTheme.route(const SignupScreen()),
+                    );
+                  },
+                  child: RichText(
+                    text: TextSpan(
+                      text: "Don't have an account? ",
+                      style: TextStyle(
+                        color: context.brand.textSecondary,
+                        fontSize: 14,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: "Sign Up",
+                          style: TextStyle(
+                            color: context.colors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
-            ),
+
+              const SizedBox(height: 32),
+            ],
           ),
         ),
       ),

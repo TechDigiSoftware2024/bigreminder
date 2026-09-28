@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/business/business_provider.dart';
 import '../../../providers/theme_provider.dart';
+import '../../../theme/app_colors.dart';
 import '../../../utils/enum_classes.dart';
 
 const int kMaxAnalysisMonths = 36;
@@ -34,16 +35,25 @@ class _BusinessAnalysisScreenState
 
   void _applyManualMonths() {
     final raw = _monthController.text.trim();
+
     if (raw.isEmpty) return;
 
     int? value = int.tryParse(raw);
+
     if (value == null) return;
 
-    if (value < 1) value = 1;
-    if (value > kMaxAnalysisMonths) value = kMaxAnalysisMonths;
+    if (value < 1) {
+      value = 1;
+    }
+
+    if (value > kMaxAnalysisMonths) {
+      value = kMaxAnalysisMonths;
+    }
 
     ref.read(analysisMonthsProvider.notifier).state = value;
+
     _monthController.text = value.toString();
+
     FocusScope.of(context).unfocus();
   }
 
@@ -55,8 +65,10 @@ class _BusinessAnalysisScreenState
     final analysis = ref.watch(businessAnalysisProvider);
     final selectedMonths = ref.watch(analysisMonthsProvider);
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: accent,
         elevation: 0,
@@ -65,110 +77,284 @@ class _BusinessAnalysisScreenState
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: 17
+            fontSize: 17,
           ),
         ),
       ),
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: SafeArea(
-          child: analysis.when(
-            loading: () => Center(
-              child: CircularProgressIndicator(color: accent),
-            ),
-            error: (e, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-                    const SizedBox(height: 16),
-                    Text(
-                      e.toString(),
-                      style: TextStyle(
-                        color: theme.colorScheme.error,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            data: (data) {
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                children: [
-                  _FilterPanel(
-                    theme: theme,
-                    selectedMonths: selectedMonths,
-                    monthController: _monthController,
-                    onQuickSelect: (v) {
-                      ref.read(analysisMonthsProvider.notifier).state = v;
-                      _monthController.clear();
-                    },
-                    onManualApply: _applyManualMonths,
-                  ),
-                  const SizedBox(height: 10),
-                  if (data.monthlyRevenue.isEmpty)
-                    _buildEmptyState(theme)
-                  else
-                    for (int i = 0; i < data.monthlyRevenue.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: AnalysisCard(
-                          month: data.monthlyRevenue[i].month,
-                          revenue: data.monthlyRevenue[i].value,
-                          purchase: data.monthlyPurchaseRevenue[i].value,
-                          expense: data.monthlyExpense[i].value,
-                          profit: data.monthlyProfit[i].value,
-                          theme: theme,
-                        ),
-                      ),
-                ],
+
+      body: SafeArea(
+        child: analysis.when(
+          loading: () =>
+              Center(child: CircularProgressIndicator(color: accent)),
+
+          error: (e, _) => _AnalysisError(error: e.toString(), theme: theme),
+
+          data: (data) {
+            if (isDesktop) {
+              return _DesktopAnalysisLayout(
+                data: data,
+                theme: theme,
+                selectedMonths: selectedMonths,
+                monthController: _monthController,
+                onQuickSelect: (value) {
+                  ref.read(analysisMonthsProvider.notifier).state = value;
+
+                  _monthController.clear();
+                },
+                onManualApply: _applyManualMonths,
               );
-            },
-          ),
+            }
+
+            return _MobileAnalysisLayout(
+              data: data,
+              theme: theme,
+              selectedMonths: selectedMonths,
+              monthController: _monthController,
+              onQuickSelect: (value) {
+                ref.read(analysisMonthsProvider.notifier).state = value;
+
+                _monthController.clear();
+              },
+              onManualApply: _applyManualMonths,
+            );
+          },
         ),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(ThemeData theme) {
-    final accent = theme.colorScheme.primary;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: accent.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.bar_chart_rounded, size: 56, color: accent),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "No Data Available",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "No analysis data for the selected period.",
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
+class _MobileAnalysisLayout extends StatelessWidget {
+  final dynamic data;
+  final ThemeData theme;
+
+  final int selectedMonths;
+  final TextEditingController monthController;
+
+  final ValueChanged<int> onQuickSelect;
+  final VoidCallback onManualApply;
+
+  const _MobileAnalysisLayout({
+    required this.data,
+    required this.theme,
+    required this.selectedMonths,
+    required this.monthController,
+    required this.onQuickSelect,
+    required this.onManualApply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        // ================= PERIOD =================
+        _FilterPanel(
+          theme: theme,
+          selectedMonths: selectedMonths,
+          monthController: monthController,
+          onQuickSelect: onQuickSelect,
+          onManualApply: onManualApply,
+          desktop: false,
         ),
-      ),
+
+        const SizedBox(height: 10),
+
+        // ================= ANALYSIS =================
+        if (data.monthlyRevenue.isEmpty)
+          _AnalysisEmptyState(theme: theme)
+        else
+          for (int i = 0; i < data.monthlyRevenue.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: AnalysisCard(
+                month: data.monthlyRevenue[i].month,
+                revenue: data.monthlyRevenue[i].value,
+                purchase: data.monthlyPurchaseRevenue[i].value,
+                expense: data.monthlyExpense[i].value,
+                profit: data.monthlyProfit[i].value,
+                theme: theme,
+              ),
+            ),
+      ],
+    );
+  }
+}
+
+class _DesktopAnalysisLayout extends StatelessWidget {
+  final dynamic data;
+  final ThemeData theme;
+
+  final int selectedMonths;
+  final TextEditingController monthController;
+
+  final ValueChanged<int> onQuickSelect;
+  final VoidCallback onManualApply;
+
+  const _DesktopAnalysisLayout({
+    required this.data,
+    required this.theme,
+    required this.selectedMonths,
+    required this.monthController,
+    required this.onQuickSelect,
+    required this.onManualApply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = theme.colorScheme.primary;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // =====================================================
+        // LEFT SIDE
+        // MONTHLY ANALYSIS
+        // =====================================================
+        Expanded(
+          flex: 7,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(36, 28, 20, 32),
+            children: [
+              // ================= HEADER =================
+              Row(
+                children: [
+                  Container(
+                    height: 42,
+                    width: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.analytics_outlined,
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                      size: 22,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Business Analysis",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      Text(
+                        "Monthly financial performance",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // ================= LIST =================
+              if (data.monthlyRevenue.isEmpty)
+                _AnalysisEmptyState(theme: theme)
+              else
+                for (int i = 0; i < data.monthlyRevenue.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: AnalysisCard(
+                      month: data.monthlyRevenue[i].month,
+                      revenue: data.monthlyRevenue[i].value,
+                      purchase: data.monthlyPurchaseRevenue[i].value,
+                      expense: data.monthlyExpense[i].value,
+                      profit: data.monthlyProfit[i].value,
+                      theme: theme,
+                    ),
+                  ),
+            ],
+          ),
+        ),
+
+        // =====================================================
+        // VERTICAL DIVIDER
+        // =====================================================
+        Container(width: 1, color: theme.dividerColor.withOpacity(.12)),
+
+        // =====================================================
+        // RIGHT SIDE
+        // PERIOD
+        // =====================================================
+        Expanded(
+          flex: 3,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 28, 36, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ================= TITLE =================
+                Row(
+                  children: [
+                    Container(
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.timeline_rounded,
+                        color: accent,
+                        size: 21,
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Period",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          "Select analysis period",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // ================= BIG PERIOD PANEL =================
+                _FilterPanel(
+                  theme: theme,
+                  selectedMonths: selectedMonths,
+                  monthController: monthController,
+                  onQuickSelect: onQuickSelect,
+                  onManualApply: onManualApply,
+                  desktop: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -178,9 +364,13 @@ class _BusinessAnalysisScreenState
 class _FilterPanel extends StatelessWidget {
   final ThemeData theme;
   final int selectedMonths;
+
   final TextEditingController monthController;
+
   final ValueChanged<int> onQuickSelect;
   final VoidCallback onManualApply;
+
+  final bool desktop;
 
   const _FilterPanel({
     required this.theme,
@@ -188,6 +378,7 @@ class _FilterPanel extends StatelessWidget {
     required this.monthController,
     required this.onQuickSelect,
     required this.onManualApply,
+    this.desktop = false,
   });
 
   static const _quickOptions = [1, 3, 6, 12];
@@ -197,14 +388,15 @@ class _FilterPanel extends StatelessWidget {
     final accent = theme.colorScheme.primary;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: double.infinity,
+      padding: EdgeInsets.all(desktop ? 22 : 18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(desktop ? 20 : 18),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: accent.withOpacity(0.05),
+            color: accent.withOpacity(.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -213,40 +405,87 @@ class _FilterPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ===================================================
+          // PERIOD LABEL
+          // ===================================================
           Row(
             children: [
-              Icon(Icons.timeline_rounded, size: 16, color: accent),
+              Icon(
+                Icons.timeline_rounded,
+                size: desktop ? 19 : 16,
+                color: accent,
+              ),
+
               const SizedBox(width: 8),
+
               Text(
                 "PERIOD",
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withOpacity(.5),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
+                  fontSize: desktop ? 11 : null,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final m in _quickOptions)
-                _MonthChip(
-                  label: m == 1 ? "1 Month" : "$m Months",
-                  selected: selectedMonths == m,
-                  theme: theme,
-                  onTap: () => onQuickSelect(m),
-                ),
-            ],
+
+          const SizedBox(height: 16),
+
+          // ===================================================
+          // DESKTOP = VERTICAL
+          // MOBILE = WRAP
+          // ===================================================
+          if (desktop)
+            Column(
+              children: [
+                for (int i = 0; i < _quickOptions.length; i++) ...[
+                  _DesktopMonthOption(
+                    months: _quickOptions[i],
+                    selected: selectedMonths == _quickOptions[i],
+                    theme: theme,
+                    onTap: () => onQuickSelect(_quickOptions[i]),
+                  ),
+
+                  if (i != _quickOptions.length - 1) const SizedBox(height: 10),
+                ],
+              ],
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final m in _quickOptions)
+                  _MonthChip(
+                    label: m == 1 ? "1 Month" : "$m Months",
+                    selected: selectedMonths == m,
+                    theme: theme,
+                    onTap: () => onQuickSelect(m),
+                  ),
+              ],
+            ),
+
+          const SizedBox(height: 16),
+
+          // ===================================================
+          // CUSTOM MONTHS
+          // ===================================================
+          Text(
+            "Custom period",
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface.withOpacity(.65),
+            ),
           ),
+
           const SizedBox(height: 8),
+
           Row(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 40,
+                  height: desktop ? 46 : 40,
                   child: TextField(
                     controller: monthController,
                     keyboardType: TextInputType.number,
@@ -258,23 +497,22 @@ class _FilterPanel extends StatelessWidget {
                       _MonthRangeFormatter(maxMonths: kMaxAnalysisMonths),
                     ],
                     decoration: InputDecoration(
-                      hintText: "Custom (1–$kMaxAnalysisMonths months)",
+                      hintText: "1–$kMaxAnalysisMonths months",
                       hintStyle: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
-                        fontSize: 14
+                        color: theme.colorScheme.onSurface.withOpacity(.4),
                       ),
-                      isDense: true,
                       prefixIcon: Icon(
                         Icons.edit_calendar_outlined,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
-                        size: 20,
+                        color: theme.colorScheme.onSurface.withOpacity(.4),
+                        size: desktop ? 21 : 20,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 14,
-                      ),
+                      isDense: true,
                       filled: true,
                       fillColor: theme.colorScheme.surface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -291,44 +529,58 @@ class _FilterPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+
+              const SizedBox(width: 10),
+
               Material(
                 color: accent,
                 borderRadius: BorderRadius.circular(14),
-                elevation: 0,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
                   onTap: onManualApply,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 9,
+                  child: SizedBox(
+                    height: desktop ? 46 : 40,
+                    width: desktop ? 52 : 44,
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                    child: Icon(Icons.check_rounded,
-                        color: Colors.white, size: 20),
                   ),
                 ),
               ),
             ],
           ),
+
+          // ===================================================
+          // INFO
+          // ===================================================
           if (selectedMonths > 12) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.08),
+                color: accent.withOpacity(.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.info_outline, size: 15, color: accent),
+
                   const SizedBox(width: 8),
+
                   Expanded(
                     child: Text(
-                      "Showing last $selectedMonths months (max $kMaxAnalysisMonths)",
+                      "Showing last "
+                      "$selectedMonths months "
+                      "(max "
+                      "$kMaxAnalysisMonths)",
                       style: TextStyle(
                         color: accent,
-                        fontSize: 11.5,
+                        fontSize: desktop ? 12 : 11.5,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -342,6 +594,163 @@ class _FilterPanel extends StatelessWidget {
     );
   }
 }
+
+class _DesktopMonthOption extends StatelessWidget {
+  final int months;
+  final bool selected;
+  final ThemeData theme;
+  final VoidCallback onTap;
+
+  const _DesktopMonthOption({
+    required this.months,
+    required this.selected,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = theme.colorScheme.primary;
+
+    final label = months == 1 ? "1 Month" : "$months Months";
+
+    return Material(
+      color: selected ? accent.withOpacity(.10) : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? accent : Colors.grey.shade200,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 34,
+                width: 34,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? accent.withOpacity(.12)
+                      : theme.colorScheme.onSurface.withOpacity(.04),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.calendar_month_outlined,
+                  size: 18,
+                  color: selected
+                      ? accent
+                      : theme.colorScheme.onSurface.withOpacity(.55),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? accent : theme.colorScheme.onSurface,
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+
+              if (selected)
+                Icon(Icons.check_circle_rounded, color: accent, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnalysisError extends StatelessWidget {
+  final String error;
+  final ThemeData theme;
+
+  const _AnalysisError({required this.error, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+
+            const SizedBox(height: 16),
+
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnalysisEmptyState extends StatelessWidget {
+  final ThemeData theme;
+
+  const _AnalysisEmptyState({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = theme.colorScheme.primary;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: accent.withOpacity(.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.bar_chart_rounded, size: 56, color: accent),
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              "No Data Available",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              "No analysis data for the selected period.",
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Custom formatter to restrict month input to valid range
 class _MonthRangeFormatter extends TextInputFormatter {
   final int maxMonths;
@@ -350,9 +759,9 @@ class _MonthRangeFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // If empty, allow it
     if (newValue.text.isEmpty) return newValue;
 
@@ -373,7 +782,9 @@ class _MonthRangeFormatter extends TextInputFormatter {
       if (value > maxMonths) {
         return TextEditingValue(
           text: maxMonths.toString(),
-          selection: TextSelection.collapsed(offset: maxMonths.toString().length),
+          selection: TextSelection.collapsed(
+            offset: maxMonths.toString().length,
+          ),
         );
       }
       return oldValue;
@@ -382,6 +793,7 @@ class _MonthRangeFormatter extends TextInputFormatter {
     return newValue;
   }
 }
+
 class _MonthChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -418,7 +830,9 @@ class _MonthChip extends StatelessWidget {
           child: Text(
             label.toUpperCase(),
             style: TextStyle(
-              color: selected ? accent : theme.colorScheme.onSurface.withOpacity(0.6),
+              color: selected
+                  ? accent
+                  : theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               fontSize: 10,
             ),
@@ -493,7 +907,10 @@ class AnalysisCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: profitColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -503,7 +920,9 @@ class AnalysisCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isProfit ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                      isProfit
+                          ? Icons.trending_up_rounded
+                          : Icons.trending_down_rounded,
                       size: 15,
                       color: profitColor,
                     ),
@@ -545,7 +964,7 @@ class AnalysisCard extends StatelessWidget {
             color: Colors.red,
             theme: theme,
           ),
-          Divider(color: theme.dividerColor.withOpacity(0.1),thickness: 2,),
+          Divider(color: theme.dividerColor.withOpacity(0.1), thickness: 2),
           _MetricRow(
             icon: Icons.account_balance_wallet_outlined,
             label: "Net Profit",

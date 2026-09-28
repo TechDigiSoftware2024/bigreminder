@@ -1,6 +1,6 @@
 class ApiConfig {
   // ================= BASE URL =================
-  static const String baseUrl = "https://sakshamdigitaltechnology.in";
+  static const String baseUrl = "https://vaidehienterprises.co.in";
 
   // ================= ENDPOINTS =================
   static const String login = "/api/v1/auth/login";
@@ -17,6 +17,9 @@ class ApiConfig {
 
   static const String subscriptions = "/api/v1/subscriptions";
 
+  static String subscriptionById(int subscriptionId) =>
+      "$subscriptions/$subscriptionId";
+
   static const String products = "/api/v1/products";
 
   static String businessTrends(int businessId, int months) => "$baseUrl/api/v1/dashboard/business/$businessId/trends?months=$months";
@@ -26,8 +29,9 @@ class ApiConfig {
 
   static const String createQuery = "$baseUrl/api/v1/queries";
 
-  /// Record Payment Endpoint
-  static String recordPayment(int purchaseId) => "$baseUrl$purchases/$purchaseId/record-payment";
+  /// Record Payment Endpoint — POST /api/v1/bills/{bill_id}/record-payment
+  static String recordPayment(int billId) =>
+      "$baseUrl$bills/$billId/record-payment";
 
   static Uri url(String endpoint) {
     return Uri.parse(baseUrl + endpoint);

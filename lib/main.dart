@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> restoreAppType(WidgetRef ref) async {
   final prefs = await SharedPreferences.getInstance();
   final savedAppType = prefs.getString('appType');
-
   AppType appType;
 
   if (savedAppType != null) {

@@ -5,6 +5,7 @@ import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/business_models/customer_list_model.dart';
 import 'package:bigreminder/models/super_admin_models/create_business_model.dart';
+import 'package:bigreminder/providers/auth/auth_provider.dart';
 import 'package:bigreminder/services/business/receive_payment_service.dart' as service;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -255,34 +256,39 @@ class BusinessService {
       final response = await http.post(
         Uri.parse(
           ApiConfig.recordPayment(
-            request.purchaseId,
+            request.billId,
           ),
         ),
         headers: ApiConfig.headers(
           token: token,
         ),
-        body: jsonEncode({
-          "received_amount": request.receivedAmount,
-        }),
+        body: jsonEncode(request.toJson()),
       );
 
-      final data =
-      jsonDecode(response.body);
+      final data = response.body.isNotEmpty ? jsonDecode(response.body) : null;
 
-      if (response.statusCode == 200 ||
-          response.statusCode == 201) {
-        return ReceivePaymentResponse
-            .fromJson(data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data is Map<String, dynamic>) {
+          return ReceivePaymentResponse.fromJson(data);
+        }
+        if (data is Map) {
+          return ReceivePaymentResponse.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+        }
+        throw Exception("Invalid payment response from server");
       }
 
+      final message = data is Map
+          ? (data["message"] ?? data["detail"] ?? data["error"])
+          : null;
+
       throw Exception(
-        data["message"] ??
-            "Failed to record payment",
+        message?.toString() ?? "Failed to record payment",
       );
     } catch (e) {
-      throw Exception(
-        "Receive Payment Error: $e",
-      );
+      if (e is Exception) rethrow;
+      throw Exception("Receive Payment Error: $e");
     }
   }
   Future<BusinessModel> createBusinessApi({
@@ -563,66 +569,6 @@ class BusinessService {
   }
 }
 
-class IncomeService {
-  final Ref ref;
-  IncomeService(this.ref);
-
-  Future<void> addIncome(BusinessIncomeRequest request) async {
-    final token = ref.read(tokenProvider);
-
-    try {
-      final res = await http.post(
-        ApiConfig.url("/api/v1/income"),
-        headers: ApiConfig.headers(token: token),
-        body: jsonEncode(request.toJson()),
-      );
-
-      _handleResponse(res);
-    } catch (e) {
-      if (e is AppError) rethrow;
-      throw AppError("No internet connection. Please try again.");
-    }
-  }
-
-  void _handleResponse(http.Response res) {
-    if (res.statusCode >= 200 && res.statusCode < 300) return;
-
-    String? msg;
-    try {
-      final data = jsonDecode(res.body);
-      if (data is Map) {
-        final m = data["message"];
-        final e = data["error"];
-        final d = data["detail"];
-        if (m != null && m.toString().trim().isNotEmpty) {
-          msg = m.toString();
-        } else if (e != null && e.toString().trim().isNotEmpty) {
-          msg = e.toString();
-        } else if (d != null && d.toString().trim().isNotEmpty) {
-          msg = d.toString();
-        }
-      }
-    } catch (_) {}
-
-    if (msg != null) throw AppError(msg);
-
-    switch (res.statusCode) {
-      case 400:
-        throw AppError("Invalid input. Please check amount/source.");
-      case 401:
-        throw AppError("Session expired. Please login again.");
-      case 403:
-        throw AppError("You are not allowed to perform this action.");
-      case 404:
-        throw AppError("Service not found.");
-      case 500:
-        throw AppError("Server error. Try again later.");
-      default:
-        throw AppError("Something went wrong.");
-    }
-  }
-}
-
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
@@ -634,4 +580,329 @@ class ApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+
+class IncomeService {
+  final Ref ref;
+
+  IncomeService(this.ref);
+
+  // ================================================================
+  // ADD INCOME
+  // ================================================================
+
+  Future<void> addIncome(
+      BusinessIncomeRequest request,
+      ) async {
+    final token = ref.read(tokenProvider);
+
+    try {
+      final res = await http.post(
+        ApiConfig.url("/api/v1/income"),
+        headers: ApiConfig.headers(
+          token: token,
+        ),
+        body: jsonEncode(
+          request.toJson(),
+        ),
+      );
+
+      _handleResponse(res);
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // GET INCOME LIST
+  // ================================================================
+
+  Future<List<BusinessIncome>> getIncomes() async {
+    final token = ref.read(tokenProvider);
+
+    final businessId = ref.read(
+      businessIdProvider,
+    );
+
+    try {
+      final res = await http.get(
+        ApiConfig.url(
+          "/api/v1/income?business_id=$businessId",
+        ),
+        headers: ApiConfig.headers(
+          token: token,
+        ),
+      );
+
+      _handleResponse(res);
+
+      final decoded = jsonDecode(res.body);
+
+      if (decoded is! List) {
+        throw AppError(
+          "Invalid income response from server.",
+        );
+      }
+
+      return decoded
+          .map(
+            (json) => BusinessIncome.fromJson(
+          Map<String, dynamic>.from(json),
+        ),
+      )
+          .toList();
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // DELETE INCOME
+  // ================================================================
+
+  Future<void> deleteIncome(
+      int incomeId,
+      ) async {
+    final token = ref.read(tokenProvider);
+
+    try {
+      final res = await http.delete(
+        ApiConfig.url(
+          "/api/v1/income/$incomeId",
+        ),
+        headers: ApiConfig.headers(
+          token: token,
+        ),
+      );
+
+      _handleResponse(res);
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // RESPONSE HANDLER
+  // ================================================================
+
+  void _handleResponse(
+      http.Response res,
+      ) {
+    if (res.statusCode >= 200 &&
+        res.statusCode < 300) {
+      return;
+    }
+
+    String? msg;
+
+    try {
+      final data = jsonDecode(res.body);
+
+      if (data is Map) {
+        final m = data["message"];
+        final e = data["error"];
+        final d = data["detail"];
+
+        if (m != null &&
+            m.toString().trim().isNotEmpty) {
+          msg = m.toString();
+        } else if (e != null &&
+            e.toString().trim().isNotEmpty) {
+          msg = e.toString();
+        } else if (d != null &&
+            d.toString().trim().isNotEmpty) {
+          msg = d.toString();
+        }
+      }
+    } catch (_) {}
+
+    if (msg != null) {
+      throw AppError(msg);
+    }
+
+    switch (res.statusCode) {
+      case 400:
+        throw AppError(
+          "Invalid input. Please check amount/source.",
+        );
+
+      case 401:
+        throw AppError(
+          "Session expired. Please login again.",
+        );
+
+      case 403:
+        throw AppError(
+          "You are not allowed to perform this action.",
+        );
+
+      case 404:
+        throw AppError(
+          "Income record not found.",
+        );
+
+      case 500:
+        throw AppError(
+          "Server error. Try again later.",
+        );
+
+      default:
+        throw AppError(
+          "Something went wrong.",
+        );
+    }
+  }
+}
+
+class ExpenseService {
+  final Ref ref;
+
+  ExpenseService(this.ref);
+
+  // ================================================================
+  // ADD EXPENSE
+  // ================================================================
+
+  Future<void> addExpense(BusinessExpenseModel request) async {
+    final token = ref.read(tokenProvider);
+
+    try {
+      final res = await http.post(
+        ApiConfig.url("/api/v1/expenses"),
+        headers: ApiConfig.headers(token: token),
+        body: jsonEncode(request.toJson()),
+      );
+
+      _handleResponse(res);
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // GET EXPENSE LIST
+  // ================================================================
+
+  Future<List<BusinessExpense>> getExpenses() async {
+    final token = ref.read(tokenProvider);
+    final businessId = ref.read(businessIdProvider);
+
+    try {
+      final res = await http.get(
+        ApiConfig.url("/api/v1/expenses?business_id=$businessId"),
+        headers: ApiConfig.headers(token: token),
+      );
+
+      _handleResponse(res);
+
+      final decoded = jsonDecode(res.body);
+
+      if (decoded is! List) {
+        throw AppError("Invalid expense response from server.");
+      }
+
+      return decoded
+          .map(
+            (json) => BusinessExpense.fromJson(
+              Map<String, dynamic>.from(json),
+            ),
+          )
+          .toList();
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // DELETE EXPENSE
+  // ================================================================
+
+  Future<void> deleteExpense(int expenseId) async {
+    final token = ref.read(tokenProvider);
+
+    try {
+      final res = await http.delete(
+        ApiConfig.url("/api/v1/expenses/$expenseId"),
+        headers: ApiConfig.headers(token: token),
+      );
+
+      _handleResponse(res);
+    } catch (e) {
+      if (e is AppError) rethrow;
+
+      throw AppError(
+        "No internet connection. Please try again.",
+      );
+    }
+  }
+
+  // ================================================================
+  // RESPONSE HANDLER
+  // ================================================================
+
+  void _handleResponse(http.Response res) {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return;
+    }
+
+    String? msg;
+
+    try {
+      final data = jsonDecode(res.body);
+
+      if (data is Map) {
+        final m = data["message"];
+        final e = data["error"];
+        final d = data["detail"];
+
+        if (m != null && m.toString().trim().isNotEmpty) {
+          msg = m.toString();
+        } else if (e != null && e.toString().trim().isNotEmpty) {
+          msg = e.toString();
+        } else if (d != null && d.toString().trim().isNotEmpty) {
+          msg = d.toString();
+        }
+      }
+    } catch (_) {}
+
+    if (msg != null) {
+      throw AppError(msg);
+    }
+
+    switch (res.statusCode) {
+      case 400:
+        throw AppError("Invalid input. Please check amount/source.");
+      case 401:
+        throw AppError("Session expired. Please login again.");
+      case 403:
+        throw AppError("You are not allowed to perform this action.");
+      case 404:
+        throw AppError("Expense record not found.");
+      case 500:
+        throw AppError("Server error. Try again later.");
+      default:
+        throw AppError("Something went wrong.");
+    }
+  }
 }

@@ -14,6 +14,7 @@ import '../../models/business_models/create_purchase_model.dart';
 import '../../models/business_models/create_purchase_response_model.dart';
 import '../../models/business_models/query_model.dart';
 import '../../models/business_models/receive_payment_request_model.dart';
+import '../../models/business_models/receive_payment_response_model.dart';
 import '../../models/super_admin_models/business_list_model.dart';
 import '../../models/super_admin_models/create_business_model.dart';
 import '../../models/super_admin_models/create_business_request_model.dart';
@@ -41,45 +42,110 @@ class BusinessController extends StateNotifier<BusinessState> {
   // =========================================================
   // 🔥 FETCH MY BUSINESSES (LOGIN FLOW)
   // =========================================================
-
   Future<void> fetchMyBusinesses(String token) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+      );
 
-      final list = await service.fetchMyBusinesses(token: token);
+      final list = await service.fetchMyBusinesses(
+        token: token,
+      );
 
-      /// 🔥 SAVE FIRST BUSINESS ID (CRITICAL FIX)
       if (list.isNotEmpty) {
         final prefs = await SharedPreferences.getInstance();
 
         final firstBusiness = list.first;
 
-        await prefs.setInt("businessId", firstBusiness.id);
-        await prefs.setString("businessName", firstBusiness.name);
+        await prefs.setInt(
+          "businessId",
+          firstBusiness.id,
+        );
 
-        print("✅ SAVED BUSINESS ID: ${firstBusiness.id}");
-        print("🏢 BUSINESS NAME: ${firstBusiness.name}");
+        await prefs.setString(
+          "businessName",
+          firstBusiness.name,
+        );
+
+        debugPrint(
+          "SAVED BUSINESS ID => ${firstBusiness.id}",
+        );
+
+        debugPrint(
+          "BUSINESS NAME => ${firstBusiness.name}",
+        );
       } else {
         final prefs = await SharedPreferences.getInstance();
+
         await prefs.remove("businessId");
 
-        print("⚠️ No businesses found");
+        debugPrint(
+          "NO BUSINESSES FOUND",
+        );
       }
 
-      /// 🔥 UPDATE STATE
-      state = state.copyWith(isLoading: false, businesses: list);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        businesses: list,
+        error: null,
+      );
+    } catch (e, stackTrace) {
+      debugPrint(
+        "FETCH BUSINESS ERROR => $e",
+      );
+
+      debugPrint(
+        stackTrace.toString(),
+      );
+
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
 
       rethrow;
     }
   }
+  // Future<void> fetchMyBusinesses(String token) async {
+  //   try {
+  //     state = state.copyWith(isLoading: true, error: null);
+  //
+  //     final list = await service.fetchMyBusinesses(token: token);
+  //
+  //     /// 🔥 SAVE FIRST BUSINESS ID (CRITICAL FIX)
+  //     if (list.isNotEmpty) {
+  //       final prefs = await SharedPreferences.getInstance();
+  //
+  //       final firstBusiness = list.first;
+  //
+  //       await prefs.setInt("businessId", firstBusiness.id);
+  //       await prefs.setString("businessName", firstBusiness.name);
+  //
+  //       print("✅ SAVED BUSINESS ID: ${firstBusiness.id}");
+  //       print("🏢 BUSINESS NAME: ${firstBusiness.name}");
+  //     } else {
+  //       final prefs = await SharedPreferences.getInstance();
+  //       await prefs.remove("businessId");
+  //
+  //       print("⚠️ No businesses found");
+  //     }
+  //
+  //     /// 🔥 UPDATE STATE
+  //     state = state.copyWith(isLoading: false, businesses: list);
+  //   } catch (e) {
+  //     state = state.copyWith(isLoading: false, error: e.toString());
+  //
+  //     rethrow;
+  //   }
+  // }
 
   Future<CreatePurchaseResponseModel> createPurchase({
     required CreatePurchaseModel model,
   }) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      // Keep global isLoading false so business_main does not full-screen spinner.
+      state = state.copyWith(error: null);
 
       final prefs = await SharedPreferences.getInstance();
 
@@ -90,11 +156,9 @@ class BusinessController extends StateNotifier<BusinessState> {
         model: model,
       );
 
-      state = state.copyWith(isLoading: false);
-
       return createdBill;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(error: e.toString());
 
       rethrow;
     }
@@ -291,6 +355,10 @@ final incomeServiceProvider = Provider<IncomeService>((ref) {
   return IncomeService(ref);
 });
 
+final expenseServiceProvider = Provider<ExpenseService>((ref) {
+  return ExpenseService(ref);
+});
+
 final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
   return BusinessRepository(ref.read(businessServiceProvider));
 });
@@ -305,16 +373,18 @@ class ReceivePaymentNotifier extends StateNotifier<AsyncValue<void>> {
 
   ReceivePaymentNotifier(this.ref) : super(const AsyncData(null));
 
-  Future<void> receivePayment({
-    required int purchaseId,
+  Future<ReceivePaymentResponse> receivePayment({
+    required int billId,
     required double amount,
+    required String paymentMode,
   }) async {
     state = const AsyncLoading();
 
     try {
       final request = ReceivePaymentRequest(
-        purchaseId: purchaseId,
+        billId: billId,
         receivedAmount: amount,
+        paymentMode: ReceivePaymentRequest.toApiMode(paymentMode),
       );
 
       final result = await ref
@@ -322,13 +392,40 @@ class ReceivePaymentNotifier extends StateNotifier<AsyncValue<void>> {
           .receivePayment(request: request);
 
       debugPrint("Updated Pending = ${result.pending}");
+      debugPrint(
+        "Customer Pending = ${result.customerPendingAmount}",
+      );
 
-      /// Refresh purchase history
+      // Refresh invoice list + customer pending amounts
       ref.invalidate(purchasesProvider(null));
+      ref.invalidate(customerProvider);
+      ref.invalidate(billDetailProvider(billId));
+
+      // Force-refresh home dashboard totals (don't wait for next manual pull)
+      final prefs = await SharedPreferences.getInstance();
+      var businessId = prefs.getInt("businessId") ?? 0;
+      if (businessId == 0) {
+        try {
+          businessId = ref.read(businessIdProvider);
+        } catch (_) {}
+      }
+
+      if (businessId != 0) {
+        ref.invalidate(dashboardProvider(businessId));
+        await ref.read(dashboardProvider(businessId).future);
+      }
+
+      // Ensure lists are ready before UI syncs
+      await Future.wait([
+        ref.read(purchasesProvider(null).future),
+        ref.read(customerProvider.future),
+      ]);
 
       state = const AsyncData(null);
+      return result;
     } catch (e, st) {
       state = AsyncError(e, st);
+      rethrow;
     }
   }
 }
@@ -486,6 +583,61 @@ final queryListProvider = FutureProvider<List<QueryModel>>((ref) async {
   return ref.read(queryServiceProvider).getQueries(token: token);
 });
 
+/// Fingerprint so status / admin reply changes show as unread again.
+String queryFingerprint(QueryModel q) =>
+    '${q.id}|${q.status.trim().toLowerCase()}|${q.adminResponse}';
+
+bool isOpenQuery(QueryModel q) {
+  final status = q.status.toLowerCase().trim();
+  return status != 'resolved' &&
+      status != 'completed' &&
+      status != 'closed';
+}
+
+const _seenQueryFingerprintsKey = 'seen_query_fingerprints';
+
+final seenQueryFingerprintsProvider =
+    StateNotifierProvider<SeenQueryFingerprintsNotifier, Set<String>>(
+  (ref) => SeenQueryFingerprintsNotifier(),
+);
+
+class SeenQueryFingerprintsNotifier extends StateNotifier<Set<String>> {
+  SeenQueryFingerprintsNotifier() : super(const {}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_seenQueryFingerprintsKey) ?? [];
+    state = saved.toSet();
+  }
+
+  Future<void> markQueriesSeen(List<QueryModel> queries) async {
+    if (queries.isEmpty) return;
+
+    final next = {...state, ...queries.map(queryFingerprint)};
+    state = next;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _seenQueryFingerprintsKey,
+      next.toList(),
+    );
+  }
+}
+
+/// Open queries that the business user has not viewed yet.
+final unreadQueryCountProvider = Provider<int>((ref) {
+  final queries = ref.watch(queryListProvider).asData?.value;
+  if (queries == null) return 0;
+
+  final seen = ref.watch(seenQueryFingerprintsProvider);
+
+  return queries
+      .where((q) => isOpenQuery(q) && !seen.contains(queryFingerprint(q)))
+      .length;
+});
+
 final currentBusinessProvider = Provider<Business?>((ref) {
   final state = ref.watch(businessControllerProvider);
 
@@ -575,29 +727,46 @@ class ProductNotifier extends AsyncNotifier<List<ProductModel>> {
     );
 
     final businessId = ref.read(businessIdProvider);
-    await loadProducts(token, businessId.toString());
+    await loadProducts(token, businessId.toString(), keepPrevious: true);
   }
 
   Future<void> deleteProduct(String token, int productId) async {
     await _service.deleteProduct(token: token, productId: productId);
 
     final businessId = ref.read(businessIdProvider);
-    await loadProducts(token, businessId.toString());
+    await loadProducts(token, businessId.toString(), keepPrevious: true);
   }
 
-  Future<void> loadProducts(String token, String businessId) async {
-    state = const AsyncLoading();
+  Future<void> loadProducts(
+    String token,
+    String businessId, {
+    bool keepPrevious = false,
+  }) async {
+    final previous = state.asData?.value;
 
-    final businessId = ref.watch(businessIdProvider);
-    state = await AsyncValue.guard(() async {
-      return _service.getProducts(businessId: businessId, token: token);
-    });
+    if (!keepPrevious) {
+      state = const AsyncLoading();
+    }
+
+    try {
+      final id = ref.read(businessIdProvider);
+      final list = await _service.getProducts(businessId: id, token: token);
+      if (!ref.mounted) return;
+      state = AsyncData(list);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (keepPrevious && previous != null) {
+        state = AsyncData(previous);
+      } else {
+        state = AsyncError(e, st);
+      }
+    }
   }
 
   Future<void> addProduct(String token, ProductModel product) async {
     await _service.createProduct(token: token, product: product);
     final businessId = ref.read(businessIdProvider);
-    await loadProducts(token, businessId.toString());
+    await loadProducts(token, businessId.toString(), keepPrevious: true);
   }
 }
 

@@ -10,13 +10,32 @@ class AuthUserModel {
   });
 
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
+    // Support flat and nested { data: {...} } / { user: {...} } payloads.
+    final nested = () {
+      final data = json['data'];
+      if (data is Map<String, dynamic>) return data;
+      final user = json['user'];
+      if (user is Map<String, dynamic>) return user;
+      return json;
+    }();
+
+    final token = json['access_token'] ??
+        json['token'] ??
+        nested['access_token'] ??
+        nested['token'];
+
+    final userId = nested['user_id'] ??
+        nested['id'] ??
+        json['user_id'] ??
+        json['id'] ??
+        '';
+
+    final role = (nested['role'] ?? json['role'] ?? '').toString();
+
     return AuthUserModel(
-      userId: json["user_id"].toString(),
-
-      // 🔥 handle multiple backend formats
-      accessToken: json["access_token"] ?? json["token"],
-
-      role: json["role"] ?? '',
+      userId: userId.toString(),
+      accessToken: token?.toString(),
+      role: role,
     );
   }
 

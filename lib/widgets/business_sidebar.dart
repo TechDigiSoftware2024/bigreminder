@@ -1,6 +1,8 @@
+import 'package:bigreminder/providers/business/business_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BusinessSidebar extends StatelessWidget {
+class BusinessSidebar extends ConsumerStatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final List<String> labels;
@@ -23,10 +25,15 @@ class BusinessSidebar extends StatelessWidget {
   ];
 
   @override
+  ConsumerState<BusinessSidebar> createState() => _BusinessSidebarState();
+}
+
+class _BusinessSidebarState extends ConsumerState<BusinessSidebar> {
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
-
+    final businessName = ref.watch(businessNameProvider);
     return Container(
       width: 250,
       decoration: BoxDecoration(
@@ -87,20 +94,20 @@ class BusinessSidebar extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: labels.length,
+              itemCount: widget.labels.length,
               itemBuilder: (context, index) {
-                final isSelected = currentIndex == index;
+                final isSelected = widget.currentIndex == index;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: _SidebarItem(
-                    label: labels[index],
-                    icon: index < _icons.length
-                        ? _icons[index]
+                    label: widget.labels[index],
+                    icon: index < BusinessSidebar._icons.length
+                        ? BusinessSidebar._icons[index]
                         : Icons.circle_outlined,
                     selected: isSelected,
                     primary: primary,
-                    onTap: () => onTap(index),
+                    onTap: () => widget.onTap(index),
                   ),
                 );
               },
@@ -110,18 +117,18 @@ class BusinessSidebar extends StatelessWidget {
           // ─────────────────────────────
           // BOTTOM AREA
           // ─────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: _SidebarItem(
-              label: 'Settings',
-              icon: Icons.settings_outlined,
-              selected: false,
-              primary: primary,
-              onTap: () {
-                // Settings navigation later
-              },
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(12),
+          //   child: _SidebarItem(
+          //     label: 'Settings',
+          //     icon: Icons.settings_outlined,
+          //     selected: false,
+          //     primary: primary,
+          //     onTap: () {
+          //       // Settings navigation later
+          //     },
+          //   ),
+          //  ),
         ],
       ),
     );

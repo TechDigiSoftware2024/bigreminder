@@ -1,421 +1,633 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
+
 import '../../../models/super_admin_models/business_list_model.dart';
 import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_service.dart';
-import '../../../theme/app_colors.dart';
+import '../../../theme/super_admin_colors.dart';
+import '../../../widgets/custom_dialog.dart';
 import 'business_list_details.dart';
 
-class BusinessListPage extends StatefulWidget {
+class BusinessListPage extends ConsumerStatefulWidget {
   const BusinessListPage({super.key});
 
   @override
-  State<BusinessListPage> createState() => _BusinessListPageState();
+  ConsumerState<BusinessListPage> createState() => _BusinessListPageState();
 }
 
-class _BusinessListPageState extends State<BusinessListPage>
-    with SingleTickerProviderStateMixin {
-  late Future<List<Business>> future;
-  late AnimationController _animController;
+class _BusinessListPageState extends ConsumerState<BusinessListPage> {
+  late Future<List<Business>> _future;
   final TextEditingController _searchController = TextEditingController();
-  List<Business> allBusinesses = [];
-  List<Business> filteredBusinesses = [];
-
-  String searchQuery = "";
   Timer? _debounce;
+
+  List<Business> _all = [];
+  List<Business> _filtered = [];
+  String _query = '';
+  Business? _selected;
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    future = BusinessService.fetchBusinesses();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
+    _load();
   }
 
   @override
   void dispose() {
-    _animController.dispose();
     _debounce?.cancel();
-    _searchController.dispose(); // ✅ important
+    _searchController.dispose();
     super.dispose();
   }
 
-  void retry() {
+  Future<void> _load() async {
     setState(() {
-      future = BusinessService.fetchBusinesses();
-      _animController.forward(from: 0);
+      _loading = true;
+      _error = null;
+      _future = BusinessService.fetchBusinesses();
     });
+
+    try {
+      final list = await _future;
+      if (!mounted) return;
+      setState(() {
+        _all = list;
+        _applyFilter();
+        _loading = false;
+        // Keep selection if still present; otherwise pick first on desktop.
+        if (_selected != null) {
+          final match = _all.where((b) => b.id == _selected!.id);
+          _selected = match.isEmpty ? null : match.first;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  void _applyFilter() {
+    if (_query.isEmpty) {
+      _filtered = List.of(_all);
+      return;
+    }
+    _filtered = _all.where((b) {
+      return b.name.toLowerCase().contains(_query) ||
+          b.category.toLowerCase().contains(_query) ||
+          b.phone.toLowerCase().contains(_query) ||
+          b.id.toString().contains(_query);
+    }).toList();
   }
 
   void _onSearchChanged(String value) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-
-    _debounce = Timer(const Duration(milliseconds: 300), () {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 220), () {
       setState(() {
-        searchQuery = value.toLowerCase();
-
-        filteredBusinesses = allBusinesses.where((b) {
-          return b.name.toLowerCase().contains(searchQuery) ||
-              b.category.toLowerCase().contains(searchQuery) ||
-              b.id.toString().contains(searchQuery);
-        }).toList();
+        _query = value.trim().toLowerCase();
+        _applyFilter();
       });
     });
   }
 
+  void _select(Business business, {required bool isDesktop}) {
+    if (isDesktop) {
+      setState(() => _selected = business);
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BusinessDetailPage(business: business),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(Business business) async {
+    final ok = await CustomDialog.showConfirm(
+      context: context,
+      title: 'Delete Business',
+      message: 'Delete "${business.name}"? This cannot be undone.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+
+    if (!ok || !mounted) return;
+
+    try {
+      await ref
+          .read(businessControllerProvider.notifier)
+          .deleteBusinessById(business.id);
+      if (!mounted) return;
+
+      final err = ref.read(businessControllerProvider).error;
+      if (err != null && err.isNotEmpty) {
+        CustomDialog.showErrorSnack(context, 'Delete failed');
+        return;
+      }
+
+      CustomDialog.showSuccessSnack(context, 'Business deleted');
+      if (_selected?.id == business.id) {
+        setState(() => _selected = null);
+      }
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      CustomDialog.showErrorSnack(context, 'Delete failed');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      body: FutureBuilder<List<Business>>(
-        future: future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final canPop = Navigator.of(context).canPop();
 
-          if (snapshot.hasError) {
-            return _ErrorView(
-                retry: retry, error: snapshot.error.toString());
-          }
-
-          allBusinesses = snapshot.data ?? [];
-
-          // first load
-          if (searchQuery.isEmpty) {
-            filteredBusinesses = allBusinesses;
-          }
-
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _header()),
-
-              /// 🔥 SEARCH BAR
-              SliverToBoxAdapter(child: _searchBar()),
-
-              /// 🔥 LIST / EMPTY STATE
-              filteredBusinesses.isEmpty
-                  ? const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: Center(
-                    child: Text(
-                      "No results found",
-                      style: TextStyle(color: Colors.grey),
-                    ),
+    return Theme(
+      data: SuperAdminTheme.theme,
+      child: Scaffold(
+        backgroundColor: const Color(0xffF5F7FB),
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: SuperAdminColors.primaryDark,
+          leading: canPop
+              ? IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
                   ),
-                ),
-              )
-                  : SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
+                )
+              : null,
+          title: const Text(
+            'Businesses',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 17,
+              color: Colors.white,
+            ),
+          ),
+          // actions: [
+          //   IconButton(
+          //     tooltip: 'Refresh',
+          //     onPressed: _loading ? null : _load,
+          //     icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+          //   ),
+          //   const SizedBox(width: 4),
+          // ],
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _ErrorView(error: _error!, onRetry: _load)
+                : isDesktop
+                    ? _desktopBody()
+                    : _mobileBody(),
+      ),
+    );
+  }
+
+  Widget _desktopBody() {
+    // Auto-select first item when nothing selected.
+    if (_selected == null && _filtered.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _selected != null) return;
+        setState(() => _selected = _filtered.first);
+      });
+    }
+
+    return Row(
+      children: [
+        _BusinessListSidebar(
+          businesses: _filtered,
+          totalCount: _all.length,
+          selectedId: _selected?.id,
+          searchController: _searchController,
+          query: _query,
+          onSearchChanged: _onSearchChanged,
+          onClearSearch: () {
+            setState(() {
+              _searchController.clear();
+              _query = '';
+              _applyFilter();
+            });
+          },
+          onRefresh: _load,
+          onSelect: (b) => _select(b, isDesktop: true),
+          onDelete: _confirmDelete,
+        ),
+        Expanded(
+          child: ColoredBox(
+            color: SuperAdminColors.background,
+            child: _selected == null
+                ? _EmptyDetail()
+                : BusinessDetailPanel(
+                    key: ValueKey(_selected!.id),
+                    business: _selected!,
+                    showInlineHeader: true,
+                    onRefreshList: _load,
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _mobileBody() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: _SearchField(
+            controller: _searchController,
+            query: _query,
+            onChanged: _onSearchChanged,
+            onClear: () {
+              setState(() {
+                _searchController.clear();
+                _query = '';
+                _applyFilter();
+              });
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${_filtered.length} of ${_all.length} businesses',
+              style: const TextStyle(
+                color: SuperAdminColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _filtered.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No businesses found',
+                    style: TextStyle(color: SuperAdminColors.textSecondary),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  itemCount: _filtered.length,
+                  itemBuilder: (context, index) {
+                    final b = _filtered[index];
                     return Padding(
-                      padding:
-                      const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                      child: _AnimatedCard(
-                        controller: _animController,
-                        delay: index * 0.08,
-                        child: _BusinessCard(
-                            business: filteredBusinesses[index]),
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _BusinessListTile(
+                        business: b,
+                        selected: false,
+                        compact: false,
+                        onTap: () => _select(b, isDesktop: false),
+                        onDelete: () => _confirmDelete(b),
                       ),
                     );
                   },
-                  childCount: filteredBusinesses.length,
                 ),
-              ),
-
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 20),
-              )
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _searchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            )
-          ],
         ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged,
-          decoration: InputDecoration(
-            hintText: "Search name, id, category...",
-            hintStyle: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500
-            ),
-            prefixIcon: const Icon(Icons.search,color: Colors.grey,),
-            suffixIcon: searchQuery.isNotEmpty
-                ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _searchController.clear();
-                  searchQuery = "";
-                  filteredBusinesses = allBusinesses;
-                });
-              },
-            )
-                : null,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-            const EdgeInsets.symmetric(vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _header() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 5),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark.withOpacity(0.95),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Businesses",
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Manage your business list",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
-class _AnimatedCard extends StatelessWidget {
-  final AnimationController controller;
-  final double delay;
-  final Widget child;
 
-  const _AnimatedCard({
-    required this.controller,
-    required this.delay,
-    required this.child,
+// ─────────────────────────────────────────────────────────────────────────────
+// LEFT SIDEBAR (permanent on desktop)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BusinessListSidebar extends StatelessWidget {
+  final List<Business> businesses;
+  final int totalCount;
+  final int? selectedId;
+  final TextEditingController searchController;
+  final String query;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+  final VoidCallback onRefresh;
+  final ValueChanged<Business> onSelect;
+  final ValueChanged<Business> onDelete;
+
+  const _BusinessListSidebar({
+    required this.businesses,
+    required this.totalCount,
+    required this.selectedId,
+    required this.searchController,
+    required this.query,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.onRefresh,
+    required this.onSelect,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Interval(delay.clamp(0.0, 0.9),
-          (delay + 0.4).clamp(0.0, 1.0),
-          curve: Curves.easeOut),
+    return Container(
+      width: 400,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: SuperAdminColors.border),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 12, 14),
+            decoration: BoxDecoration(
+              color: SuperAdminColors.primary.withValues(alpha: 0.04),
+              border: const Border(
+                bottom: BorderSide(color: SuperAdminColors.border),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 38,
+                      width: 38,
+                      decoration: BoxDecoration(
+                        color: SuperAdminColors.primary,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(
+                        Icons.storefront_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Businesses',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: SuperAdminColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Select to view details',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: SuperAdminColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _SearchField(
+                  controller: searchController,
+                  query: query,
+                  onChanged: onSearchChanged,
+                  onClear: onClearSearch,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '${businesses.length} of $totalCount',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: SuperAdminColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: businesses.isEmpty
+                ? Center(
+                    child: Text(
+                      query.isEmpty ? 'No businesses yet' : 'No matches',
+                      style: const TextStyle(
+                        color: SuperAdminColors.textSecondary,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+                    itemCount: businesses.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final b = businesses[index];
+                      return _BusinessListTile(
+                        business: b,
+                        selected: b.id == selectedId,
+                        compact: true,
+                        onTap: () => onSelect(b),
+                        onDelete: () => onDelete(b),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
+  }
+}
 
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (_, __) => Opacity(
-        opacity: animation.value,
-        child: Transform.translate(
-          offset: Offset(0, 20 * (1 - animation.value)),
-          child: child,
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String query;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _SearchField({
+    required this.controller,
+    required this.query,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      cursorColor: SuperAdminColors.primary,
+      decoration: InputDecoration(
+        hintText: 'Search name, phone, id…',
+        hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+        prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.shade500),
+        suffixIcon: query.isNotEmpty
+            ? IconButton(
+                onPressed: onClear,
+                icon: const Icon(Icons.close_rounded, size: 18),
+              )
+            : null,
+        filled: true,
+        fillColor: SuperAdminColors.surfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: SuperAdminColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: SuperAdminColors.primary,
+            width: 1.4,
+          ),
         ),
       ),
     );
   }
 }
 
-class _BusinessCard extends ConsumerWidget {
+class _BusinessListTile extends StatelessWidget {
   final Business business;
+  final bool selected;
+  final bool compact;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _BusinessCard({required this.business});
+  const _BusinessListTile({
+    required this.business,
+    required this.selected,
+    required this.compact,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isActive = business.isActive;
 
-    return Slidable(
-      key: ValueKey(business.id),
-
-      // 🔥 Right side swipe actions
-      endActionPane: ActionPane(
-        motion: const StretchMotion(), // smooth premium feel
-        extentRatio: 0.3,
-        children: [
-          SlidableAction(
-            onPressed: (_) async {
-              final confirm = await showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text("Delete Business"),
-                  content: const Text(
-                      "Are you sure you want to delete this business?"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryDark, // 🔥 text color
-                      ),
-                      child: const Text("Cancel"),
-                    ),
-
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryDark, // 🔥 main color
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      ),
-                      child: const Text("Delete"),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm == true) {
-                ref
-                    .read(businessControllerProvider.notifier)
-                    .deleteBusinessById(business.id);
-              }
-            },
-
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ],
-      ),
-
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BusinessDetailPage(business: business),
-            ),
-          );
-        },
+    return Material(
+      color: selected
+          ? SuperAdminColors.primary.withValues(alpha: 0.08)
+          : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 12 : 14,
+            vertical: compact ? 10 : 12,
+          ),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? SuperAdminColors.primary.withValues(alpha: 0.45)
+                  : SuperAdminColors.border,
+              width: selected ? 1.4 : 1,
+            ),
           ),
           child: Row(
             children: [
               Container(
-                height: 40,
-                width: 40,
+                height: compact ? 38 : 42,
+                width: compact ? 38 : 42,
                 decoration: BoxDecoration(
                   color: isActive
-                      ? AppColors.primaryDark.withOpacity(0.3) // active soft bg
-                      : Colors.red.withOpacity(0.3), // inactive lighter bg
-                  borderRadius: BorderRadius.circular(14),
+                      ? SuperAdminColors.primary.withValues(alpha: 0.12)
+                      : SuperAdminColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.store,
+                  Icons.storefront_rounded,
+                  size: 20,
                   color: isActive
-                      ? AppColors.primaryDark // strong for active
-                      : Colors.red.shade600, // faded for inactive
+                      ? SuperAdminColors.primaryDark
+                      : SuperAdminColors.error,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       business.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: compact ? 13.5 : 14,
+                        color: SuperAdminColors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
-                      business.category,
-                      style: TextStyle(color: Colors.grey.shade600,
-                      fontSize: 12),
+                      '${business.category} · #${business.id}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: SuperAdminColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? SuperAdminColors.success.withValues(alpha: 0.12)
+                          : SuperAdminColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isActive ? "Active" : "Inactive",
+                      isActive ? 'Active' : 'Off',
                       style: TextStyle(
-                        color: isActive ? Colors.green : Colors.red,
-                        fontSize: 11,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isActive
+                            ? SuperAdminColors.success
+                            : SuperAdminColors.error,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Icon(Icons.arrow_forward_ios,
-                      size: 12, color: Colors.grey.shade400)
+                  IconButton(
+                    tooltip: 'Delete',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 28,
+                    ),
+                    onPressed: onDelete,
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -423,22 +635,83 @@ class _BusinessCard extends ConsumerWidget {
     );
   }
 }
-class _ErrorView extends StatelessWidget {
-  final VoidCallback retry;
-  final String error;
 
-  const _ErrorView({required this.retry, required this.error});
-
+class _EmptyDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(error),
-          const SizedBox(height: 10),
-          ElevatedButton(onPressed: retry, child: const Text("Retry"))
+          Container(
+            height: 72,
+            width: 72,
+            decoration: BoxDecoration(
+              color: SuperAdminColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.storefront_outlined,
+              size: 34,
+              color: SuperAdminColors.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Select a business',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: SuperAdminColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Pick one from the list to view details\nand manage access controls.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: SuperAdminColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _ErrorView({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 40,
+              color: SuperAdminColors.error,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SuperAdminColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }

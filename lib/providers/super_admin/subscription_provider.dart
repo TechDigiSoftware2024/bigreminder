@@ -229,8 +229,10 @@ class SubscriptionProvider extends ChangeNotifier {
   }
 
   // =========================================================
-  // 🔥 SUBSCRIPTION SECTION (same pattern as plans/features)
+  // 🔥 SUBSCRIPTION SECTION — /api/v1/subscriptions CRUD
   // =========================================================
+
+  int? _lastListBusinessId;
 
   Future<void> createSubscription({
     required int businessId,
@@ -248,6 +250,7 @@ class SubscriptionProvider extends ChangeNotifier {
         planId: planId,
       );
 
+      await loadAllSubscriptions(businessId: _lastListBusinessId);
     } catch (e) {
       debugPrint("❌ CREATE SUB ERROR: $e");
       rethrow;
@@ -264,9 +267,7 @@ class SubscriptionProvider extends ChangeNotifier {
       isSubLoading = true;
       notifyListeners();
 
-      currentSubscription =
-      await subsApi.getMySubscription(token);
-
+      currentSubscription = await subsApi.getMySubscription(token);
     } catch (e) {
       debugPrint("❌ LOAD SUB ERROR: $e");
     } finally {
@@ -275,43 +276,108 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  /// GET /api/v1/subscriptions  (optional ?business_id=)
   Future<void> loadAllSubscriptions({int? businessId}) async {
     try {
       await _ensureToken();
 
+      _lastListBusinessId = businessId;
       isSubListLoading = true;
       notifyListeners();
 
-      if (businessId != null) {
-        subscriptions = await subsApi.getAllSubscriptions(
-          token,
-          businessId: businessId,
-        );
-      } else {
-        subscriptions = [];
-      }
+      subscriptions = await subsApi.getAllSubscriptions(
+        token,
+        businessId: businessId,
+      );
     } catch (e) {
       debugPrint("❌ LOAD ALL SUB ERROR: $e");
+      subscriptions = [];
     } finally {
       isSubListLoading = false;
       notifyListeners();
     }
   }
-  Future<void> activateSubscription(int id) async {
+
+  /// GET /api/v1/subscriptions/{subscription_id}
+  Future<SubscriptionModel?> getSubscriptionById(int subscriptionId) async {
+    try {
+      await _ensureToken();
+      return await subsApi.getSubscriptionById(
+        token: token,
+        subscriptionId: subscriptionId,
+      );
+    } catch (e) {
+      debugPrint("❌ GET SUB BY ID ERROR: $e");
+      rethrow;
+    }
+  }
+
+  /// PUT/PATCH /api/v1/subscriptions/{subscription_id}
+  Future<void> updateSubscription({
+    required int subscriptionId,
+    int? planId,
+    String? status,
+    String? paymentStatus,
+    bool? autoRenew,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
       await _ensureToken();
 
-      await subsApi.updateSubscription(
+      isSubLoading = true;
+      notifyListeners();
+
+      final updated = await subsApi.updateSubscription(
         token: token,
-        id: id,
-        status: "active",
-        paymentStatus: "paid",
+        subscriptionId: subscriptionId,
+        planId: planId,
+        status: status,
+        paymentStatus: paymentStatus,
+        autoRenew: autoRenew,
+        startDate: startDate,
+        endDate: endDate,
       );
 
-      await loadMySubscription();
-
+      currentSubscription = updated;
+      await loadAllSubscriptions(businessId: _lastListBusinessId);
     } catch (e) {
-      debugPrint("❌ ACTIVATE ERROR: $e");
+      debugPrint("❌ UPDATE SUB ERROR: $e");
+      rethrow;
+    } finally {
+      isSubLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> activateSubscription(int id) async {
+    await updateSubscription(
+      subscriptionId: id,
+      status: 'active',
+      paymentStatus: 'paid',
+    );
+  }
+
+  /// DELETE /api/v1/subscriptions/{subscription_id}
+  Future<void> deleteSubscription(int subscriptionId) async {
+    try {
+      await _ensureToken();
+
+      isSubLoading = true;
+      notifyListeners();
+
+      await subsApi.deleteSubscription(
+        token: token,
+        subscriptionId: subscriptionId,
+      );
+
+      await loadAllSubscriptions(businessId: _lastListBusinessId);
+    } catch (e) {
+      debugPrint("❌ DELETE SUB ERROR: $e");
+      rethrow;
+    } finally {
+      isSubLoading = false;
+      notifyListeners();
     }
   }
 
@@ -319,8 +385,7 @@ class SubscriptionProvider extends ChangeNotifier {
     return currentSubscription?.features.contains(key) ?? false;
   }
 
-  bool get isSubscribed =>
-      currentSubscription?.status == "active";
+  bool get isSubscribed => currentSubscription?.status == "active";
 }
 
 // ================================

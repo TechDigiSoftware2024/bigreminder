@@ -97,13 +97,25 @@ class PurchaseModel {
     return PurchaseModel(
       // Detail endpoint returns `id`; list endpoint returns `bill_id`.
       // Support both without breaking either screen.
-      billId: json['id'] ?? json['bill_id'] ?? 0,
-      businessId: json['business_id'] ?? 0,
+      billId: () {
+        final raw = json['id'] ?? json['bill_id'];
+        if (raw is int) return raw;
+        return int.tryParse(raw?.toString() ?? '') ?? 0;
+      }(),
+      businessId: () {
+        final raw = json['business_id'];
+        if (raw is int) return raw;
+        return int.tryParse(raw?.toString() ?? '') ?? 0;
+      }(),
       billNumber: json['bill_number']?.toString() ?? '',
       subtotal: parseDecimal(json["subtotal"]),
       totalGst: parseDecimal(json["total_gst"]),
       barcode: json['barcode']?.toString() ?? '',
-      customerId: json['customer_id'] ?? 0,
+      customerId: () {
+        final raw = json['customer_id'];
+        if (raw is int) return raw;
+        return int.tryParse(raw?.toString() ?? '') ?? 0;
+      }(),
       customerName: json['customer_name']?.toString() ?? '',
       customerPhone: json['customer_phone']?.toString() ?? '0',
       totalAmount: json['total_amount']?.toString() ?? '0',
