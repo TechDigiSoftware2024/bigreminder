@@ -11,7 +11,6 @@ import '../../../subscription/plan_model.dart';
 import '../../../theme/super_admin_colors.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_dialog.dart';
-import '../../../widgets/custom_list_toggle.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -3655,86 +3654,374 @@ class PlanFeatureMappingScreen extends ConsumerStatefulWidget {
 
 class _PlanFeatureMappingScreenState
     extends ConsumerState<PlanFeatureMappingScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _ready = false;
+  int? _busyFeatureId;
 
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() async {
       final p = ref.read(subscriptionProvider);
       await p.loadFeatures();
       await p.loadPlanFeatures(widget.plan.id);
+      if (mounted) setState(() => _ready = true);
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleFeature(FeatureModel feature) async {
+    if (_busyFeatureId != null) return;
+    setState(() => _busyFeatureId = feature.id);
+    try {
+      await ref.read(subscriptionProvider).toggleFeature(
+            planId: widget.plan.id,
+            featureId: feature.id,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      CustomDialog.showErrorSnack(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+    } finally {
+      if (mounted) setState(() => _busyFeatureId = null);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = ref.watch(subscriptionProvider);
-
-    /// 🔥 FIX: loading state added
-    if (provider.isMappingLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final features = provider.features;
-    final selected = provider.planFeatureMap[widget.plan.id] ?? {};
+    final selected = provider.planFeatureMap[widget.plan.id] ?? <int>{};
+    final query = _searchController.text.trim().toLowerCase();
+    final visible = features.where((feature) {
+      if (query.isEmpty) return true;
+      return feature.name.toLowerCase().contains(query) ||
+          feature.key.toLowerCase().contains(query) ||
+          feature.description.toLowerCase().contains(query);
+    }).toList();
+    final enabledCount =
+        features.where((feature) => selected.contains(feature.id)).length;
 
     return Scaffold(
+      backgroundColor: SuperAdminColors.background,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: SuperAdminColors.primaryDark,
         foregroundColor: Colors.white,
         title: Text(
-          "${widget.plan.name} Features",
+          widget.plan.name,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-      body: features.isEmpty
-          ? const Center(child: Text("No Features"))
-          :ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: features.length,
-        itemBuilder: (_, i) {
-          final f = features[i];
-          final isSelected = selected.contains(f.id);
-
-          return CustomListToggle(
-            title: f.name,
-            subtitle: f.id.toString(),
-            value: isSelected,
-
-            /// optional theming (keeps your earlier feel)
-            onColor: SuperAdminColors.primaryDark,
-            outlineColor: SuperAdminColors.primaryDark.withOpacity(0.4),
-
-            onChanged: (val) async {
-              try {
-                await provider.toggleFeature(
-                  planId: widget.plan.id,
-                  featureId: f.id,
-                );
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Failed to update feature: ${e.toString()}",
-                      ),
-                      backgroundColor: Colors.red,
+      body: !_ready
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                  child: _PlanFeatureSummary(
+                    enabledCount: enabledCount,
+                    totalCount: features.length,
+                    priceLabel: '₹${widget.plan.price.toStringAsFixed(0)}',
+                    cycleLabel: widget.plan.billingCycle,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: SuperAdminColors.textPrimary,
                     ),
-                  );
-                }
-              }
-            },
-          );
-        },
-      )
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: 'Search features',
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: SuperAdminColors.textHint,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: SuperAdminColors.primaryDark,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: SuperAdminColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: SuperAdminColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: SuperAdminColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: features.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No features yet',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: SuperAdminColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      : visible.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No matching features',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: SuperAdminColors.textSecondary,
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
+                              itemCount: visible.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (_, index) {
+                                final feature = visible[index];
+                                final isOn = selected.contains(feature.id);
+                                return _PlanFeatureToggleTile(
+                                  feature: feature,
+                                  isOn: isOn,
+                                  isBusy: _busyFeatureId == feature.id,
+                                  onChanged: _busyFeatureId == null
+                                      ? (_) => _toggleFeature(feature)
+                                      : null,
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _PlanFeatureSummary extends StatelessWidget {
+  final int enabledCount;
+  final int totalCount;
+  final String priceLabel;
+  final String cycleLabel;
+
+  const _PlanFeatureSummary({
+    required this.enabledCount,
+    required this.totalCount,
+    required this.priceLabel,
+    required this.cycleLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: SuperAdminColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Plan features',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: SuperAdminColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'Turn a feature on to include it in this plan.',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+              color: SuperAdminColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _summaryChip('$enabledCount of $totalCount on'),
+              _summaryChip(priceLabel),
+              if (cycleLabel.trim().isNotEmpty)
+                _summaryChip(cycleLabel.toUpperCase()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: SuperAdminColors.primaryLight,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: SuperAdminColors.primaryDark,
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanFeatureToggleTile extends StatelessWidget {
+  final FeatureModel feature;
+  final bool isOn;
+  final bool isBusy;
+  final ValueChanged<bool>? onChanged;
+
+  const _PlanFeatureToggleTile({
+    required this.feature,
+    required this.isOn,
+    required this.isBusy,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = feature.description.trim().isNotEmpty
+        ? feature.description.trim()
+        : feature.key.replaceAll('_', ' ');
+
+    return Material(
+      color: isOn ? SuperAdminColors.surfaceMuted : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onChanged == null ? null : () => onChanged!(!isOn),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isOn
+                  ? SuperAdminColors.primary.withValues(alpha: 0.45)
+                  : SuperAdminColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 34,
+                width: 34,
+                decoration: BoxDecoration(
+                  color: isOn
+                      ? SuperAdminColors.primary
+                      : SuperAdminColors.grey100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isOn ? Icons.check_rounded : Icons.extension_outlined,
+                  color: isOn ? Colors.white : SuperAdminColors.grey500,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      feature.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: SuperAdminColors.textPrimary,
+                      ),
+                    ),
+                    if (detail.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        detail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          height: 1.25,
+                          color: SuperAdminColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isBusy)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    Transform.scale(
+                      scale: 0.86,
+                      child: Switch(
+                        value: isOn,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onChanged: onChanged,
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: SuperAdminColors.primary,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: SuperAdminColors.grey400,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
