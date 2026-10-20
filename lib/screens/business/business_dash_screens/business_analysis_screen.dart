@@ -6,6 +6,7 @@ import '../../../providers/business/business_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/enum_classes.dart';
+import '../../../utils/formatters.dart';
 
 const int kMaxAnalysisMonths = 36;
 
@@ -1020,7 +1021,7 @@ class _MetricRow extends StatelessWidget {
           ),
         ),
         Text(
-          "₹${value.toStringAsFixed(2)}",
+          AppFormatters.currency(value),
           style: TextStyle(
             color: emphasized ? color : theme.colorScheme.onSurface,
             fontSize: emphasized ? 17 : 14,

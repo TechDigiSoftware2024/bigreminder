@@ -7,6 +7,12 @@ class ApiConfig {
 
   static const String register = "/api/v1/auth/register-business";
 
+  static const String categories = "/api/v1/categories";
+
+  static const String adminCategories = "/api/v1/admin/categories";
+
+  static String adminCategoryById(int id) => "$adminCategories/$id";
+
   static const String businessList = "/api/v1/businesses";
 
   static const String businessAccess = "/api/v1/access-control";

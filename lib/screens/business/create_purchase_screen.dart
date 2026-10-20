@@ -12,6 +12,7 @@ import '../../providers/business/business_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/business/business_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/custom_dialog.dart';
 
 class CreatePurchaseScreen extends ConsumerStatefulWidget {
@@ -878,7 +879,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${totalAmount.toStringAsFixed(2)}',
+                      AppFormatters.currency(totalAmount),
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
@@ -899,25 +900,25 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     _moneyRow(
                       theme,
                       'Subtotal',
-                      '₹${subtotalAmount.toStringAsFixed(2)}',
+                      AppFormatters.currency(subtotalAmount),
                     ),
                     _moneyRow(
                       theme,
                       'GST',
-                      '₹${totalGstAmount.toStringAsFixed(2)}',
+                      AppFormatters.currency(totalGstAmount),
                       valueColor: AppColors.credit,
                     ),
                     Divider(height: 16, color: _line(theme)),
                     _moneyRow(
                       theme,
                       'Paid',
-                      '₹${paid.toStringAsFixed(2)}',
+                      AppFormatters.currency(paid),
                       valueColor: cs.primary,
                     ),
                     _moneyRow(
                       theme,
                       'Pending',
-                      '₹${pendingAmount.toStringAsFixed(2)}',
+                      AppFormatters.currency(pendingAmount),
                       valueColor: pendingAmount > 0
                           ? AppColors.warning
                           : AppColors.credit,
@@ -1060,7 +1061,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     ),
                   ),
                   Text(
-                    '₹${totalAmount.toStringAsFixed(2)}',
+                    AppFormatters.currency(totalAmount),
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -1071,8 +1072,8 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                   const SizedBox(height: 2),
                   Text(
                     pendingAmount > 0
-                        ? 'Pending ₹${pendingAmount.toStringAsFixed(0)}'
-                        : 'GST ₹${totalGstAmount.toStringAsFixed(0)}',
+                        ? 'Pending ${AppFormatters.currency(pendingAmount)}'
+                        : 'GST ${AppFormatters.currency(totalGstAmount)}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -1198,18 +1199,18 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                           _moneyRow(
                             theme,
                             'Subtotal',
-                            '₹${subtotalAmount.toStringAsFixed(2)}',
+                            AppFormatters.currency(subtotalAmount),
                           ),
                           _moneyRow(
                             theme,
                             'GST',
-                            '₹${totalGstAmount.toStringAsFixed(2)}',
+                            AppFormatters.currency(totalGstAmount),
                             valueColor: AppColors.credit,
                           ),
                           _moneyRow(
                             theme,
                             'Pending',
-                            '₹${pendingAmount.toStringAsFixed(2)}',
+                            AppFormatters.currency(pendingAmount),
                             valueColor: pendingAmount > 0
                                 ? AppColors.warning
                                 : AppColors.credit,
@@ -1518,7 +1519,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          _chip(theme, '₹${item['price']}'),
+                          _chip(theme, AppFormatters.currencyOf(item['price'])),
                           _chip(theme, 'Qty ${item['quantity']}'),
                           _chip(theme, 'GST $gstPercent%'),
                         ],
@@ -1531,7 +1532,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₹${lineTotal.toStringAsFixed(0)}',
+                      AppFormatters.currency(lineTotal),
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
@@ -1540,7 +1541,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'GST ₹${gstAmount.toStringAsFixed(0)}',
+                      'GST ${AppFormatters.currency(gstAmount)}',
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.credit,
@@ -1742,7 +1743,7 @@ class _CreatePurchaseScreenState extends ConsumerState<CreatePurchaseScreen> {
                         ),
                       ),
                       Text(
-                        '₹${product.price.toStringAsFixed(product.price % 1 == 0 ? 0 : 2)}',
+                        AppFormatters.currency(product.price),
                         style: TextStyle(
                           color: cs.primary,
                           fontWeight: FontWeight.w800,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -18,33 +19,30 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AppBar(
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: theme.colorScheme.primary, // 👈 dynamic
+      backgroundColor: AppColors.appBarBg,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: AppColors.appBarText,
       centerTitle: centerTitle,
-
-      /// 🔹 Leading
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.appBarBorder),
+      ),
       leading: showBack
           ? IconButton(
-        icon: Icon(Icons.arrow_back,
-            color: theme.colorScheme.onSurface),
-        onPressed: () => Navigator.pop(context),
-      )
+              icon: const Icon(Icons.arrow_back, color: AppColors.appBarIcon),
+              onPressed: () => Navigator.pop(context),
+            )
           : leading,
-
-      /// 🔹 Title
       title: Text(
         title,
-        style: theme.textTheme.titleLarge?.copyWith(
+        style: const TextStyle(
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 16,
+          color: AppColors.appBarText,
         ),
       ),
-
-      /// 🔹 Actions
       actions: actions,
     );
   }

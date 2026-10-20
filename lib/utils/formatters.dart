@@ -3,14 +3,39 @@ import 'package:intl/intl.dart';
 class AppFormatters {
   AppFormatters._();
 
-  /// 💰 CURRENCY FORMAT (₹)
-  static String currency(num amount) {
-    final formatter = NumberFormat.currency(
+  /// Indian rupee display: ₹1,40,000 or ₹979.82.
+  static String currency(num amount, {int? decimalDigits}) {
+    return NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
-      decimalDigits: 0,
-    );
-    return formatter.format(amount);
+      decimalDigits: decimalDigits ?? _decimalDigits(amount),
+    ).format(amount);
+  }
+
+  /// Same grouping, without the rupee symbol.
+  static String plain(num amount, {int? decimalDigits}) {
+    return NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '',
+      decimalDigits: decimalDigits ?? _decimalDigits(amount),
+    ).format(amount).trim();
+  }
+
+  static String currencyOf(Object? raw, {int? decimalDigits}) {
+    return currency(parseAmount(raw), decimalDigits: decimalDigits);
+  }
+
+  static double parseAmount(Object? raw) {
+    if (raw is num) return raw.toDouble();
+    final text = raw?.toString().replaceAll(',', '').trim() ?? '';
+    return double.tryParse(text) ?? 0;
+  }
+
+  static int _decimalDigits(num amount) {
+    final value = amount.toDouble();
+    if (value.isNaN || value.isInfinite) return 0;
+    final paise = (value * 100).round();
+    return paise % 100 == 0 ? 0 : 2;
   }
 
   /// 💰 SHORT AMOUNT (K, L, Cr)

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/business_models/business_purchase_list_model.dart';
 import '../../providers/business/business_provider.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/custom_dialog.dart';
 
 class BusinessPurchaseHistoryScreen extends ConsumerStatefulWidget {
@@ -878,19 +879,21 @@ class BillDetailPanel extends ConsumerWidget {
             children: [
               _AmountChip(
                 label: 'Total',
-                value: '₹${purchase.totalAmount}',
+                value: AppFormatters.currencyOf(purchase.totalAmount),
                 color: cs.primary,
               ),
               const SizedBox(width: 8),
               _AmountChip(
                 label: 'Paid',
-                value: '₹${purchase.paid}',
+                value: AppFormatters.currencyOf(purchase.paid),
                 color: Colors.green.shade700,
               ),
               const SizedBox(width: 8),
               _AmountChip(
                 label: 'Pending',
-                value: isPaid ? '₹0' : '₹${purchase.pending}',
+                value: isPaid
+                    ? AppFormatters.currency(0)
+                    : AppFormatters.currencyOf(purchase.pending),
                 color: isPaid ? Colors.grey.shade600 : Colors.red.shade700,
               ),
             ],
@@ -1614,8 +1617,5 @@ class _ErrorState extends StatelessWidget {
 }
 
 extension PriceFormatter on double {
-  String get formatPrice {
-    if (this == toInt()) return toInt().toString();
-    return toStringAsFixed(2);
-  }
+  String get formatPrice => AppFormatters.plain(this);
 }

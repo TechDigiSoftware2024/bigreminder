@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class CustomDialog {
   /// Compact confirm / alert dialogs (delete, logout, continue…).
   static const double confirmWidth = 360;
@@ -40,7 +42,7 @@ class CustomDialog {
     _showSnack(
       context,
       message,
-      Colors.green,
+      AppColors.success,
       Icons.check_circle,
     );
   }
@@ -52,7 +54,7 @@ class CustomDialog {
     _showSnack(
       context,
       message,
-      Colors.red,
+      AppColors.error,
       Icons.error,
     );
   }
@@ -137,7 +139,7 @@ class CustomDialog {
     IconData? icon,
   }) async {
     final primary = Theme.of(context).colorScheme.primary;
-    final accent = isDestructive ? Colors.red : primary;
+    final accent = isDestructive ? AppColors.error : primary;
     final width = dialogWidth(context, desktop: confirmWidth);
     final resolvedIcon = icon ??
         (isDestructive ? Icons.delete_outline_rounded : Icons.help_outline_rounded);

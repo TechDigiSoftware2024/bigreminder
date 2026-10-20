@@ -4,6 +4,7 @@ class RegisterRequestModel {
   final String password;
   final String businessName;
   final String businessCategory;
+  final int? categoryId;
   final String address;
   final String doc;
 
@@ -13,6 +14,7 @@ class RegisterRequestModel {
     required this.password,
     required this.businessName,
     required this.businessCategory,
+    this.categoryId,
     required this.address,
     required this.doc,
   });
@@ -24,6 +26,7 @@ class RegisterRequestModel {
       "password": password.trim(),
       "business_name": businessName.trim(),
       "business_category": businessCategory.trim(),
+      if (categoryId != null) "category_id": categoryId,
       "address": address.trim(),
       "doc": doc.trim(),
     };
@@ -36,6 +39,7 @@ class RegisterRequestModel {
     String? password,
     String? businessName,
     String? businessCategory,
+    int? categoryId,
     String? address,
     String? doc,
   }) {
@@ -45,6 +49,7 @@ class RegisterRequestModel {
       password: password ?? this.password,
       businessName: businessName ?? this.businessName,
       businessCategory: businessCategory ?? this.businessCategory,
+      categoryId: categoryId ?? this.categoryId,
       address: address ?? this.address,
       doc: doc ?? this.doc,
     );

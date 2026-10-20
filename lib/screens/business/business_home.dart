@@ -8,7 +8,9 @@ import 'package:bigreminder/screens/business/business_query_screen.dart';
 import 'package:bigreminder/screens/business/business_template_screen.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
 import '../../utils/enum_classes.dart';
+import '../../utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/business_models/business_dashboard_model.dart';
 import '../../providers/business/business_provider.dart';
@@ -59,7 +61,7 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     final dashboardAsync = ref.watch(dashboardProvider(businessId));
     final queryList = ref.watch(queryListProvider);
     return Scaffold(
-      backgroundColor: const Color(0xffF5F7FB),
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(
         context,
         businessName,
@@ -175,17 +177,22 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       String businessName,
       AsyncValue queryList,
       ) {
-    final primary = Theme.of(context).colorScheme.primary;
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final unreadCount = ref.watch(unreadQueryCountProvider);
     return AppBar(
-      backgroundColor: primary,
+      backgroundColor: AppColors.appBarBg,
+      foregroundColor: AppColors.appBarText,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.appBarBorder),
+      ),
       title: Text(
         businessName,
         style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.appBarText,
         ),
       ),
       actions: [
@@ -232,8 +239,8 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade700,
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     unreadCount > 9 ? '9+' : '$unreadCount',
@@ -302,15 +309,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: primary,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primary.withOpacity(.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.card,
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
@@ -325,9 +326,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     ),
 
                     Container(
-                      height: 55,
+                      height: 48,
                       width: 1,
-                      color: Colors.white24,
+                      color: AppColors.border,
                     ),
 
                     Expanded(
@@ -342,9 +343,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                     ),
 
                     Container(
-                      height: 55,
+                      height: 48,
                       width: 1,
-                      color: Colors.white24,
+                      color: AppColors.border,
                     ),
 
                     Expanded(
@@ -397,8 +398,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
 
                 _MetricCard(
                   title: "Pending Amount",
-                  value:
-                  "₹${data.grandTotalPendingAmountValue.toStringAsFixed(0)}",
+                  value: AppFormatters.currency(
+                    data.grandTotalPendingAmountValue,
+                  ),
                   icon:
                   Icons.account_balance_wallet_outlined,
                   onTap: () {
@@ -442,18 +444,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,8 +454,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
           const Text(
             "Quick Actions",
             style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
 
@@ -703,8 +697,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                         const Text(
                           "Financial Overview",
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
                         ),
 
@@ -721,8 +716,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                         const Text(
                           "Business Metrics",
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
                         ),
 
@@ -768,8 +764,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                                 height: 145,
                                 child: _MetricCard(
                                   title: "Pending Amount",
-                                  value:
-                                  "₹${data.grandTotalPendingAmountValue.toStringAsFixed(0)}",
+                                  value: AppFormatters.currency(
+                                    data.grandTotalPendingAmountValue,
+                                  ),
                                   icon: Icons
                                       .account_balance_wallet_outlined,
                                   onTap: () {
@@ -817,11 +814,8 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       BuildContext context,
       BusinessDashboardModel data,
       ) {
-    final primary =
-        Theme.of(context).colorScheme.primary;
-
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: AppRadius.card,
       onTap: () {
         Navigator.push(
           context,
@@ -833,17 +827,11 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: primary,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: primary.withOpacity(.20),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          color: AppColors.surface,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -907,52 +895,52 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
             children: [
               Icon(
                 icon,
-                color: AppColors.white,
-                size: 18,
+                color: AppColors.textSecondary,
+                size: 16,
               ),
               const SizedBox(width: 7),
               Text(
                 title,
                 style: const TextStyle(
-                  color: AppColors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           Text(
-            "₹${amount.toStringAsFixed(0)}",
+            AppFormatters.currency(amount),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
           if (growth != 0) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               children: [
                 Icon(
                   isPositive
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
-                  color: Colors.white,
+                  color: isPositive ? AppColors.success : AppColors.error,
                   size: 13,
                 ),
                 const SizedBox(width: 3),
                 Text(
                   "${isPositive ? '+' : ''}${growth.toStringAsFixed(1)}%",
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isPositive ? AppColors.success : AppColors.error,
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -965,9 +953,9 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
 
   Widget _desktopVerticalDivider() {
     return Container(
-      height: 100,
+      height: 72,
       width: 1,
-      color: Colors.white24,
+      color: AppColors.border,
     );
   }
 
@@ -978,20 +966,11 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       int businessId,
       ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.04),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment:
@@ -1000,18 +979,19 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
           const Text(
             "Quick Actions",
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
 
-          Text(
-            "Manage your business quickly",
+          const Text(
+            "Common tasks for this workspace",
             style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 13,
+              color: AppColors.textSecondary,
+              fontSize: 12,
             ),
           ),
 
@@ -1178,50 +1158,43 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
       VoidCallback onTap, {
         bool highlighted = false,
       }) {
-    final primary =
-        Theme.of(context).colorScheme.primary;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
+            horizontal: 12,
+            vertical: 10,
           ),
           decoration: BoxDecoration(
-            color: highlighted
-                ? primary.withOpacity(.08)
-                : Colors.grey.shade50,
-            borderRadius:
-            BorderRadius.circular(14),
+            color: highlighted ? AppColors.primaryLight : AppColors.grey50,
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: highlighted
-                  ? primary.withOpacity(.18)
-                  : Colors.grey.shade200,
+              color: highlighted ? AppColors.primaryLight : AppColors.border,
             ),
           ),
           child: Row(
             children: [
               Container(
-                height: 42,
-                width: 42,
+                height: 32,
+                width: 32,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(.10),
-                  borderRadius:
-                  BorderRadius.circular(12),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Icon(
                   icon,
-                  color: primary,
-                  size: 20,
+                  color: AppColors.primary,
+                  size: 16,
                 ),
               ),
 
-              const SizedBox(width: 13),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: Text(
@@ -1229,16 +1202,17 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
 
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: Colors.grey.shade500,
+              const Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: AppColors.textHint,
               ),
             ],
           ),
@@ -1582,21 +1556,21 @@ Widget _metricItem({
         Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
+            color: AppColors.textSecondary,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
         ),
 
         const SizedBox(height: 4),
         Text(
-            "₹${amount.toStringAsFixed(0)}",
+            AppFormatters.currency(amount),
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
@@ -1610,7 +1584,7 @@ Widget _metricItem({
                     ? Icons.trending_up_rounded
                     : Icons.trending_down_rounded,
                 size: 14,
-                color: isPositive ? Colors.white : Colors.white,
+                color: isPositive ? AppColors.success : AppColors.error,
               ),
 
               const SizedBox(width: 4),
@@ -1618,7 +1592,7 @@ Widget _metricItem({
               Text(
                 "${isPositive ? '+' : ''}${growth.toStringAsFixed(1)}%",
                 style: TextStyle(
-                  color: isPositive ? Colors.white : Colors.white,
+                  color: isPositive ? AppColors.success : AppColors.error,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1646,50 +1620,45 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: AppColors.surface,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: EdgeInsets.all(14),
+              height: 32,
+              width: 32,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(99),
-                color: primary.withOpacity(0.1),
+                borderRadius: AppRadius.radiusSM,
+                color: AppColors.primaryLight,
               ),
-              child: Icon(icon, color: primary,size: 20,),
+              child: Icon(icon, color: AppColors.primary, size: 16),
             ),
             const Spacer(),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  title,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey.shade800),
-                ),
-              ],
+            Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -1714,49 +1683,40 @@ class _ActionBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: AppRadius.button,
         onTap: onTap,
-        splashColor: primary.withOpacity(0.08),
-        highlightColor: primary.withOpacity(0.04),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: primary.withOpacity(0.12), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: AppRadius.button,
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                height: 28,
+                width: 28,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(99),
+                  color: AppColors.primaryLight,
+                  borderRadius: AppRadius.radiusSM,
                 ),
-                child: Icon(icon, color: primary, size: 16),
+                child: Icon(icon, color: AppColors.primary, size: 15),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),

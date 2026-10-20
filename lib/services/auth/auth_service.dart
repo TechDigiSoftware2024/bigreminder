@@ -39,6 +39,7 @@ class AuthService {
     required String password,
     required String businessName,
     required String businessCategory,
+    int? categoryId,
     required String address,
     required String doc,
   }) async {
@@ -52,6 +53,7 @@ class AuthService {
         "password": password,
         "business_name": businessName,
         "business_category": businessCategory,
+        if (categoryId != null) "category_id": categoryId,
         "address": address,
         "doc": doc,
       }),

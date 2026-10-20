@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class CustomBottomBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -14,76 +16,61 @@ class CustomBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return Material(
+      color: AppColors.surface,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildItem(Icons.home_outlined, labels[0], 0, context),
-            _buildItem(Icons.history_outlined, labels[1], 1, context),
-            _buildItem(Icons.shopping_bag_outlined, labels[2], 2, context),
-            _buildItem(Icons.notifications_outlined, labels[3], 3, context),
-            _buildItem(Icons.person_outline, labels[4], 4, context),
-          ],
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 58,
+            child: Row(
+              children: [
+                _item(Icons.home_outlined, labels[0], 0),
+                _item(Icons.receipt_long_outlined, labels[1], 1),
+                _item(Icons.point_of_sale_outlined, labels[2], 2),
+                _item(Icons.notifications_none_outlined, labels[3], 3),
+                _item(Icons.person_outline, labels[4], 4),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildItem(
-      IconData icon,
-      String label,
-      int index,
-      BuildContext context,
-      ) {
-    final isSelected = currentIndex == index;
+  Widget _item(IconData icon, String label, int index) {
+    final selected = currentIndex == index;
+    final color = selected ? AppColors.primary : AppColors.textSecondary;
 
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: isSelected
-                ? BoxDecoration(
-              color:
-              Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            )
-                : null,
-            child: Icon(
-              icon,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey,
+    return Expanded(
+      child: InkWell(
+        onTap: () => onTap(index),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 2,
+              width: 18,
+              margin: const EdgeInsets.only(bottom: 6),
+              color: selected ? AppColors.primary : Colors.transparent,
             ),
-          ),
-          Text(
-            label,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey,
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: color,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

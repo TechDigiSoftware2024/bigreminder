@@ -233,12 +233,20 @@ class _BusinessCalculatorScreenState extends State<BusinessCalculatorScreen>
   String _addCommas(String number) {
     final isNeg = number.startsWith('-');
     final digits = isNeg ? number.substring(1) : number;
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(digits[i]);
+    if (digits.length <= 3) return number;
+
+    final head = digits.substring(0, digits.length - 3);
+    final tail = digits.substring(digits.length - 3);
+    final groups = <String>[];
+    var rest = head;
+    while (rest.length > 2) {
+      groups.insert(0, rest.substring(rest.length - 2));
+      rest = rest.substring(0, rest.length - 2);
     }
-    return isNeg ? '-${buffer.toString()}' : buffer.toString();
+    if (rest.isNotEmpty) groups.insert(0, rest);
+    groups.add(tail);
+    final formatted = groups.join(',');
+    return isNeg ? '-$formatted' : formatted;
   }
 
   void _clearAll() {

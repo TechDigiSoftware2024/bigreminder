@@ -2,6 +2,7 @@ import 'package:bigreminder/theme/role_colors.dart';
 
 import '../models/app_color_scheme.dart';
 import '../utils/enum_classes.dart';
+
 final Map<AppType, AppColorScheme> _colorMap = {
   AppType.gym: gymColors,
   AppType.shop: shopColors,
@@ -11,8 +12,9 @@ final Map<AppType, AppColorScheme> _colorMap = {
   AppType.restaurant: restaurantColors,
   AppType.finance: financeColors,
   AppType.realEstate: realEstateColors,
+  AppType.generic: genericColors,
 };
 
 AppColorScheme getColors(AppType type) {
-  return _colorMap[type] ?? gymColors; // fallback safe
+  return _colorMap[type] ?? genericColors;
 }

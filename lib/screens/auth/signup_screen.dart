@@ -14,8 +14,9 @@ import 'dart:ui';
 import '../../providers/business/business_provider.dart';
 import '../../widgets/custom_dialog.dart';
 import '../business/business_main.dart';
+import '../../models/category_model.dart';
 import '../../providers/auth/auth_state.dart';
-import '../../widgets/custom_dropdown.dart';
+import '../../widgets/category_picker_field.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   final bool isFromAdmin;
@@ -37,36 +38,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   final passwordController = TextEditingController();
   final phoneController = TextEditingController();
   final businessNameController = TextEditingController();
-  final categoryController = TextEditingController();
   final addressController = TextEditingController();
   String? docFilePath; // image/file optional
   bool _obscurePassword = true;
 
   final _formKey = GlobalKey<FormState>();
   String? selectedRole;
-  late final finalCategory = selectedCategory == "Other"
-      ? otherCategoryController.text.trim()
-      : selectedCategory;
-
-  String? selectedCategory;
-  bool showOtherField = false;
-
-  final TextEditingController otherCategoryController = TextEditingController();
+  CategoryModel? selectedCategory;
 
   @override
   void initState() {
     super.initState();
   }
-
-  final List<String> businessCategories = [
-    "General Store",
-    "Gym",
-    "Medical",
-    "Salon",
-    "Restaurant",
-    "Clothing",
-    "Other",
-  ];
 
   @override
   void dispose() {
@@ -74,7 +57,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     passwordController.dispose();
     phoneController.dispose();
     businessNameController.dispose();
-    categoryController.dispose();
     addressController.dispose();
     super.dispose();
   }
@@ -870,89 +852,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
         const SizedBox(height: 6),
 
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomDropdown(
-              roles: businessCategories,
-              selectedRole: selectedCategory,
-              hint: "Select Business Category",
-              onChanged: (value) {
-                setState(() {
-                  selectedCategory = value;
-                  showOtherField = value == "Other";
-
-                  if (!showOtherField) {
-                    otherCategoryController.clear();
-                  }
-                });
-              },
-              validator: (value) {
-                return value == null
-                    ? "Please select category"
-                    : null;
-              },
-            ),
-
-            if (showOtherField)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: TextFormField(
-                  controller: otherCategoryController,
-                  style: TextStyle(
-                    color: context.colors.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Enter your business category",
-                    hintStyle: TextStyle(
-                      color: context.brand.textHint,
-                    ),
-                    filled: true,
-                    fillColor: context.colors.primary.withOpacity(0.03),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: context.brand.border,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: context.brand.border,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: context.colors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: context.colors.error,
-                      ),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: context.colors.error,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (showOtherField &&
-                        (value == null || value.trim().isEmpty)) {
-                      return "Please enter your business type";
-                    }
-
-                    return null;
-                  },
-                ),
-              ),
-          ],
+        CategoryPickerField(
+          selected: selectedCategory,
+          hint: "Select Business Category",
+          onChanged: (value) {
+            setState(() => selectedCategory = value);
+          },
+          validator: (value) {
+            return value == null ? "Please select category" : null;
+          },
         ),
 
         const SizedBox(height: 6),
@@ -1070,12 +978,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
               // Super Admin create keeps admin logged in (AuthGate stays on
               // SuperAdminMain). Normal signup replaces session → BusinessMain.
 
+              final category = selectedCategory;
+              if (category == null) return;
+
               final createdUser = await authController.signup(
                 ownerName: nameController.text.trim(),
                 phone: phoneController.text.trim(),
                 password: passwordController.text.trim(),
                 businessName: businessNameController.text.trim(),
-                businessCategory: finalCategory ?? "general",
+                businessCategory: category.name,
+                categoryId: category.id,
                 address: addressController.text.trim(),
                 doc: docFilePath ?? "",
                 replaceSession: !widget.isFromAdmin,
@@ -1109,7 +1021,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
               } else {
                 await businessController.createBusiness(
                   name: businessNameController.text.trim(),
-                  category: finalCategory ?? "general",
+                  category: category.name,
+                  categoryId: category.id,
                   address: addressController.text.trim(),
                   doc: docFilePath ?? "",
                   userId: int.parse(ownerUserId),

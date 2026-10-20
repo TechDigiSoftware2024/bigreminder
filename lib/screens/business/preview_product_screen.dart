@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/business_models/add_product_model.dart';
+import '../../utils/formatters.dart';
 
 class PreviewProductsScreen extends StatefulWidget {
   final List<ProductModel> products;
@@ -320,9 +321,7 @@ class _PreviewProductCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final hasBarcode =
         product.barcode != null && product.barcode!.trim().isNotEmpty;
-    final priceLabel = product.price % 1 == 0
-        ? product.price.toInt().toString()
-        : product.price.toStringAsFixed(2);
+    final priceLabel = AppFormatters.currency(product.price);
 
     return Material(
       color: Colors.transparent,
@@ -419,7 +418,7 @@ class _PreviewProductCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '₹$priceLabel',
+                      priceLabel,
                       style: const TextStyle(
                         color: Color(0xFF1B8A3E),
                         fontWeight: FontWeight.w700,
@@ -523,9 +522,7 @@ class _ImportSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final valueLabel = totalValue % 1 == 0
-        ? totalValue.toInt().toString()
-        : totalValue.toStringAsFixed(2);
+    final valueLabel = AppFormatters.currency(totalValue);
 
     return Container(
       width: double.infinity,
@@ -588,7 +585,7 @@ class _ImportSummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatChip(
                   label: 'Stock Value',
-                  value: '₹$valueLabel',
+                  value: valueLabel,
                   color: Colors.green.shade700,
                 ),
               ),
@@ -622,9 +619,7 @@ class _ProductDetailCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final hasBarcode =
         product.barcode != null && product.barcode!.trim().isNotEmpty;
-    final priceLabel = product.price % 1 == 0
-        ? product.price.toInt().toString()
-        : product.price.toStringAsFixed(2);
+    final priceLabel = AppFormatters.currency(product.price);
 
     return Container(
       width: double.infinity,
@@ -686,7 +681,7 @@ class _ProductDetailCard extends StatelessWidget {
             value: hasBarcode ? product.barcode! : '—',
           ),
           const SizedBox(height: 8),
-          _DetailRow(label: 'Price', value: '₹$priceLabel'),
+          _DetailRow(label: 'Price', value: priceLabel),
           const SizedBox(height: 8),
           _DetailRow(label: 'Stock', value: '${product.stock}'),
           const SizedBox(height: 8),
@@ -718,9 +713,7 @@ class _SummaryBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final valueLabel = totalValue % 1 == 0
-        ? totalValue.toInt().toString()
-        : totalValue.toStringAsFixed(2);
+    final valueLabel = AppFormatters.currency(totalValue);
 
     return Container(
       width: double.infinity,
@@ -758,7 +751,7 @@ class _SummaryBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Stock value ₹$valueLabel',
+                  'Stock value $valueLabel',
                   style: TextStyle(
                     color: Colors.white.withOpacity(.9),
                     fontSize: 12,
