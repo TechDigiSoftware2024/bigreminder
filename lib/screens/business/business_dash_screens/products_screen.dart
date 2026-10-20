@@ -7,6 +7,9 @@ import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_csv_import_service.dart';
 import '../../../services/business/product_import_service.dart';
 import '../../../widgets/custom_dialog.dart';
+import '../../../utils/formatters.dart';
+import '../barcode_scanner_dialog.dart';
+import '../generate_barcode_screen.dart';
 import '../preview_product_screen.dart';
 
 class ProductScreen extends ConsumerStatefulWidget {
@@ -253,7 +256,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     );
   }
 
-  void _openProductForm({ProductModel? product}) {
+  void _openProductForm({ProductModel? product, String? scannedBarcode}) {
     final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
     // Desktop: fill the side panel for both add and edit.
@@ -261,6 +264,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       _resetForm();
       if (product != null) {
         _fillForm(product);
+      } else if (scannedBarcode != null) {
+        barcodeCtrl.text = scannedBarcode;
       }
       setState(() => saving = false);
       return;
@@ -270,6 +275,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     _resetForm();
     if (product != null) {
       _fillForm(product);
+    } else if (scannedBarcode != null) {
+      barcodeCtrl.text = scannedBarcode;
     }
     setState(() => saving = false);
 
@@ -307,6 +314,11 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                       stockController: stockCtrl,
                       loading: saving,
                       isEditing: editingProduct != null,
+                      onScan: () => _scanAndFill(formAlreadyOpen: true),
+                      onGenerate: () {
+                        Navigator.of(dialogContext).pop();
+                        _openGenerate();
+                      },
                       onSubmit: () async {
                         final success = await _submit(
                           key: dialogFormKey,
@@ -330,6 +342,150 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         setState(_resetForm);
       }
     });
+  }
+
+  Future<void> _showAddOptions() async {
+    final cs = Theme.of(context).colorScheme;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Add product',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Enter the details yourself, or scan a barcode with a USB scanner.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 16),
+                  _AddOptionButton(
+                    icon: Icons.edit_outlined,
+                    title: 'Enter manually',
+                    subtitle: 'Type the product name, price, and stock',
+                    color: cs.primary,
+                    onTap: () => Navigator.pop(dialogContext, 'manual'),
+                  ),
+                  const SizedBox(height: 8),
+                  _AddOptionButton(
+                    icon: Icons.qr_code_scanner_rounded,
+                    title: 'Scan barcode',
+                    subtitle: 'Scan first, then fill in the other details',
+                    color: cs.primary,
+                    onTap: () => Navigator.pop(dialogContext, 'scan'),
+                  ),
+                  const SizedBox(height: 8),
+                  _AddOptionButton(
+                    icon: Icons.qr_code_2_rounded,
+                    title: 'Generate barcodes',
+                    subtitle: 'Create labels with MRP and selling price',
+                    color: const Color(0xFF2F6B4A),
+                    onTap: () => Navigator.pop(dialogContext, 'generate'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || choice == null) return;
+    if (choice == 'manual') {
+      _openProductForm();
+    } else if (choice == 'scan') {
+      await _scanAndFill();
+    } else if (choice == 'generate') {
+      _openGenerate();
+    }
+  }
+
+  Future<void> _scanAndFill({bool formAlreadyOpen = false}) async {
+    final code = await showWindowsBarcodeScanner(context);
+    if (!mounted || code == null) return;
+
+    final products = ref.read(productProvider).asData?.value ?? <ProductModel>[];
+    ProductModel? existing;
+    for (final product in products) {
+      if ((product.barcode ?? '').trim() == code) {
+        existing = product;
+        break;
+      }
+    }
+
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+
+    if (formAlreadyOpen) {
+      barcodeCtrl.text = code;
+      if (existing != null) {
+        CustomDialog.showErrorSnack(
+          context,
+          'This barcode is already used by ${existing.name}.',
+        );
+      } else {
+        CustomDialog.showSuccessSnack(
+          context,
+          'Barcode scanned. Add the other details.',
+        );
+      }
+      return;
+    }
+
+    if (existing != null) {
+      _openProductForm(product: existing);
+      if (!mounted) return;
+      CustomDialog.showSuccessSnack(
+        context,
+        'This barcode is already in inventory. You can update it.',
+      );
+      return;
+    }
+
+    if (isDesktop) {
+      barcodeCtrl.text = code;
+      setState(() {});
+      CustomDialog.showSuccessSnack(
+        context,
+        'Barcode scanned. Add the other details.',
+      );
+      return;
+    }
+
+    _openProductForm(scannedBarcode: code);
+  }
+
+  void _openGenerate({ProductModel? seed}) {
+    final products = ref.read(productProvider).asData?.value ?? <ProductModel>[];
+    final taken = <String>{};
+    final missing = <ProductModel>[];
+    for (final product in products) {
+      final code = (product.barcode ?? '').trim();
+      if (code.isEmpty) {
+        missing.add(product);
+      } else {
+        taken.add(code);
+      }
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GenerateBarcodeScreen(
+          productsWithoutBarcode: missing,
+          takenBarcodes: taken,
+          seed: seed,
+        ),
+      ),
+    );
   }
 
   // ─── CSV (same backend flow) ──────────────────────────────────────────────
@@ -690,6 +846,16 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: "Scan barcode",
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+            onPressed: () => _scanAndFill(),
+          ),
+          IconButton(
+            tooltip: "Generate barcodes",
+            icon: const Icon(Icons.qr_code_2_rounded, color: Colors.white),
+            onPressed: _openGenerate,
+          ),
+          IconButton(
             tooltip: "Import products from CSV",
             icon: const Icon(Icons.upload_file_outlined, color: Colors.white),
             onPressed: _showImportDialog,
@@ -700,7 +866,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       floatingActionButton: !isDesktop
           ? FloatingActionButton(
               backgroundColor: cs.primary,
-              onPressed: () => _openProductForm(),
+              onPressed: _showAddOptions,
               child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
@@ -736,6 +902,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
               onRefresh: () => _refreshProducts(silent: true),
               onEdit: (product) => _openProductForm(product: product),
               onDelete: _deleteProduct,
+              onGenerateBarcode: (product) => _openGenerate(seed: product),
               isDesktop: true,
             ),
           ),
@@ -753,6 +920,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                 loading: saving,
                 isEditing: editingProduct != null,
                 onClear: () => setState(_resetForm),
+                onScan: () => _scanAndFill(),
+                onGenerate: _openGenerate,
                 onSubmit: () async {
                   await _submit(key: desktopFormKey);
                 },
@@ -791,6 +960,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
               onRefresh: () => _refreshProducts(silent: true),
               onEdit: (product) => _openProductForm(product: product),
               onDelete: _deleteProduct,
+              onGenerateBarcode: (product) => _openGenerate(seed: product),
               isDesktop: false,
             ),
             const SizedBox(height: 80),
@@ -805,6 +975,72 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 // ADD / EDIT FORM
 // ============================================================================
 
+class _AddOptionButton extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AddOptionButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xffFAFBFD),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade500),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ProductAddForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController barcodeController;
@@ -816,6 +1052,8 @@ class ProductAddForm extends StatelessWidget {
   final bool isEditing;
   final VoidCallback onSubmit;
   final VoidCallback? onClear;
+  final VoidCallback? onScan;
+  final VoidCallback? onGenerate;
 
   const ProductAddForm({
     super.key,
@@ -829,6 +1067,8 @@ class ProductAddForm extends StatelessWidget {
     required this.isEditing,
     required this.onSubmit,
     this.onClear,
+    this.onScan,
+    this.onGenerate,
   });
 
   @override
@@ -879,7 +1119,7 @@ class ProductAddForm extends StatelessWidget {
                         Text(
                           isEditing
                               ? "Edit inventory details"
-                              : "Add items to your inventory",
+                              : "Scan a barcode or enter the details",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -898,12 +1138,42 @@ class ProductAddForm extends StatelessWidget {
                 ],
               ),
             ),
+            if (onScan != null || (onGenerate != null && !isEditing)) ...[
+              const SizedBox(height: 14),
+              if (onScan != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: loading ? null : onScan,
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                    label: const Text('Scan barcode'),
+                  ),
+                ),
+              if (onGenerate != null && !isEditing) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: loading ? null : onGenerate,
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                    label: const Text('Generate barcodes'),
+                  ),
+                ),
+              ],
+            ],
             const SizedBox(height: 18),
             _ProductInputField(
               controller: barcodeController,
               label: "Barcode",
-              hint: "Optional barcode",
+              hint: "Optional, or scan one",
               icon: Icons.qr_code_scanner,
+              suffixIcon: onScan == null
+                  ? null
+                  : IconButton(
+                      tooltip: 'Scan barcode',
+                      onPressed: loading ? null : onScan,
+                      icon: Icon(Icons.qr_code_scanner_rounded, color: cs.primary),
+                    ),
             ),
             const SizedBox(height: 10),
             _ProductInputField(
@@ -1013,6 +1283,7 @@ class _ProductInputField extends StatelessWidget {
   final TextInputType keyboardType;
   final TextCapitalization textCapitalization;
   final String? Function(String?)? validator;
+  final Widget? suffixIcon;
 
   const _ProductInputField({
     required this.controller,
@@ -1022,6 +1293,7 @@ class _ProductInputField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.textCapitalization = TextCapitalization.none,
     this.validator,
+    this.suffixIcon,
   });
 
   @override
@@ -1052,6 +1324,7 @@ class _ProductInputField extends StatelessWidget {
               fontSize: 13,
             ),
             prefixIcon: Icon(icon, color: cs.primary, size: 20),
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: const Color(0xffFAFBFD),
             contentPadding: const EdgeInsets.symmetric(
@@ -1101,6 +1374,7 @@ class ProductListPanel extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final ValueChanged<ProductModel> onEdit;
   final ValueChanged<ProductModel> onDelete;
+  final ValueChanged<ProductModel>? onGenerateBarcode;
   final bool isDesktop;
 
   const ProductListPanel({
@@ -1114,6 +1388,7 @@ class ProductListPanel extends StatelessWidget {
     required this.onRefresh,
     required this.onEdit,
     required this.onDelete,
+    this.onGenerateBarcode,
     required this.isDesktop,
   });
 
@@ -1269,6 +1544,9 @@ class ProductListPanel extends StatelessWidget {
           deleting: deletingId == product.id,
           onEdit: () => onEdit(product),
           onDelete: () => onDelete(product),
+          onGenerateBarcode: onGenerateBarcode == null
+              ? null
+              : () => onGenerateBarcode!(product),
         );
       },
     );
@@ -1302,6 +1580,9 @@ class ProductListPanel extends StatelessWidget {
           deleting: deletingId == product.id,
           onEdit: () => onEdit(product),
           onDelete: () => onDelete(product),
+          onGenerateBarcode: onGenerateBarcode == null
+              ? null
+              : () => onGenerateBarcode!(product),
         );
       },
     );
@@ -1403,6 +1684,7 @@ class ProductCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onGenerateBarcode;
   final bool deleting;
 
   const ProductCard({
@@ -1410,6 +1692,7 @@ class ProductCard extends StatelessWidget {
     required this.product,
     required this.onEdit,
     required this.onDelete,
+    this.onGenerateBarcode,
     this.deleting = false,
   });
 
@@ -1419,9 +1702,7 @@ class ProductCard extends StatelessWidget {
     final lowStock = product.stock <= 10;
     final hasBarcode =
         product.barcode != null && product.barcode!.trim().isNotEmpty;
-    final priceLabel = product.price % 1 == 0
-        ? product.price.toInt().toString()
-        : product.price.toStringAsFixed(2);
+    final priceLabel = AppFormatters.currency(product.price);
 
     return Container(
       padding: const EdgeInsets.all(13),
@@ -1545,7 +1826,7 @@ class ProductCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "₹$priceLabel",
+                  priceLabel,
                   style: const TextStyle(
                     color: Color(0xFF1B8A3E),
                     fontWeight: FontWeight.w700,
@@ -1558,6 +1839,29 @@ class ProductCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (!hasBarcode && onGenerateBarcode != null) ...[
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: deleting ? null : onGenerateBarcode,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Ink(
+                          height: 32,
+                          width: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2F6B4A).withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.qr_code_2_rounded,
+                            size: 16,
+                            color: Color(0xFF2F6B4A),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                   Material(
                     color: Colors.transparent,
                     child: InkWell(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/business_models/BusinessMonthlyGrowthModel.dart';
+import '../../../utils/formatters.dart';
 
 
 class BusinessMonthlyGrowthScreen
@@ -402,7 +403,7 @@ class _BusinessMonthlyGrowthScreenState
                     ),
 
                     trailing: Text(
-                      "₹${item.amountValue.toStringAsFixed(0)}",
+                      AppFormatters.currency(item.amountValue),
                       style:
                       TextStyle(
                         color: primary,
@@ -511,7 +512,7 @@ class _BusinessMonthlyGrowthScreenState
           const SizedBox(height: 8),
 
           Text(
-            "₹${value.toStringAsFixed(0)}",
+            AppFormatters.currency(value),
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:bigreminder/theme/app_colors.dart';
+import 'package:bigreminder/screens/super_admin/bottom_nav_screens/categories_screen.dart';
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/settings_screen.dart';
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/subscription_screen.dart';
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/super_admin_home.dart';
@@ -30,6 +32,7 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
 
   final List<Widget> _screens = const [
     SuperAdminHome(),
+    CategoriesScreen(),
     SubscriptionScreen(),
     NotificationScreen(),
     SettingsScreen(),
@@ -220,8 +223,6 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
     return SuperAdminTheme.wrap(
       Builder(
         builder: (context) {
-          final primary = Theme.of(context).colorScheme.primary;
-
           if (isDesktop) {
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -241,83 +242,64 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: _contentNavigator(),
-            bottomNavigationBar: SafeArea(
-              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            bottomNavigationBar: Material(
+              color: AppColors.surface,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.border)),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _navItem(
-                        Icons.dashboard_outlined,
-                        'Home',
-                        0,
-                        primary,
-                      ),
-                    ),
-                    Expanded(
-                      child: _navItem(
-                        Icons.workspace_premium_outlined,
-                        'Plans',
-                        1,
-                        primary,
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: _openCreateBusiness,
-                          child: Container(
-                            padding: const EdgeInsets.all(13),
-                            decoration: BoxDecoration(
-                              color: primary,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: primary.withValues(alpha: 0.35),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              size: 24,
-                            ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 58,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _navItem(
+                            Icons.dashboard_outlined,
+                            'Home',
+                            0,
                           ),
                         ),
-                      ),
+                        Expanded(
+                          child: _navItem(
+                            Icons.category_outlined,
+                            'Category',
+                            1,
+                          ),
+                        ),
+                        Expanded(
+                          child: _navItem(
+                            Icons.add_business_outlined,
+                            'New',
+                            -1,
+                            onPressed: _openCreateBusiness,
+                          ),
+                        ),
+                        Expanded(
+                          child: _navItem(
+                            Icons.workspace_premium_outlined,
+                            'Plans',
+                            2,
+                          ),
+                        ),
+                        Expanded(
+                          child: _navItem(
+                            Icons.notifications_none_outlined,
+                            'Notify',
+                            3,
+                          ),
+                        ),
+                        Expanded(
+                          child: _navItem(
+                            Icons.settings_outlined,
+                            'Settings',
+                            4,
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: _navItem(
-                        Icons.notifications_none_rounded,
-                        'Notify',
-                        2,
-                        primary,
-                      ),
-                    ),
-                    Expanded(
-                      child: _navItem(
-                        Icons.settings_outlined,
-                        'Settings',
-                        3,
-                        primary,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -327,41 +309,39 @@ class _SuperAdminMainState extends ConsumerState<SuperAdminMain> {
     );
   }
 
-  Widget _navItem(IconData icon, String label, int index, Color primary) {
-    final isSelected = currentIndex == index;
+  Widget _navItem(
+    IconData icon,
+    String label,
+    int index, {
+    VoidCallback? onPressed,
+  }) {
+    final isSelected = index >= 0 && currentIndex == index;
+    final color = isSelected ? AppColors.primary : AppColors.textSecondary;
 
     return InkWell(
-      onTap: () => _onTabChange(index),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected ? primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: isSelected ? Colors.white : Colors.grey.shade500,
-              ),
+      onTap: onPressed ?? () => _onTabChange(index),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            height: 2,
+            width: 18,
+            margin: const EdgeInsets.only(bottom: 6),
+            color: isSelected ? AppColors.primary : Colors.transparent,
+          ),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: color,
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? primary : Colors.grey.shade500,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

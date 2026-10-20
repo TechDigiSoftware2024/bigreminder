@@ -1,10 +1,12 @@
 import 'package:bigreminder/models/super_admin_models/platform_dashboard_model.dart';
+import 'package:bigreminder/screens/super_admin/bottom_nav_screens/categories_screen.dart';
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/notification_screen.dart';
 import 'package:bigreminder/screens/super_admin/bottom_nav_screens/subscription_screen.dart';
 import 'package:bigreminder/screens/super_admin/supAd_home_screens/business_list.dart';
 import 'package:bigreminder/screens/super_admin/supAd_home_screens/super_admin_qeury_screen.dart';
 import 'package:bigreminder/screens/super_admin/supAd_home_screens/user_list_screen.dart';
-import 'package:bigreminder/theme/super_admin_colors.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -61,23 +63,28 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
     final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      backgroundColor: const Color(0xffF5F7FB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: SuperAdminColors.primaryDark,
+        backgroundColor: AppColors.appBarBg,
+        foregroundColor: AppColors.appBarText,
+        surfaceTintColor: Colors.transparent,
+        shape: const Border(
+          bottom: BorderSide(color: AppColors.appBarBorder),
+        ),
         title: const Text(
           'Dashboard',
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 17,
-            color: Colors.white,
+            fontSize: 16,
+            color: AppColors.appBarText,
           ),
         ),
         actions: [
           IconButton(
             tooltip: 'Refresh',
             onPressed: _refreshAll,
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.appBarIcon),
           ),
           const SizedBox(width: 4),
         ],
@@ -131,7 +138,7 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
           }
 
           return RefreshIndicator(
-            color: SuperAdminColors.primaryDark,
+            color: AppColors.primary,
             onRefresh: _refreshAll,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -172,8 +179,9 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                     const Text(
                       'Platform Overview',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -194,8 +202,9 @@ class _SuperAdminHomeState extends ConsumerState<SuperAdminHome> {
                     const Text(
                       'Key Numbers',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -434,21 +443,13 @@ class _OverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = SuperAdminColors.primaryDark;
-
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(compact ? 18 : 24),
+      padding: EdgeInsets.all(compact ? 16 : 20),
       decoration: BoxDecoration(
-        color: primary,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withValues(alpha: 0.22),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -460,7 +461,11 @@ class _OverviewCard extends StatelessWidget {
               compact: compact,
             ),
           ),
-          Container(height: compact ? 48 : 55, width: 1, color: Colors.white24),
+          Container(
+            height: compact ? 40 : 48,
+            width: 1,
+            color: AppColors.border,
+          ),
           Expanded(
             child: _OverviewMetric(
               title: 'Expenses',
@@ -469,7 +474,11 @@ class _OverviewCard extends StatelessWidget {
               compact: compact,
             ),
           ),
-          Container(height: compact ? 48 : 55, width: 1, color: Colors.white24),
+          Container(
+            height: compact ? 40 : 48,
+            width: 1,
+            color: AppColors.border,
+          ),
           Expanded(
             child: _OverviewMetric(
               title: 'Pending',
@@ -506,13 +515,13 @@ class _OverviewMetric extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: compact ? 14 : 16, color: Colors.white70),
+              Icon(icon, size: compact ? 14 : 16, color: AppColors.textSecondary),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textSecondary,
                     fontSize: compact ? 12 : 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -526,9 +535,9 @@ class _OverviewMetric extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: compact ? 15 : 17,
-              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+              fontSize: compact ? 15 : 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -556,36 +565,30 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = SuperAdminColors.primaryDark;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: AppRadius.card,
         child: Ink(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            color: AppColors.surface,
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                height: 32,
+                width: 32,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(99),
-                  color: primary.withValues(alpha: 0.1),
+                  borderRadius: AppRadius.radiusSM,
+                  color: AppColors.primaryLight,
                 ),
-                child: Icon(icon, color: primary, size: 20),
+                child: Icon(icon, color: AppColors.primary, size: 16),
               ),
               const Spacer(),
               Text(
@@ -593,15 +596,16 @@ class _MetricCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 title,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  fontSize: 13,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -627,16 +631,9 @@ class _QuickActionsPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,8 +641,9 @@ class _QuickActionsPanel extends StatelessWidget {
           const Text(
             'Quick Actions',
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 5),
@@ -657,6 +655,18 @@ class _QuickActionsPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          _ActionTile(
+            title: 'Categories',
+            subtitle: 'Add and manage business categories',
+            icon: Icons.category_outlined,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           _ActionTile(
             title: 'Users',
             subtitle: 'View all platform users',
@@ -747,41 +757,36 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = SuperAdminColors.primaryDark;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppRadius.button,
         child: Ink(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: highlighted
-                ? Colors.orange.withValues(alpha: 0.08)
-                : Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(14),
+            color: highlighted ? AppColors.overdueBg : AppColors.grey50,
+            borderRadius: AppRadius.button,
             border: Border.all(
-              color: highlighted
-                  ? Colors.orange.withValues(alpha: 0.25)
-                  : Colors.grey.shade200,
+              color: highlighted ? AppColors.overdueBg : AppColors.border,
             ),
           ),
           child: Row(
             children: [
               Container(
-                height: 42,
-                width: 42,
+                height: 32,
+                width: 32,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: (highlighted ? Colors.orange : primary)
-                      .withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.radiusSM,
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Icon(
                   icon,
-                  color: highlighted ? Colors.orange : primary,
-                  size: 20,
+                  color: highlighted ? AppColors.warning : AppColors.primary,
+                  size: 16,
                 ),
               ),
               const SizedBox(width: 13),
@@ -814,13 +819,13 @@ class _ActionTile extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(99),
+                    color: AppColors.warning,
+                    borderRadius: AppRadius.radiusSM,
                   ),
                   child: Text(
                     badge!,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 11,
                     ),

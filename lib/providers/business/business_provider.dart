@@ -187,6 +187,7 @@ class BusinessController extends StateNotifier<BusinessState> {
   Future<void> createBusiness({
     required String name,
     required String category,
+    int? categoryId,
     required String address,
     required String doc,
     required int userId,
@@ -201,6 +202,7 @@ class BusinessController extends StateNotifier<BusinessState> {
       final requestModel = CreateBusinessRequestModel(
         name: name,
         category: category,
+        categoryId: categoryId,
         address: address,
         doc: doc,
         userId: userId,

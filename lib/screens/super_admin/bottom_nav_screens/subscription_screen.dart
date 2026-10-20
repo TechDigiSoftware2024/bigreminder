@@ -10,6 +10,7 @@ import '../../../subscription/feature_model.dart';
 import '../../../subscription/plan_model.dart';
 import '../../../theme/super_admin_colors.dart';
 import '../../../widgets/custom_button.dart';
+import '../../../utils/formatters.dart';
 import '../../../widgets/custom_dialog.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -292,7 +293,7 @@ Widget _planCardEnhanced(PlanModel plan, BuildContext context) {
 
           /// 🔹 PRICE
           Text(
-            "₹${plan.price.toStringAsFixed(0)}",
+            AppFormatters.currency(plan.price),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1144,7 +1145,7 @@ class _CreateSubscriptionFormState
     String planLabel(int id) {
       try {
         final p = plans.firstWhere((x) => x.id == id);
-        return '${p.name} · ₹${p.price}';
+        return '${p.name} · ${AppFormatters.currency(p.price)}';
       } catch (_) {
         return 'Plan #$id';
       }
@@ -1220,7 +1221,8 @@ class _CreateSubscriptionFormState
                 final selected = tempSelectedPlan == p.id;
                 return _selectTile(
                   title: p.name,
-                  subtitle: '₹${p.price} · ${p.billingCycle}',
+                  subtitle:
+                      '${AppFormatters.currency(p.price)} · ${p.billingCycle}',
                   selected: selected,
                   onTap: isLoading
                       ? null
@@ -2407,7 +2409,7 @@ Future<void> _showEditSubscriptionDialog(
                                   (p) => DropdownMenuItem<int>(
                                     value: p.id,
                                     child: Text(
-                                      '${p.name}  ·  ₹${p.price}',
+                                      '${p.name}  ·  ${AppFormatters.currency(p.price)}',
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -3733,7 +3735,7 @@ class _PlanFeatureMappingScreenState
                   child: _PlanFeatureSummary(
                     enabledCount: enabledCount,
                     totalCount: features.length,
-                    priceLabel: '₹${widget.plan.price.toStringAsFixed(0)}',
+                    priceLabel: AppFormatters.currency(widget.plan.price),
                     cycleLabel: widget.plan.billingCycle,
                   ),
                 ),

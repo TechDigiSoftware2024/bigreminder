@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_shadows.dart';
 
 class CustomCard extends StatelessWidget {
   final Widget child;
@@ -10,40 +13,21 @@ class CustomCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.isElevated = true,
-    this.showBorder = false,
+    this.isElevated = false,
+    this.showBorder = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface, // ✅ dynamic
-
-        borderRadius: BorderRadius.circular(16),
-
-        boxShadow: isElevated
-            ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ]
-            : [],
-
+        color: AppColors.surface,
+        borderRadius: AppRadius.card,
+        boxShadow: isElevated ? AppShadows.light : null,
         border: showBorder
-            ? Border.all(
-          color: theme.colorScheme.primary, // ✅ dynamic
-          width: 0.3,
-        )
-            : Border.all(
-          color: Colors.blueGrey.shade200,
-          width: 0.3,
-        ),
+            ? const Border.fromBorderSide(BorderSide(color: AppColors.border))
+            : null,
       ),
       child: child,
     );

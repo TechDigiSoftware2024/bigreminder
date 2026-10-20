@@ -1,12 +1,13 @@
 import 'dart:ui';
 import '../models/app_color_scheme.dart';
 
-final gymColors        = AppColorScheme(primary: Color(0xFFEF4444)); // red
-final shopColors       = AppColorScheme(primary: Color(0xFF16A34A)); // green
-final instituteColors  = AppColorScheme(primary: Color(0xFF2563EB)); // blue
-
-final salonColors      = AppColorScheme(primary: Color(0xFFEC4899)); // pink
-final hospitalColors   = AppColorScheme(primary: Color(0xFF0EA5E9)); // sky blue
-final restaurantColors = AppColorScheme(primary: Color(0xFFF97316)); // orange
-final financeColors    = AppColorScheme(primary: Color(0xFF7C3AED)); // purple
-final realEstateColors = AppColorScheme(primary: Color(0xFF64748B)); // slate
+/// Vertical accents stay in one muted family so the shell never shifts to neon.
+final gymColors = AppColorScheme(primary: Color(0xFF5C534E));
+final shopColors = AppColorScheme(primary: Color(0xFF3E6552));
+final instituteColors = AppColorScheme(primary: Color(0xFF2C4A6E));
+final salonColors = AppColorScheme(primary: Color(0xFF645860));
+final hospitalColors = AppColorScheme(primary: Color(0xFF3D5E72));
+final restaurantColors = AppColorScheme(primary: Color(0xFF6E5A46));
+final financeColors = AppColorScheme(primary: Color(0xFF3C4A66));
+final realEstateColors = AppColorScheme(primary: Color(0xFF4A5562));
+final genericColors = AppColorScheme(primary: Color(0xFF2C4A6E));

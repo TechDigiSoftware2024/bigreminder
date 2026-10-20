@@ -103,6 +103,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
     required String businessName,
     required String businessCategory,
+    int? categoryId,
     required String address,
     required String doc,
     bool replaceSession = true,
@@ -123,6 +124,7 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
         businessName: businessName,
         businessCategory: businessCategory,
+        categoryId: categoryId,
         address: address,
         doc: doc,
       );

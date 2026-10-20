@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../utils/enum_classes.dart';
 
 class CustomButton extends StatelessWidget {
@@ -31,58 +33,60 @@ class CustomButton extends StatelessWidget {
     final disabled = isDisabled || onTap == null;
 
     BorderSide? border;
-
     if (variant == ButtonVariant.outline) {
-      border = BorderSide(color: primary, width: 0.8);
+      border = BorderSide(color: primary.withValues(alpha: 0.55));
     }
 
     final bg = backgroundColor ??
         (variant == ButtonVariant.filled ? primary : Colors.transparent);
 
     final txtColor = textColor ??
-        (variant == ButtonVariant.filled ? Colors.white : primary);
-
-    final disabledColor = theme.disabledColor.withValues(alpha: 0.2);
+        (variant == ButtonVariant.filled ? AppColors.textOnPrimary : primary);
 
     return Material(
-      borderRadius: BorderRadius.circular(22),
-      color: disabled ? disabledColor : bg,
+      borderRadius: AppRadius.button,
+      color: disabled ? AppColors.buttonDisabledBg : bg,
       child: InkWell(
         onTap: disabled ? null : onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: AppRadius.button,
         child: Container(
-          height: 50,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: AppRadius.button,
             border: border != null ? Border.fromBorderSide(border) : null,
           ),
           child: isLoading
               ? SizedBox(
-            height: 18,
-            width: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: txtColor,
-            ),
-          )
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: disabled ? AppColors.buttonDisabledText : txtColor,
+                  ),
+                )
               : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18, color: txtColor),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: txtColor,
-                  fontWeight: FontWeight.w500,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        size: 16,
+                        color: disabled ? AppColors.buttonDisabledText : txtColor,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: disabled ? AppColors.buttonDisabledText : txtColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

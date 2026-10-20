@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/business_models/create_purchase_response_model.dart';
+import 'formatters.dart';
 
 class ReceiptGenerator {
   /// Opens the print/share preview. isThermal=true -> 80mm roll,
@@ -158,14 +159,14 @@ class ReceiptGenerator {
 
                 _kv("Items", "${bill.items.length}", lineWidth),
                 _kv("Quantity", "$totalQty", lineWidth),
-                _kv("Subtotal", bill.subtotal.toStringAsFixed(2), lineWidth),
-                _kv("Total GST", bill.totalGst.toStringAsFixed(2), lineWidth),
+                _kv("Subtotal", AppFormatters.plain(bill.subtotal, decimalDigits: 2), lineWidth),
+                _kv("Total GST", AppFormatters.plain(bill.totalGst, decimalDigits: 2), lineWidth),
 
                 pw.Text(_repeat("-", lineWidth), style: const pw.TextStyle(fontSize: 8)),
 
-                _kv("Grand Total", bill.totalAmount.toStringAsFixed(2), lineWidth, bold: true),
-                _kv("Paid", bill.paid.toStringAsFixed(2), lineWidth),
-                _kv("Pending", bill.pending.toStringAsFixed(2), lineWidth),
+                _kv("Grand Total", AppFormatters.plain(bill.totalAmount, decimalDigits: 2), lineWidth, bold: true),
+                _kv("Paid", AppFormatters.plain(bill.paid, decimalDigits: 2), lineWidth),
+                _kv("Pending", AppFormatters.plain(bill.pending, decimalDigits: 2), lineWidth),
                 if (bill.paymentMode.isNotEmpty) _kv("Payment", bill.paymentMode, lineWidth),
                 if (bill.status.isNotEmpty) _kv("Status", bill.status, lineWidth),
                 if (bill.notes.isNotEmpty) ...[
@@ -191,8 +192,8 @@ class ReceiptGenerator {
   static String _thermalItemLine(PurchaseResponseItemModel item) {
     final baseAmount = item.quantity * item.price;
 
-    final left = "${item.quantity} x ${item.price.toStringAsFixed(2)}";
-    final right = baseAmount.toStringAsFixed(2);
+    final left = "${item.quantity} x ${AppFormatters.plain(item.price, decimalDigits: 2)}";
+    final right = AppFormatters.plain(baseAmount, decimalDigits: 2);
 
     const totalWidth = 32;
 
@@ -203,7 +204,7 @@ class ReceiptGenerator {
     String secondLine = "";
     if (item.gstPercent != null) {
       final gstLeft = "GST ${item.gstPercent}%";
-      final gstRight = item.gstAmount.toStringAsFixed(2);
+      final gstRight = AppFormatters.plain(item.gstAmount, decimalDigits: 2);
 
       final space2 = totalWidth - gstLeft.length - gstRight.length;
       secondLine =
@@ -314,10 +315,10 @@ class ReceiptGenerator {
                 children: [
                   _cell(item.name),
                   _cell("${item.quantity}"),
-                  _cell(item.price.toStringAsFixed(2)),
+                  _cell(AppFormatters.plain(item.price, decimalDigits: 2)),
                   _cell(item.gstPercent != null ? "${item.gstPercent}%" : "-"),
-                  _cell(item.gstAmount.toStringAsFixed(2)),
-                  _cell(item.lineTotal.toStringAsFixed(2)),
+                  _cell(AppFormatters.plain(item.gstAmount, decimalDigits: 2)),
+                  _cell(AppFormatters.plain(item.lineTotal, decimalDigits: 2)),
                 ],
               ),
             ),
@@ -367,7 +368,7 @@ class ReceiptGenerator {
         children: [
           pw.Text(label,
               style: pw.TextStyle(fontSize: 9, fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal)),
-          pw.Text(value.toStringAsFixed(2),
+          pw.Text(AppFormatters.plain(value, decimalDigits: 2),
               style: pw.TextStyle(fontSize: 9, fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal)),
         ],
       ),

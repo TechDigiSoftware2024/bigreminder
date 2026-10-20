@@ -17,6 +17,7 @@ import '../../../providers/business/business_provider.dart';
 import '../../../services/business/business_access_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/enum_classes.dart';
+import '../../../utils/formatters.dart';
 
 class CustomerListScreen extends ConsumerStatefulWidget {
   const CustomerListScreen({super.key});
@@ -1072,7 +1073,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
-        "₹$amount",
+        AppFormatters.currencyOf(amount),
         style: const TextStyle(
           color: Colors.red,
           fontWeight: FontWeight.w600,

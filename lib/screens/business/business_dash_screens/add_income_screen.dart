@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:bigreminder/widgets/custom_dropdown_textfield.dart';
 import '../../../models/business_models/business_income_req_model.dart';
+import '../../../utils/formatters.dart';
 import '../../../providers/business/business_provider.dart';
 
 class AddIncomeScreen extends ConsumerStatefulWidget {
@@ -671,7 +672,7 @@ class _IncomeCardState extends State<IncomeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final amount = widget.income.amount?.toString() ?? "0";
+    final amount = AppFormatters.currency(widget.income.amount);
     final source = widget.income.source?.toString() ?? "Other";
     final remark = widget.income.remark?.toString().trim().isNotEmpty == true
         ? widget.income.remark.toString()
@@ -781,9 +782,9 @@ class _IncomeCardState extends State<IncomeCard> {
                               ),
                               const SizedBox(width: 8),
                               ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 88),
+                                constraints: const BoxConstraints(maxWidth: 140),
                                 child: Text(
-                                  "₹$amount",
+                                  amount,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.right,

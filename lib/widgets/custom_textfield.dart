@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -42,42 +45,42 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       cursorColor: scheme.primary,
-      style: TextStyle(
-        fontSize: 15,
+      style: const TextStyle(
+        fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: scheme.onSurface,
+        color: AppColors.textPrimary,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-          color: scheme.onSurfaceVariant,
+        hintStyle: const TextStyle(
+          color: AppColors.textHint,
           fontSize: 14,
         ),
         filled: true,
-        fillColor: scheme.surface,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outline, width: 1.2),
+        fillColor: AppColors.inputBg,
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: AppColors.inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: scheme.primary, width: 1.4),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.error, width: 1),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: AppColors.inputErrorBorder),
         ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.error, width: 1.2),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: AppColors.inputErrorBorder, width: 1.4),
         ),
         prefixIcon: icon == null
             ? null
-            : Icon(icon, size: 20, color: scheme.primary),
+            : Icon(icon, size: 18, color: AppColors.textSecondary),
         suffixIcon: trailing,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
+          horizontal: 12,
+          vertical: 14,
         ),
       ),
     );

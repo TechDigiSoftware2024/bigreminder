@@ -4,8 +4,7 @@
 // import 'package:bigreminder/widgets/custom_button.dart';
 // import 'package:bigreminder/widgets/custom_textfield.dart';
 // import 'package:flutter/material.dart';
-import 'package:bigreminder/theme/super_admin_colors.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
+  // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 // import 'dart:ui';
 // import '../../providers/auth/auth_state.dart';
@@ -383,10 +382,10 @@ import 'package:bigreminder/theme/super_admin_colors.dart';
 // }
 import 'package:bigreminder/providers/auth/auth_provider.dart';
 import 'package:bigreminder/screens/auth/signup_screen.dart';
+import 'package:bigreminder/theme/super_admin_colors.dart';
 import 'package:bigreminder/widgets/custom_button.dart';
 import 'package:bigreminder/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
-import 'package:bigreminder/theme/super_admin_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -488,7 +487,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: context.brand.white,
+            backgroundColor: context.brand.background,
             body: isDesktop
                 ? _buildDesktopLayout(context, isLoading)
                 : _buildMobileLayout(context, isLoading),
@@ -505,21 +504,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           maxHeight: 650,
         ),
         child: Container(
-          margin: const EdgeInsets.all(32),
+          margin: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: context.brand.background,
-            borderRadius: BorderRadius.circular(24),
+            color: context.brand.white,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: context.brand.border,
-              width: 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: context.colors.primary.withOpacity(0.08),
-                blurRadius: 40,
-                offset: const Offset(0, 15),
-              ),
-            ],
           ),
           clipBehavior: Clip.antiAlias,
           child: Row(
@@ -530,9 +521,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Expanded(
                 flex: 5,
                 child: Container(
-                  padding: const EdgeInsets.all(55),
+                  padding: const EdgeInsets.all(48),
                   decoration: BoxDecoration(
-                    color: context.colors.primary.withOpacity(0.05),
+                    color: context.brand.sidebar,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,8 +533,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         height: 64,
                         width: 64,
                         decoration: BoxDecoration(
-                          color: context.colors.primary,
-                          borderRadius: BorderRadius.circular(18),
+                          color: context.brand.sidebarActive,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
                           Icons.business_center_rounded,
@@ -557,10 +548,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       Text(
                         "Biz Reminder",
                         style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w800,
-                          color: context.brand.primaryDark,
-                          letterSpacing: -1,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: context.brand.white,
+                          letterSpacing: -0.4,
                         ),
                       ),
 
@@ -569,9 +560,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       Text(
                         "Manage your business,\ncustomers and reminders smarter.",
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
                           height: 1.45,
-                          color: context.brand.textSecondary,
+                          color: context.brand.sidebarText,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -622,9 +613,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         Text(
                           "Welcome back",
                           style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: context.brand.primaryDark,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: context.brand.textPrimary,
                           ),
                         ),
 
@@ -791,13 +782,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           height: 40,
           width: 40,
           decoration: BoxDecoration(
-            color: context.colors.primary.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(12),
+            color: context.brand.sidebarActive,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
-            color: context.colors.primary,
-            size: 21,
+            color: context.brand.sidebarText,
+            size: 18,
           ),
         ),
 
@@ -806,8 +797,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Text(
           text,
           style: TextStyle(
-            color: context.brand.textSecondary,
-            fontSize: 15,
+            color: context.brand.sidebarText,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -828,11 +819,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Text(
                 "Welcome to \nBiz Reminder",
                 style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
-                  color: context.brand.primaryDark,
-                  height: 1.15,
-                  letterSpacing: -0.5,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: context.brand.textPrimary,
+                  height: 1.2,
+                  letterSpacing: -0.3,
                 ),
               ),
 
@@ -850,19 +841,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
               Container(
                 decoration: BoxDecoration(
-                  color: context.brand.background,
-                  borderRadius: BorderRadius.circular(16),
+                  color: context.brand.white,
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: context.brand.border,
-                    width: 1.5,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.colors.primary.withOpacity(0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),

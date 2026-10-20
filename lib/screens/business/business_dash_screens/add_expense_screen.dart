@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:bigreminder/widgets/custom_dropdown_textfield.dart';
 import '../../../models/business_models/business_create_expense_model.dart';
+import '../../../utils/formatters.dart';
 import '../../../providers/business/business_provider.dart';
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
@@ -532,7 +533,7 @@ class _ExpenseCardState extends State<ExpenseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final amount = widget.expense.amount.toString();
+    final amount = AppFormatters.currency(widget.expense.amount);
     final source =
         widget.expense.source.isNotEmpty ? widget.expense.source : "Other";
     final category = widget.expense.category.isNotEmpty
@@ -641,9 +642,9 @@ class _ExpenseCardState extends State<ExpenseCard> {
                             ),
                             const SizedBox(width: 8),
                             ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 88),
+                              constraints: const BoxConstraints(maxWidth: 140),
                               child: Text(
-                                "₹$amount",
+                                amount,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.right,

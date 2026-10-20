@@ -1,107 +1,107 @@
 import 'package:flutter/material.dart';
 
+/// Muted enterprise palette: slate canvas, steel-blue actions, soft status tones.
 class AppColors {
   AppColors._();
 
-  // 🟣 BRAND (Purple Identity)
-  static const Color primary = Color(0xFF14B8A6);      // main teal (clean + modern)
-  static const Color primaryDark = Color(0xFF0D9488);  // deeper teal for pressed/active
-  static const Color primaryLight = Color(0xFFCCFBF1); // soft teal tint for backgrounds
-  // ⚫ NEUTRAL BASE
-  static const Color black = Color(0xFF111827);
-  static const Color white = Colors.white;
-  static const Color darkGrey = Color(0xFF374151);
-  // ⚪ BACKGROUND SYSTEM
-  static const Color background =  Color(0xffF5F7FB);
-  static const Color surface = Color(0xFFF3F4F6);
-  static const Color card = primaryDark;
-  static const Color cardText = Colors.white;
+  // Brand
+  static const Color primary = Color(0xFF2C4A6E);
+  static const Color primaryDark = Color(0xFF1E3550);
+  static const Color primaryLight = Color(0xFFE6EDF4);
+  static const Color accent = Color(0xFF5C7A96);
 
-  // 🧊 GLASS EFFECT (optional premium)
-  static const Color glass = Color(0x80FFFFFF);
-  static const Color glassBorder = Color(0x33FFFFFF);
+  // Neutrals
+  static const Color black = Color(0xFF1A2332);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color darkGrey = Color(0xFF3D4856);
 
-  // 🔤 TEXT SYSTEM
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textHint = Color(0xFF9CA3AF);
-  static const Color textOnPrimary = Colors.white;
+  // Canvas
+  static const Color background = Color(0xFFF3F5F8);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFEEF1F5);
+  static const Color card = surface;
+  static const Color cardText = textPrimary;
 
-  // 📱 APP BAR
-  static const Color appBarBg = primaryDark;
-  static const Color appBarText = Colors.white;
+  // Navigation shell
+  static const Color sidebar = Color(0xFF1C2834);
+  static const Color sidebarBorder = Color(0xFF2A3846);
+  static const Color sidebarText = Color(0xFFD5DCE3);
+  static const Color sidebarMuted = Color(0xFF8B97A3);
+  static const Color sidebarActive = Color(0xFF243447);
+  static const Color sidebarAccent = Color(0xFF8AA4BE);
+
+  // Text
+  static const Color textPrimary = Color(0xFF1A2332);
+  static const Color textSecondary = Color(0xFF5C6778);
+  static const Color textHint = Color(0xFF8B95A3);
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
+
+  // App bar
+  static const Color appBarBg = surface;
+  static const Color appBarText = textPrimary;
   static const Color appBarIcon = textPrimary;
-  static const Color appBarBorder = Color(0xFFE5E7EB);
+  static const Color appBarBorder = Color(0xFFE2E6EB);
 
-  // 💰 MONEY STATES (DON’T CHANGE UX)
-  static const Color credit = Color(0xFF16A34A);
-  static const Color debit = Color(0xFFDC2626);
+  // Money states — distinguishable, not neon
+  static const Color credit = Color(0xFF2F6B4A);
+  static const Color debit = Color(0xFFA33D3D);
+  static const Color creditBg = Color(0xFFE7F2EB);
+  static const Color debitBg = Color(0xFFF8EAEA);
 
-  static const Color creditBg = Color(0xFFE6F9EF);
-  static const Color debitBg = Color(0xFFFDECEC);
-
-  // 📊 BALANCE STATES
   static const Color balancePositive = credit;
   static const Color balanceNegative = debit;
   static const Color balanceNeutral = textSecondary;
 
-  // 🧱 BORDER SYSTEM
-  static const Color border = Color(0xFFE5E7EB);
-  static const Color divider = Color(0xFFF3F4F6);
+  // Borders
+  static const Color border = Color(0xFFE2E6EB);
+  static const Color divider = Color(0xFFE8ECF0);
 
-  // 🔘 BUTTON SYSTEM
-  static const Color buttonPrimaryBg = primaryDark;
-  static const Color buttonPrimaryText = Colors.white;
-
-  static const Color buttonSecondaryBg = Color(0xFFF3F4F6);
+  // Buttons
+  static const Color buttonPrimaryBg = primary;
+  static const Color buttonPrimaryText = textOnPrimary;
+  static const Color buttonSecondaryBg = surfaceMuted;
   static const Color buttonSecondaryText = textPrimary;
+  static const Color buttonDisabledBg = Color(0xFFE4E7EC);
+  static const Color buttonDisabledText = Color(0xFF9AA3AE);
 
-  static const Color buttonDisabledBg = Color(0xFFE5E7EB);
-  static const Color buttonDisabledText = Color(0xFF9CA3AF);
-
-  static const Color iconColor = Colors.white;
+  static const Color iconColor = textOnPrimary;
   static const Color iconBg = primaryLight;
 
-  // 🏷️ CHIP / TAG
-  static const Color chipBg = Color(0xFFF3F4F6);
-  static const Color chipSelectedBg = Color(0xFFEDE9FE); // light purple
-  static const Color chipText = Color(0xFF374151);
+  // Chips
+  static const Color chipBg = surfaceMuted;
+  static const Color chipSelectedBg = primaryLight;
+  static const Color chipText = darkGrey;
 
-  // 📥 INPUT FIELD
-  static const Color inputBg = Colors.white;
-  static const Color inputBorder = Color(0xFFE5E7EB);
+  // Inputs
+  static const Color inputBg = surface;
+  static const Color inputBorder = border;
   static const Color inputFocusedBorder = primary;
-  static const Color inputErrorBorder = Color(0xFFEF4444);
+  static const Color inputErrorBorder = error;
 
-  // 🌟 STATUS
-  static const Color success = Color(0xFF22C55E);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
+  // Status
+  static const Color success = Color(0xFF3D7A56);
+  static const Color warning = Color(0xFF9A7430);
+  static const Color error = Color(0xFFB23B3B);
 
-  // 📅 PAYMENT STATUS
-  static const Color paid = Color(0xFF16A34A);
-  static const Color unpaid = Color(0xFFDC2626);
-  static const Color overdue = Color(0xFFF97316);
+  static const Color paid = credit;
+  static const Color unpaid = debit;
+  static const Color overdue = Color(0xFF9A6A32);
+  static const Color paidBg = creditBg;
+  static const Color unpaidBg = debitBg;
+  static const Color overdueBg = Color(0xFFF6EFE4);
 
-  static const Color paidBg = Color(0xFFDCFCE7);
-  static const Color unpaidBg = Color(0xFFFEE2E2);
-  static const Color overdueBg = Color(0xFFFFEDD5);
+  // Greyscale
+  static const Color grey50 = Color(0xFFF7F8FA);
+  static const Color grey100 = Color(0xFFEEF1F4);
+  static const Color grey200 = Color(0xFFE2E6EB);
+  static const Color grey300 = Color(0xFFCDD3DA);
+  static const Color grey400 = Color(0xFF9AA3AE);
+  static const Color grey500 = Color(0xFF6B7582);
 
-  // 🌫️ GREYSCALE
-  static const Color grey50 = Color(0xFFF9FAFB);
-  static const Color grey100 = Color(0xFFF3F4F6);
-  static const Color grey200 = Color(0xFFE5E7EB);
-  static const Color grey300 = Color(0xFFD1D5DB);
-  static const Color grey400 = Color(0xFF9CA3AF);
-  static const Color grey500 = Color(0xFF6B7280);
-
-  // 🌈 EFFECT HELPERS
-  static Color primaryOpacity(double opacity) =>
-      primary.withOpacity(opacity);
+  static Color primaryOpacity(double opacity) => primary.withValues(alpha: opacity);
 
   static Color blackOpacity(double opacity) =>
-      Colors.black.withOpacity(opacity);
+      const Color(0xFF000000).withValues(alpha: opacity);
 
-  static Color whiteOpacity(double opacity) =>
-      Colors.white.withOpacity(opacity);
+  static Color whiteOpacity(double opacity) => white.withValues(alpha: opacity);
 }
