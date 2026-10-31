@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:bigreminder/widgets/custom_dropdown_textfield.dart';
@@ -40,12 +41,14 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen>
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
         elevation: 0,
+        leading: BackButton(color: Colors.white,),
         title: const Text(
           "Income",
           style: TextStyle(
             fontSize: 17,
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),

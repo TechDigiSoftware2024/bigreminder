@@ -129,17 +129,55 @@ debugPrint("RESPONSE BODY:${response.body}");
         return CreatePurchaseResponseModel.fromJson(billJson);
       }
 
-      throw Exception(
-        data["detail"] ?? data["message"] ?? "Failed to create purchase",
-      );
+      throw Exception(_purchaseErrorMessage(data));
     } on SocketException {
       throw Exception("No internet connection");
     } on HttpException {
       throw Exception("Server error");
     } on FormatException {
       throw Exception("Invalid server response");
-    } catch (e) {
-      throw Exception(e.toString());
+    } on Exception {
+      rethrow;
+    } catch (_) {
+      throw Exception("Failed to create purchase");
     }
   }
+}
+
+String _purchaseErrorMessage(dynamic data) {
+  final text = _purchaseErrorValue(data);
+  if (text != null && text.trim().isNotEmpty) return text.trim();
+  return 'Failed to create purchase';
+}
+
+String? _purchaseErrorValue(dynamic value) {
+  if (value == null) return null;
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+  if (value is List) {
+    return _joinErrorParts(value.map(_purchaseErrorValue));
+  }
+  if (value is Map) {
+    return _joinErrorParts([
+      for (final key in ['message', 'msg', 'detail', 'error', 'reason'])
+        if (value.containsKey(key)) _purchaseErrorValue(value[key]),
+    ]);
+  }
+  return null;
+}
+
+String? _joinErrorParts(Iterable<String?> parts) {
+  final unique = <String>[];
+  for (final part in parts) {
+    final trimmed = part?.trim() ?? '';
+    if (trimmed.isEmpty) continue;
+    final exists = unique.any(
+      (item) => item.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (!exists) unique.add(trimmed);
+  }
+  if (unique.isEmpty) return null;
+  return unique.join('\n');
 }

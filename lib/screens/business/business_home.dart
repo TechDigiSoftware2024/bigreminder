@@ -180,19 +180,19 @@ class _BusinessHomeState extends ConsumerState<BusinessHome> {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final unreadCount = ref.watch(unreadQueryCountProvider);
     return AppBar(
-      backgroundColor: AppColors.appBarBg,
-      foregroundColor: AppColors.appBarText,
+      backgroundColor: AppColors.sidebar,
+      foregroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: const Border(
-        bottom: BorderSide(color: AppColors.appBarBorder),
+        bottom: BorderSide(color: AppColors.sidebarBorder),
       ),
       title: Text(
         businessName,
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.appBarText,
+          color: Colors.white,
         ),
       ),
       actions: [

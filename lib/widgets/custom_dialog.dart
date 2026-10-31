@@ -252,6 +252,93 @@ class CustomDialog {
     return result == true;
   }
 
+  /// One short message and an OK button.
+  static Future<void> showNotice({
+    required BuildContext context,
+    required String title,
+    required String message,
+  }) {
+    final width = dialogWidth(context, desktop: confirmWidth);
+    return showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: SizedBox(
+            width: width,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 48,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.error,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogContext, rootNavigator: true).pop();
+                      },
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// Legacy API — uses the same compact confirm dialog.
   static Future<void> showConfirmDialog({
     required BuildContext context,

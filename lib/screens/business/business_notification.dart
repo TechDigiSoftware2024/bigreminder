@@ -2,6 +2,7 @@ import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/business_models/customer_list_model.dart';
@@ -224,13 +225,14 @@ class _BusinessNotificationScreenState
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
         elevation: 0,
         title: const Text(
           'Notifications',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 17,
+            color: Colors.white
           ),
         ),
         actions: [

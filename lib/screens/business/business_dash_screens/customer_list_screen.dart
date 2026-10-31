@@ -515,12 +515,6 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       "contact number",
     ]);
 
-    if (nameIndex == null || phoneIndex == null) {
-      return _CustomerCsvParseResult.error(
-        "CSV must include name and phone columns",
-      );
-    }
-
     final emailIndex = column(const ["email", "e-mail", "email address"]);
     final genderIndex = column(const ["gender", "sex"]);
     final pendingIndex = column(const [
@@ -530,6 +524,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       "due",
       "due amount",
     ]);
+
+    if (nameIndex == null &&
+        phoneIndex == null &&
+        emailIndex == null &&
+        genderIndex == null &&
+        pendingIndex == null) {
+      return _CustomerCsvParseResult.error(
+        "CSV must include a customer column",
+      );
+    }
 
     String cellAt(List<dynamic> row, int? index) {
       if (index == null || index < 0 || index >= row.length) return "";
@@ -548,28 +552,49 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
     for (var i = 1; i < rows.length; i++) {
       final row = rows[i];
-      final name = cellAt(row, nameIndex);
-      final phone = _normalizeIndianPhone(cellAt(row, phoneIndex));
+      final rawName = cellAt(row, nameIndex);
+      final rawPhone = cellAt(row, phoneIndex);
+      final email = cellAt(row, emailIndex);
+      final genderRaw = cellAt(row, genderIndex).toLowerCase();
+      final pendingRaw =
+          cellAt(row, pendingIndex).replaceAll(RegExp(r'[^0-9.]'), '');
 
-      if (name.isEmpty || phone == null) {
-        invalidRows++;
+      if (rawName.isEmpty &&
+          rawPhone.isEmpty &&
+          email.isEmpty &&
+          genderRaw.isEmpty &&
+          pendingRaw.isEmpty) {
         continue;
       }
 
-      if (!seenPhones.add(phone)) {
+      final String phone;
+      if (rawPhone.isEmpty) {
+        phone = "";
+      } else {
+        final normalized = _normalizeIndianPhone(rawPhone);
+        if (normalized == null) {
+          invalidRows++;
+          continue;
+        }
+        phone = normalized;
+      }
+
+      if (phone.isNotEmpty && !seenPhones.add(phone)) {
         duplicateRows++;
         continue;
       }
 
-      final genderRaw = cellAt(row, genderIndex).toLowerCase();
-      final gender = genderRaw.startsWith("f") ? "female" : "male";
-      final pendingRaw = cellAt(row, pendingIndex).replaceAll(RegExp(r'[^0-9.]'), '');
+      final gender = genderRaw.isEmpty
+          ? ""
+          : genderRaw.startsWith("f")
+              ? "female"
+              : "male";
 
       parsedRows.add(
         _CsvCustomerRow(
-          name: name,
+          name: rawName.isEmpty ? "Demo Customer" : rawName,
           phone: phone,
-          email: cellAt(row, emailIndex),
+          email: email,
           gender: gender,
           pendingAmount: pendingRaw.isEmpty ? "0" : pendingRaw,
         ),
@@ -675,11 +700,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
     return AppBar(
-      backgroundColor: primary,
+      backgroundColor: AppColors.sidebar,
+      leading: BackButton(color: Colors.white,),
       title: Text(
         "Add ${DashboardText.customer(type)}",
         style: const TextStyle(
-          color: AppColors.appBarText,
+          color: Colors.white,
           fontWeight: FontWeight.w700,
           fontSize: 17,
         ),
@@ -2312,8 +2338,8 @@ class _CustomerCsvUploadDialog extends StatelessWidget {
   });
 
   static const _headers = [
-    "name*",
-    "phone*",
+    "name",
+    "phone",
     "email",
     "gender",
     "pending_amount",
@@ -2389,7 +2415,7 @@ class _CustomerCsvUploadDialog extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                "* name and phone are required. Other columns are optional.",
+                "All columns are optional. A blank name is saved as Demo Customer.",
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/business_models/business_purchase_list_model.dart';
@@ -315,7 +316,8 @@ class _BusinessPurchaseHistoryScreenState
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
+        leading: BackButton(color: Colors.white,),
         elevation: 0,
         title: const Text(
           'Bill History',
