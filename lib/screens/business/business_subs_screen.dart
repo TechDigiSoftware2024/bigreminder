@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 class BusinessSubscriptionScreen extends StatefulWidget {
   const BusinessSubscriptionScreen({super.key});
@@ -110,7 +111,7 @@ class _BusinessSubscriptionScreenState
 
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
 
         title: const Text(
           "Subscriptions",

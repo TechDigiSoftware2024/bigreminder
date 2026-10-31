@@ -1,5 +1,6 @@
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/business_models/add_product_model.dart';
@@ -375,16 +376,17 @@ class _GenerateBarcodeScreenState extends ConsumerState<GenerateBarcodeScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xffF5F7FB),
         appBar: AppBar(
-          backgroundColor: cs.primary,
+          backgroundColor: AppColors.sidebar,
           foregroundColor: Colors.white,
           elevation: 0,
           title: const Text(
             'Generate barcodes',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600,color: Colors.white),
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _maybeLeave,
+            color: Colors.white,
           ),
         ),
         body: wide

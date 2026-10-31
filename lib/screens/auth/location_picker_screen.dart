@@ -42,6 +42,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
+
   @override
   void dispose() {
     _searchController.dispose();

@@ -1092,18 +1092,14 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
 
 
     return AppBar(
-
+      leading: BackButton(color: Colors.white,),
       title: Text(
 
         "Support Center",
-
         style: theme.textTheme.titleLarge?.copyWith(
-
           fontWeight: FontWeight.w600,
-
           fontSize: 17,
-
-          color: theme.colorScheme.onPrimary,
+          color: Colors.white,
 
         ),
 
@@ -1113,7 +1109,7 @@ class _BusinessQueryScreenState extends ConsumerState<BusinessQueryScreen> {
 
       elevation: 0,
 
-      backgroundColor: theme.colorScheme.primary,
+      backgroundColor: AppColors.sidebar,
 
       foregroundColor: theme.colorScheme.onPrimary,
 

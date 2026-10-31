@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:flutter/services.dart';
 
 /// WhatsApp-style Create template (Setup + Edit). No email/profile in header.
@@ -166,8 +167,9 @@ class _BusinessTemplateScreenState extends State<BusinessTemplateScreen> {
       backgroundColor: _pageBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: _primary,
+        backgroundColor: AppColors.sidebar,
         foregroundColor: Colors.white,
+        leading: BackButton(color: Colors.white,),
         title: const Text(
           'Create template',
           style: TextStyle(

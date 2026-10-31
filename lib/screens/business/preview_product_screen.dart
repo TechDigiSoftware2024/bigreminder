@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 import '../../models/business_models/add_product_model.dart';
 import '../../utils/formatters.dart';
 
 class PreviewProductsScreen extends StatefulWidget {
   final List<ProductModel> products;
-  final Future<void> Function(List<ProductModel> products) onUpload;
+  final Future<void> Function(
+    List<ProductModel> products,
+    void Function(int current, int total) onProgress,
+  ) onUpload;
 
   const PreviewProductsScreen({
     super.key,
@@ -22,6 +26,7 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
   ProductModel? _selected;
   int? _selectedIndex;
   bool _isUploading = false;
+  int _uploadedCount = 0;
 
   @override
   void initState() {
@@ -36,10 +41,19 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
   Future<void> _handleUpload() async {
     if (_isUploading || _products.isEmpty) return;
 
-    setState(() => _isUploading = true);
+    setState(() {
+      _isUploading = true;
+      _uploadedCount = 0;
+    });
 
     try {
-      await widget.onUpload(List<ProductModel>.from(_products));
+      await widget.onUpload(
+        List<ProductModel>.from(_products),
+        (current, total) {
+          if (!mounted) return;
+          setState(() => _uploadedCount = current);
+        },
+      );
     } finally {
       if (mounted) {
         setState(() => _isUploading = false);
@@ -79,13 +93,14 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
         elevation: 0,
         title: const Text(
           'Preview Products',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 17,
+            color: Colors.white,
           ),
         ),
       ),
@@ -98,10 +113,22 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: _UploadButton(
-                  count: _products.length,
-                  loading: _isUploading,
-                  onPressed: _handleUpload,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _UploadButton(
+                      count: _products.length,
+                      loading: _isUploading,
+                      onPressed: _handleUpload,
+                    ),
+                    if (_isUploading) ...[
+                      const SizedBox(height: 10),
+                      _UploadProgress(
+                        current: _uploadedCount,
+                        total: _products.length,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             )
@@ -134,6 +161,7 @@ class _PreviewProductsScreenState extends State<PreviewProductsScreen> {
               totalCount: _products.length,
               totalValue: _totalValue,
               loading: _isUploading,
+              uploadedCount: _uploadedCount,
               onUpload: _handleUpload,
               onRemoveSelected: _selectedIndex == null
                   ? null
@@ -467,6 +495,7 @@ class _PreviewSidePanel extends StatelessWidget {
   final int totalCount;
   final double totalValue;
   final bool loading;
+  final int uploadedCount;
   final VoidCallback onUpload;
   final VoidCallback? onRemoveSelected;
 
@@ -476,6 +505,7 @@ class _PreviewSidePanel extends StatelessWidget {
     required this.totalCount,
     required this.totalValue,
     required this.loading,
+    required this.uploadedCount,
     required this.onUpload,
     required this.onRemoveSelected,
   });
@@ -489,6 +519,7 @@ class _PreviewSidePanel extends StatelessWidget {
             count: totalCount,
             totalValue: totalValue,
             loading: loading,
+            uploadedCount: uploadedCount,
             onUpload: onUpload,
           ),
           const SizedBox(height: 14),
@@ -510,12 +541,14 @@ class _ImportSummaryCard extends StatelessWidget {
   final int count;
   final double totalValue;
   final bool loading;
+  final int uploadedCount;
   final VoidCallback onUpload;
 
   const _ImportSummaryCard({
     required this.count,
     required this.totalValue,
     required this.loading,
+    required this.uploadedCount,
     required this.onUpload,
   });
 
@@ -597,6 +630,13 @@ class _ImportSummaryCard extends StatelessWidget {
             loading: loading,
             onPressed: onUpload,
           ),
+          if (loading) ...[
+            const SizedBox(height: 12),
+            _UploadProgress(
+              current: uploadedCount,
+              total: count,
+            ),
+          ],
         ],
       ),
     );
@@ -762,6 +802,86 @@ class _SummaryBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UploadProgress extends StatelessWidget {
+  final int current;
+  final int total;
+
+  const _UploadProgress({
+    required this.current,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final safeTotal = total <= 0 ? 1 : total;
+    final done = current.clamp(0, total);
+    final progress = total <= 0 ? 0.0 : done / safeTotal;
+    final remaining = (total - done).clamp(0, total);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                remaining == 0 ? 'Upload complete' : 'Uploading products',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withOpacity(.7),
+                ),
+              ),
+            ),
+            Text(
+              '$done/$total',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: cs.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: SizedBox(
+            height: 8,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(color: cs.primary.withOpacity(.12)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: AnimatedFractionallySizedBox(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeOutCubic,
+                    widthFactor: progress,
+                    child: ColoredBox(color: cs.primary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          remaining == 0
+              ? 'All $total products uploaded'
+              : '$remaining remaining',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: cs.onSurface.withOpacity(.55),
+          ),
+        ),
+      ],
     );
   }
 }

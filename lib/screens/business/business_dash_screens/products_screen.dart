@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/business_models/add_product_model.dart';
 import '../../../providers/business/business_provider.dart';
@@ -23,11 +24,10 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
   final barcodeCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
   final gstCtrl = TextEditingController();
-  final priceCtrl = TextEditingController();
+  final costCtrl = TextEditingController();
+  final sellingPriceCtrl = TextEditingController();
   final stockCtrl = TextEditingController();
   final searchCtrl = TextEditingController();
-
-  final desktopFormKey = GlobalKey<FormState>();
 
   String searchQuery = "";
   bool saving = false;
@@ -53,17 +53,25 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     barcodeCtrl.dispose();
     nameCtrl.dispose();
     gstCtrl.dispose();
-    priceCtrl.dispose();
+    costCtrl.dispose();
+    sellingPriceCtrl.dispose();
     stockCtrl.dispose();
     searchCtrl.dispose();
     super.dispose();
+  }
+
+  double? _optionalAmount(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty) return null;
+    return double.tryParse(text);
   }
 
   void _resetForm() {
     barcodeCtrl.clear();
     nameCtrl.clear();
     gstCtrl.clear();
-    priceCtrl.clear();
+    costCtrl.clear();
+    sellingPriceCtrl.clear();
     stockCtrl.clear();
     editingProduct = null;
   }
@@ -73,7 +81,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     barcodeCtrl.text = product.barcode ?? "";
     nameCtrl.text = product.name;
     gstCtrl.text = product.gst_percent?.toString() ?? "";
-    priceCtrl.text = product.price.toString();
+    costCtrl.text = product.productCost?.toString() ?? "";
+    sellingPriceCtrl.text = product.price.toString();
     stockCtrl.text = product.stock.toString();
   }
 
@@ -111,7 +120,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         gst_percent: gstCtrl.text.trim().isEmpty
             ? null
             : int.tryParse(gstCtrl.text.trim()),
-        price: double.tryParse(priceCtrl.text.trim()) ?? 0,
+        price: double.tryParse(sellingPriceCtrl.text.trim()) ?? 0,
+        productCost: _optionalAmount(costCtrl.text),
         stock: int.tryParse(stockCtrl.text.trim()) ?? 0,
       );
 
@@ -257,21 +267,6 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
   }
 
   void _openProductForm({ProductModel? product, String? scannedBarcode}) {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
-    // Desktop: fill the side panel for both add and edit.
-    if (isDesktop) {
-      _resetForm();
-      if (product != null) {
-        _fillForm(product);
-      } else if (scannedBarcode != null) {
-        barcodeCtrl.text = scannedBarcode;
-      }
-      setState(() => saving = false);
-      return;
-    }
-
-    // Mobile: dialog for add / edit.
     _resetForm();
     if (product != null) {
       _fillForm(product);
@@ -281,6 +276,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     setState(() => saving = false);
 
     final dialogFormKey = GlobalKey<FormState>();
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     showDialog(
       context: context,
@@ -296,7 +292,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+                constraints: BoxConstraints(maxWidth: isWide ? 460 : 420),
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: EdgeInsets.only(
@@ -310,7 +306,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                       barcodeController: barcodeCtrl,
                       nameController: nameCtrl,
                       gstController: gstCtrl,
-                      priceController: priceCtrl,
+                      costController: costCtrl,
+                      sellingPriceController: sellingPriceCtrl,
                       stockController: stockCtrl,
                       loading: saving,
                       isEditing: editingProduct != null,
@@ -423,8 +420,6 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       }
     }
 
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
     if (formAlreadyOpen) {
       barcodeCtrl.text = code;
       if (existing != null) {
@@ -447,16 +442,6 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
       CustomDialog.showSuccessSnack(
         context,
         'This barcode is already in inventory. You can update it.',
-      );
-      return;
-    }
-
-    if (isDesktop) {
-      barcodeCtrl.text = code;
-      setState(() {});
-      CustomDialog.showSuccessSnack(
-        context,
-        'Barcode scanned. Add the other details.',
       );
       return;
     }
@@ -490,14 +475,14 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
   // ─── CSV (same backend flow) ──────────────────────────────────────────────
 
-  void showImportResult(BuildContext context, ImportResult result) {
+  Future<void> showImportResult(BuildContext context, ImportResult result) {
     final cs = Theme.of(context).colorScheme;
     final width = CustomDialog.dialogWidth(
       context,
       desktop: CustomDialog.formWidth,
     );
 
-    showDialog(
+    return showDialog(
       context: context,
       useRootNavigator: true,
       barrierDismissible: false,
@@ -598,6 +583,27 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     );
   }
 
+  void _showDuplicateBarcodeSnack(BuildContext context, ImportResult result) {
+    final duplicates = result.errors.where(_isDuplicateBarcodeError).length;
+    if (duplicates == 0) return;
+
+    CustomDialog.showErrorSnack(
+      context,
+      duplicates == 1
+          ? 'Barcode already exists.'
+          : 'Barcode already exists for $duplicates products.',
+    );
+  }
+
+  bool _isDuplicateBarcodeError(String error) {
+    final lower = error.toLowerCase();
+    final mentionsBarcode = lower.contains('barcode');
+    final alreadyUsed = lower.contains('already') ||
+        lower.contains('exist') ||
+        lower.contains('duplicate');
+    return mentionsBarcode && alreadyUsed;
+  }
+
   void _showImportDialog() {
     showModalBottomSheet(
       context: context,
@@ -634,14 +640,12 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                 MaterialPageRoute(
                   builder: (_) => PreviewProductsScreen(
                     products: result.products,
-                    onUpload: (productsToUpload) async {
+                    onUpload: (productsToUpload, onProgress) async {
                       final uploadResult =
                           await ProductImportService().uploadProducts(
                         products: productsToUpload,
                         token: ref.read(tokenProvider),
-                        onProgress: (current, total) {
-                          debugPrint("$current / $total");
-                        },
+                        onProgress: onProgress,
                       );
 
                       await _refreshProducts(silent: true);
@@ -649,23 +653,24 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                       if (context.mounted) {
                         Navigator.pop(context);
 
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (context.mounted) {
-                            showImportResult(context, uploadResult);
+                        Future.delayed(const Duration(milliseconds: 300), () async {
+                          if (!context.mounted) return;
+                          await showImportResult(context, uploadResult);
+                          if (!context.mounted) return;
+                          _showDuplicateBarcodeSnack(context, uploadResult);
 
-                            if (result.errors.isNotEmpty) {
-                              Future.delayed(
-                                const Duration(milliseconds: 400),
-                                () {
-                                  if (context.mounted) {
-                                    _showCsvErrorDialog(
-                                      context,
-                                      result.errors,
-                                    );
-                                  }
-                                },
-                              );
-                            }
+                          if (result.errors.isNotEmpty) {
+                            Future.delayed(
+                              const Duration(milliseconds: 400),
+                              () {
+                                if (context.mounted) {
+                                  _showCsvErrorDialog(
+                                    context,
+                                    result.errors,
+                                  );
+                                }
+                              },
+                            );
                           }
                         });
                       }
@@ -835,13 +840,15 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: AppBar(
-        backgroundColor: cs.primary,
+        backgroundColor: AppColors.sidebar,
+        leading: BackButton(color: Colors.white,),
         elevation: 0,
         title: const Text(
-          "Products",
+          "Add Products",
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
+            color: Colors.white
           ),
         ),
         actions: [
@@ -863,13 +870,19 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
           const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: !isDesktop
-          ? FloatingActionButton(
+      floatingActionButton: isDesktop
+          ? FloatingActionButton.extended(
+              backgroundColor: cs.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add product'),
+              onPressed: () => _openProductForm(),
+            )
+          : FloatingActionButton(
               backgroundColor: cs.primary,
               onPressed: _showAddOptions,
               child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
+            ),
       body: isDesktop
           ? _buildDesktopLayout(productsAsync, cs)
           : _buildMobileLayout(productsAsync, cs),
@@ -882,53 +895,23 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 7,
-            child: ProductListPanel(
-              productsAsync: productsAsync,
-              searchController: searchCtrl,
-              searchQuery: searchQuery,
-              deletingId: deletingId,
-              onSearchChanged: (value) {
-                setState(() => searchQuery = value.trim().toLowerCase());
-              },
-              onClearSearch: () {
-                searchCtrl.clear();
-                setState(() => searchQuery = "");
-              },
-              onRefresh: () => _refreshProducts(silent: true),
-              onEdit: (product) => _openProductForm(product: product),
-              onDelete: _deleteProduct,
-              onGenerateBarcode: (product) => _openGenerate(seed: product),
-              isDesktop: true,
-            ),
-          ),
-          const SizedBox(width: 20),
-          SizedBox(
-            width: 380,
-            child: SingleChildScrollView(
-              child: ProductAddForm(
-                formKey: desktopFormKey,
-                barcodeController: barcodeCtrl,
-                nameController: nameCtrl,
-                gstController: gstCtrl,
-                priceController: priceCtrl,
-                stockController: stockCtrl,
-                loading: saving,
-                isEditing: editingProduct != null,
-                onClear: () => setState(_resetForm),
-                onScan: () => _scanAndFill(),
-                onGenerate: _openGenerate,
-                onSubmit: () async {
-                  await _submit(key: desktopFormKey);
-                },
-              ),
-            ),
-          ),
-        ],
+      child: ProductListPanel(
+        productsAsync: productsAsync,
+        searchController: searchCtrl,
+        searchQuery: searchQuery,
+        deletingId: deletingId,
+        onSearchChanged: (value) {
+          setState(() => searchQuery = value.trim().toLowerCase());
+        },
+        onClearSearch: () {
+          searchCtrl.clear();
+          setState(() => searchQuery = "");
+        },
+        onRefresh: () => _refreshProducts(silent: true),
+        onEdit: (product) => _openProductForm(product: product),
+        onDelete: _deleteProduct,
+        onGenerateBarcode: (product) => _openGenerate(seed: product),
+        isDesktop: true,
       ),
     );
   }
@@ -1041,12 +1024,19 @@ class _AddOptionButton extends StatelessWidget {
   }
 }
 
+String? _optionalAmountValidator(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  if (double.tryParse(value.trim()) == null) return "Invalid";
+  return null;
+}
+
 class ProductAddForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController barcodeController;
   final TextEditingController nameController;
   final TextEditingController gstController;
-  final TextEditingController priceController;
+  final TextEditingController costController;
+  final TextEditingController sellingPriceController;
   final TextEditingController stockController;
   final bool loading;
   final bool isEditing;
@@ -1061,7 +1051,8 @@ class ProductAddForm extends StatelessWidget {
     required this.barcodeController,
     required this.nameController,
     required this.gstController,
-    required this.priceController,
+    required this.costController,
+    required this.sellingPriceController,
     required this.stockController,
     required this.loading,
     required this.isEditing,
@@ -1202,8 +1193,21 @@ class ProductAddForm extends StatelessWidget {
               children: [
                 Expanded(
                   child: _ProductInputField(
-                    controller: priceController,
-                    label: "Price",
+                    controller: costController,
+                    label: "Product Cost",
+                    hint: "Optional",
+                    icon: Icons.payments_outlined,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: _optionalAmountValidator,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ProductInputField(
+                    controller: sellingPriceController,
+                    label: "Selling Price",
                     hint: "0.00",
                     icon: Icons.currency_rupee,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -1218,22 +1222,20 @@ class ProductAddForm extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ProductInputField(
-                    controller: stockController,
-                    label: "Stock",
-                    hint: "0",
-                    icon: Icons.inventory_outlined,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return "Required";
-                      if (int.tryParse(v.trim()) == null) return "Invalid";
-                      return null;
-                    },
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 10),
+            _ProductInputField(
+              controller: stockController,
+              label: "Stock",
+              hint: "0",
+              icon: Icons.inventory_outlined,
+              keyboardType: TextInputType.number,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return "Required";
+                if (int.tryParse(v.trim()) == null) return "Invalid";
+                return null;
+              },
             ),
             const SizedBox(height: 18),
             SizedBox(
@@ -1535,6 +1537,7 @@ class ProductListPanel extends StatelessWidget {
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 80),
       itemCount: filtered.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {

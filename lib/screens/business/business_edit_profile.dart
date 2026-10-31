@@ -3,6 +3,7 @@ import 'package:bigreminder/providers/theme_provider.dart';
 import 'package:bigreminder/utils/enum_classes.dart';
 import 'package:bigreminder/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -183,7 +184,7 @@ class _EditBusinessProfileScreenState
       // =====================================================
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: theme.primaryColor,
+        backgroundColor: AppColors.sidebar,
         foregroundColor: Colors.white,
 
         leading: IconButton(

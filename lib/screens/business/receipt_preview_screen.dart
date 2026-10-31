@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import 'package:printing/printing.dart';
 
 import '../../models/business_models/create_purchase_response_model.dart';
@@ -30,7 +31,12 @@ class ReceiptPreviewScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text("Receipt Preview", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.sidebar,
+        foregroundColor: Colors.white,
+        title: const Text(
+          "Receipt Preview",
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
       ),
       body: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -49,6 +55,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                 businessName: businessName,
                 businessAddress: businessAddress,
                 businessPhone: businessPhone,
+                customerName: customerName,
                 isThermal: isThermal,
               );
 
