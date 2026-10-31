@@ -514,11 +514,9 @@ class BusinessService {
         return;
       }
 
-      // ✅ Show backend message directly
-      final errorMessage = data["detail"] ?? data["message"] ?? data["error"];
-
+      final errorMessage = _customerErrorText(data);
       if (errorMessage != null) {
-        throw Exception(errorMessage.toString());
+        throw Exception(errorMessage);
       }
 
       // ✅ Fallback errors
@@ -905,4 +903,42 @@ class ExpenseService {
         throw AppError("Something went wrong.");
     }
   }
+}
+
+String? _customerErrorText(dynamic data) {
+  final text = _customerErrorValue(data);
+  final trimmed = text?.trim() ?? '';
+  return trimmed.isEmpty ? null : trimmed;
+}
+
+String? _customerErrorValue(dynamic value) {
+  if (value == null) return null;
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+  if (value is List) {
+    return _joinCustomerErrorParts(value.map(_customerErrorValue));
+  }
+  if (value is Map) {
+    return _joinCustomerErrorParts([
+      for (final key in ['message', 'msg', 'detail', 'error', 'reason'])
+        if (value.containsKey(key)) _customerErrorValue(value[key]),
+    ]);
+  }
+  return null;
+}
+
+String? _joinCustomerErrorParts(Iterable<String?> parts) {
+  final unique = <String>[];
+  for (final part in parts) {
+    final trimmed = part?.trim() ?? '';
+    if (trimmed.isEmpty) continue;
+    final exists = unique.any(
+      (item) => item.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (!exists) unique.add(trimmed);
+  }
+  if (unique.isEmpty) return null;
+  return unique.join('\n');
 }

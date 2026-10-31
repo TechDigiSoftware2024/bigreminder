@@ -5,6 +5,7 @@ class ProductModel {
   final String name;
   final int? gst_percent;
   final double price;
+  final double? productCost;
   final double? gstAmount;
   final double? totalPrice;
   final int stock;
@@ -19,6 +20,7 @@ class ProductModel {
     this.gstAmount,
     this.totalPrice,
     required this.price,
+    this.productCost,
     required this.stock,
     this.isActive,
   });
@@ -35,6 +37,10 @@ class ProductModel {
           : (double.tryParse(json["gst_percent"].toString()) ?? 0).toInt(),
 
       price: double.tryParse(json["price"].toString()) ?? 0.0,
+
+      productCost: json["product_cost"] == null
+          ? null
+          : double.tryParse(json["product_cost"].toString()),
 
       gstAmount: json["gst_amount"] == null
           ? null
@@ -61,6 +67,10 @@ class ProductModel {
 
     if (barcode != null && barcode!.trim().isNotEmpty) {
       data["barcode"] = barcode!.trim();
+    }
+
+    if (productCost != null) {
+      data["product_cost"] = productCost;
     }
 
     return data;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
@@ -406,13 +407,15 @@ class _BusinessRemindersScreenState
       child: Scaffold(
         backgroundColor: const Color(0xffF5F7FB),
         appBar: AppBar(
-          backgroundColor: cs.primary,
+          backgroundColor: AppColors.sidebar,
           elevation: 0,
+          leading: BackButton(color: Colors.white,),
           title: const Text(
             'Reminders',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
           actions: [

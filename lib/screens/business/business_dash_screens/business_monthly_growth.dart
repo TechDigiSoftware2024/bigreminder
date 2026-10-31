@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/business_models/BusinessMonthlyGrowthModel.dart';
@@ -56,7 +57,7 @@ class _BusinessMonthlyGrowthScreenState
 
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: primary,
+        backgroundColor: AppColors.sidebar,
         title: const Text(
           "Business Growth Analytics",
           style: TextStyle(

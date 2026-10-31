@@ -71,8 +71,9 @@ class _BusinessAnalysisScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: accent,
+        backgroundColor: AppColors.sidebar,
         elevation: 0,
+        leading: BackButton(color: Colors.white,),
         title: const Text(
           "Business Analysis",
           style: TextStyle(

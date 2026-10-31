@@ -435,6 +435,7 @@ import '../../providers/business/business_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/enum_classes.dart';
 
+import 'business_dash_screens/products_screen.dart';
 import 'layouts/business_desktop_layout.dart';
 import 'layouts/business_mobile_layout.dart';
 
@@ -840,24 +841,29 @@ class _BusinessMainState extends ConsumerState<BusinessMain> {
     }
 
     // ==========================================================
-    // PROTECT INDEX
-    // ==========================================================
-
-    if (currentIndex >= screens.length) {
-      currentIndex = 0;
-    }
-
-    // ==========================================================
     // DESKTOP
     // ==========================================================
 
     if (isDesktop) {
+      final desktopScreens = List<Widget>.from(screens)
+        ..insert(2, const ProductScreen());
+      final desktopLabels = List<String>.from(getBottomBarLabels(appType))
+        ..insert(2, 'Add products');
+
+      if (currentIndex >= desktopScreens.length) {
+        currentIndex = 0;
+      }
+
       return DesktopLayout(
-        screens: screens,
+        screens: desktopScreens,
         currentIndex: currentIndex,
         onTabTapped: onTabTapped,
-        labels: getBottomBarLabels(appType),
+        labels: desktopLabels,
       );
+    }
+
+    if (currentIndex >= screens.length) {
+      currentIndex = 0;
     }
 
     // ==========================================================
